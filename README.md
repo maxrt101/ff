@@ -1,14 +1,14 @@
 # ff programming language
 
 ## About
-ff is a general purpose programming language with dynamic and gradual typing.
-It was developed to be easily paired with C++ applications.
+ff is a general purpose programming language with dynamic and gradual typing.  
+It was developed to be easily paired with C++ applications.  
 
 ## Building
 ### Prerequisites:
   - Linux or MacOS environment
   - `C++` compiler that supports `c++17` (tested with `apple clang 11.0.3`)
-  - `python3` (tested with `3.10`)
+  - `python3` (tested with `3.10.0`)
 
 ### Steps:
  - Clone the repo
@@ -47,13 +47,14 @@ var s: str = "abc";
 Functions are declared using `fn` keyword followed by function name and parameter list. Every parameter can have optional type annotation as well as the function itself. For any type that cannot be inferred, `any` will be assumed. After parameter list `->` must be placed. Function body can be either a block or an expression. 
 
 ```
-fn main() -> {}
-
 fn add(a: int, b: int): int -> a + b;
+
+fn main() -> {
+  let res = add(10, 20);
+}
 ```
 
 ### 4. Control flow
-
 ```
 if (condition) {
   // then-body
@@ -63,7 +64,7 @@ if (condition) {
 ```
 
 ### 5. Loops
-For looping there is `loop`, `for` and `while`. `continue` and `break` are also supported.
+For looping there are `loop`, `for` and `while`. `continue` and `break` are also supported.
 
 `loop` is an unconditioned infinite loop.   
 ```
