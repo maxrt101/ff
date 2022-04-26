@@ -1,4 +1,5 @@
 #include <ff/ast.h>
+#include <mrt/container_utils.h>
 #include <string>
 
 static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag = false) {
@@ -93,7 +94,10 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       for (auto& bodyNode : node->as<Block>()->getBody()) {
         printf("%s", (prefix + "  ").c_str());
         _printTree(bodyNode, prefix + "  ", flag);
-        printf(";\n");
+        if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE)) {
+          printf(";");
+        }
+        printf("\n");
       }
       printf("%s}", prefix.c_str());
       break;
@@ -139,15 +143,28 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
         printf(" else ");
         _printTree(if_->getElseBody(), prefix);
       }
-      // printf("}");
       break;
     }
     case NTYPE_FOR: {
       For* for_ = node->as<For>();
       printf("for (");
+      _printTree(for_->getInit());
+      printf("; ");
       _printTree(for_->getCondition());
+      printf("; ");
+      _printTree(for_->getIncrement());
       printf(")");
       _printTree(for_->getBody(), prefix);
+      break;
+    }
+    case NTYPE_FOREACH: {
+      ForEach* foreach = node->as<ForEach>();
+      printf("for ");
+      _printTree(foreach->getLoopVariable());
+      printf(" in ");
+      _printTree(foreach->getIterable());
+      printf(" ");
+      _printTree(foreach->getBody(), prefix);
       break;
     }
     case NTYPE_WHILE: {

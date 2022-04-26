@@ -24,6 +24,7 @@
 #include <ff/ast/false.h>
 #include <ff/ast/if.h>
 #include <ff/ast/for.h>
+#include <ff/ast/foreach.h>
 #include <ff/ast/while.h>
 #include <ff/ast/loop.h>
 #include <ff/ast/continue.h>

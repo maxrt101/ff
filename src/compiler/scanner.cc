@@ -55,7 +55,7 @@ static std::map<ff::TokenType, std::string> g_tokenTypes {
   {ff::TOKEN_BREAK, "TOKEN_BREAK"},
   {ff::TOKEN_CONTINUE, "TOKEN_CONTINUE"},
   {ff::TOKEN_AS, "TOKEN_AS"},
-  // {ff::TOKEN_IN, "TOKEN_IN"},
+  {ff::TOKEN_IN, "TOKEN_IN"},
   {ff::TOKEN_NEW, "TOKEN_NEW"},
   {ff::TOKEN_REF, "TOKEN_REF"},
   {ff::TOKEN_EOF, "TOKEN_EOF"},
@@ -173,9 +173,7 @@ ff::Token ff::Scanner::scanToken() {
     case '"': return string();
   }
 
-  // return errorToken("Unexpected token");
   throw ScanError(m_filename, m_line, "Unexpected char '%c'", c);
-  // return Token(TOKEN_ERROR, "Unexpected char", m_line);
   return {}; // unreachable
 }
 
@@ -246,10 +244,10 @@ ff::Token ff::Scanner::makeToken(TokenType type) {
 
 ff::TokenType ff::Scanner::identifierType() {
   switch (m_start[0]) {
-    case 'a': //return checkKeyword(1, 2, "nd", TOKEN_AND);
+    case 'a':
       if (m_current - m_start > 1) {
         switch (m_start[1]) {
-          case 's': return TOKEN_AS;
+          case 's': return checkKeyword(1, 1, "s", TOKEN_AS);
         }
       }
       break;
@@ -269,7 +267,7 @@ ff::TokenType ff::Scanner::identifierType() {
                               if (m_current - m_start > 5) {
                                 return checkKeyword(5, 5, "point", TOKEN_BREAKPOINT);
                               } else {
-                                return TOKEN_BREAK;
+                                return checkKeyword(4, 1, "k", TOKEN_BREAK);
                               }
                             }
                           }
@@ -313,12 +311,21 @@ ff::TokenType ff::Scanner::identifierType() {
         switch (m_start[1]) {
           case 'a': return checkKeyword(2, 3, "lse", TOKEN_FALSE);
           case 'o': return checkKeyword(2, 1, "r", TOKEN_FOR);
-          case 'n': return TOKEN_FN;
+          case 'n': return checkKeyword(1, 1, "n", TOKEN_FN);
         }
       }
       break;
     }
-    case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
+    case 'i': {
+      if (m_current - m_start > 1) {
+        switch (m_start[1]) {
+          case 'f': return checkKeyword(1, 1, "f", TOKEN_IF);
+          case 'n': return checkKeyword(1, 1, "n", TOKEN_IN);
+        }
+      }
+      break;
+    }
+    //return checkKeyword(1, 1, "f", TOKEN_IF);
     case 'l': return checkKeyword(1, 3, "oop", TOKEN_LOOP);
     case 'n': {
       if (m_current - m_start > 1) {
@@ -344,9 +351,8 @@ ff::TokenType ff::Scanner::identifierType() {
           }
         }
       }
-
+      break;
     }
-    //return checkKeyword(1, 5, "eturn", TOKEN_RETURN);
     case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER);
     case 't': {
       if (m_current - m_start > 1) {
@@ -371,15 +377,11 @@ ff::TokenType ff::Scanner::checkKeyword(int start, int length, const char* rest,
 }
 
 ff::Token ff::Scanner::identifier() {
-  // m_start = m_current;
-  // skipWhitespace();
   while (isalnum(*m_current) || *m_current == '_') m_current++;
   return makeToken(identifierType());
 }
 
 ff::Token ff::Scanner::number() {
-  // m_start = m_current;
-  // skipWhitespace();
   while (isdigit(peek()) || peek() == 'x' || (peek() >= 'a' && peek() <= 'f') || peek() == '.') advance();
   std::string str(m_start, m_current - m_start);
   if (str.find('x') != std::string::npos || str.find('b') != std::string::npos) {
@@ -398,7 +400,6 @@ ff::Token ff::Scanner::number() {
 }
 
 ff::Token ff::Scanner::string() {
-  // m_start = m_current;
   if (peek() == '"') advance();
   m_start = m_current;
   std::string result;

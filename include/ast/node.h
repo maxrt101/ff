@@ -7,16 +7,16 @@ namespace ff {
 namespace ast {
 
 enum NodeType {
-  NTYPE_FLOAT_LITERAL,    // float
-  NTYPE_INTEGER_LITERAL,  // int
-  NTYPE_STRING_LITERAL,   // str
-  NTYPE_IDENTIFIER,       // id
+  NTYPE_FLOAT_LITERAL,
+  NTYPE_INTEGER_LITERAL,
+  NTYPE_STRING_LITERAL,
+  NTYPE_IDENTIFIER,
 
-  NTYPE_GROUP_EXPR,       // '(' expr ')'
-  NTYPE_UNARY_EXPR,       // OP expr
-  NTYPE_BINARY_EXPR,      // expr OP expr
+  NTYPE_GROUP_EXPR,
+  NTYPE_UNARY_EXPR,
+  NTYPE_BINARY_EXPR,
 
-  NTYPE_SEQUENCE,         // (id|call) ('.' (id|call))*
+  NTYPE_SEQUENCE,
 
   NTYPE_FUNCTION,
   NTYPE_VAR_DECL,
@@ -30,6 +30,7 @@ enum NodeType {
 
   NTYPE_IF,
   NTYPE_FOR,
+  NTYPE_FOREACH,
   NTYPE_WHILE,
   NTYPE_LOOP,
 
@@ -65,8 +66,6 @@ class Node {
   inline T* as() {
     return (T*)this;
   }
-
-  // virtual void interpret() = 0;
 };
 
 } /* namespace ast */

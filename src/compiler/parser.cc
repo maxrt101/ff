@@ -207,10 +207,9 @@ ff::ast::Node* ff::Parser::vardecl(bool isConst) {
     throw ParseError(peek(), m_filename, "Expected an identifier after 'var'");
   }
   Token name = previous();
-  Ref<TypeAnnotation> type = TypeAnnotation::create("any");
+  Ref<TypeAnnotation> type = TypeAnnotation::any();
   ast::Node* value = nullptr;
   if (match({TOKEN_COLON})) {
-    // type = advance();
     type = typeAnnotation();
   }
   if (match({TOKEN_EQUAL})) {
@@ -250,11 +249,94 @@ ff::ast::Node* ff::Parser::ifstmt() {
 }
 
 ff::ast::Node* ff::Parser::forstmt() {
+  if (peek().type == TOKEN_LEFT_PAREN) { // for
+    consume(TOKEN_LEFT_PAREN);
+    
+    ast::Node* init = nullptr;
+    ast::Node* cond = nullptr;
+    ast::Node* incr = nullptr;
+    
+    if (peek().type != TOKEN_SEMICOLON) {
+      if (peek().type == TOKEN_VAR) {
+        consume(TOKEN_VAR);
+        init = vardecl();
+      } else {
+        init = expression();
+      }
+    }
+
+    if (!match({TOKEN_SEMICOLON})) {
+      throw ParseError(peek(), m_filename, "Expected ';' after 'for' initializer");
+    }
+
+    if (peek().type != TOKEN_SEMICOLON) {
+      cond = expression();
+    }
+
+    if (!match({TOKEN_SEMICOLON})) {
+      throw ParseError(peek(), m_filename, "Expected ';' after 'for' condition");
+    }
+
+    if (peek().type != TOKEN_RIGHT_PAREN) {
+      incr = expression();
+    }
+
+    if (!match({TOKEN_RIGHT_PAREN})) {
+      throw ParseError(peek(), m_filename, "Expected ')' after 'for' increment");
+    }
+
+    ast::Node* body = nullptr;
+    if (peek().type == TOKEN_LEFT_BRACE) {
+      body = block();
+    } else {
+      body = expression();
+      if (!match({TOKEN_SEMICOLON})) {
+        throw ParseError(peek(), m_filename, "Expected ')' after 'for' body");
+      }
+    }
+
+    return new ast::For(init, cond, incr, body);
+  } else if (peek().type == TOKEN_IDENTIFIER) { // foreach
+    ast::Node* var = vardecl();
+    if (!match({TOKEN_IN})) {
+      throw ParseError(peek(), m_filename, "Expected 'in' after variable declaration in foreach");
+    }
+
+    ast::Node* iter = expression();
+    if (peek().type != TOKEN_LEFT_BRACE) {
+      throw ParseError(peek(), m_filename, "Expected '{' after foreach iter");
+    }
+
+    ast::Node* body = block();
+    return new ast::ForEach(var, iter, body);
+  } else {
+    throw ParseError(peek(), m_filename, "Expected '(' or identifier after 'for'");
+  }
   return nullptr;
 }
 
 ff::ast::Node* ff::Parser::whilestmt() {
-  return nullptr;
+  if (!match({TOKEN_LEFT_PAREN})) {
+    throw ParseError(peek(), m_filename, "Expected '(' after 'while'");
+  }
+
+  ast::Node* cond = expression();
+
+  if (!match({TOKEN_RIGHT_PAREN})) {
+    throw ParseError(peek(), m_filename, "Expected ')' after 'while' condition");
+  }
+
+  ast::Node* body = nullptr;
+  if (peek().type == TOKEN_LEFT_BRACE) {
+    body = block();
+  } else {
+    body = expression();
+    if (!match({TOKEN_SEMICOLON})) {
+      throw ParseError(peek(), m_filename, "Expected ')' after 'while' body");
+    }
+  }
+
+  return new ast::While(cond, body);
 }
 
 ff::ast::Node* ff::Parser::loopstmt() {
@@ -343,7 +425,7 @@ std::vector<ff::ast::Node*> ff::Parser::statementList() {
     if (peek().type == TOKEN_RIGHT_BRACE) break;
     nodes.push_back(statement());
     /* Skip semicolon after blocks, if's, for's, and while's */
-    if (mrt::isIn(nodes.back()->getType(), ast::NTYPE_BLOCK, ast::NTYPE_IF, ast::NTYPE_FOR, ast::NTYPE_WHILE)) continue;
+    if (mrt::isIn(nodes.back()->getType(), ast::NTYPE_BLOCK, ast::NTYPE_IF, ast::NTYPE_FOR, ast::NTYPE_FOREACH, ast::NTYPE_WHILE, ast::NTYPE_LOOP)) continue;
     if (!match({TOKEN_SEMICOLON})) break;
   }
 

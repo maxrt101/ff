@@ -17,7 +17,10 @@
         rhs = Object::cast(context, args[1], "int").as<Float>()->value; \
       } \
       return T::createInstance(lhs op rhs).asRefTo<Object>(); \
-    }, {{"self", TypeAnnotation::create("float")}, {"other", TypeAnnotation::create("any")}}).asRefTo<Object>()); \
+    }, { \
+      {"self", TypeAnnotation::create("float")}, \
+      {"other", TypeAnnotation::any()} \
+    }).asRefTo<Object>()); \
   } while (0)
 
 ff::Ref<ff::FloatType> ff::FloatType::m_instance = nullptr;

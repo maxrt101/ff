@@ -698,6 +698,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       return TypeAnnotation::create("bool");
     }
     case ast::NTYPE_FOR:
+    case ast::NTYPE_FOREACH:
+    case ast::NTYPE_WHILE:
     case ast::NTYPE_REF:
     case ast::NTYPE_EXPR_LIST_EXPR: {
       throw CompileError(m_filename, -1, "Unimplemented");
