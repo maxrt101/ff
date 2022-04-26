@@ -1,7 +1,7 @@
-# `ff` programming language
+# ff programming language
 
 ## About
-`ff` is a general purpose programming language with dynamic and gradual typing.
+ff is a general purpose programming language with dynamic and gradual typing.
 It was developed to be easily paired with C++ applications.
 
 ## Building
@@ -23,7 +23,7 @@ For more verbose output use `-v`
 To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of debug fatures with `--feature FEATURES`.  
 Supported debug features are `MEM`, `REF`, `EVAL`, `TOKEN`, `PARSER`, `NOCATCH`.  
 
-Build system keeps track of changed source files, and on subsequent builds will only recompile changed files. To force recompilation of everything, use `-f` flag.  
+Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
 
 ## Language
 
@@ -32,7 +32,7 @@ Every value is an object. `null` is used to mark an absence of value.
 Built-in types are `int`, `float`, `string`, `bool`.  
 Numeric and string literals are supported, as well as `true` and `false` for booleans.  
 Numeric literals can be decimal, hexadecimal or binary.  
-String literals support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
+String literals are enclosed in `"` and support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
 
 ### 2. Variables
 Variables are declared with `var` keyword followed by variable name. You can provide optional type annotation and initializer value. If type cannot be inferred, `any` will be assumed.
