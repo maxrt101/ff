@@ -543,11 +543,6 @@ bool ff::VM::executeInstruction(Opcode op) {
       getCode()->setReadIndex(getCode()->getReadIndex() + offset);
       break;
     }
-    /*case OP_JUMP_ABS: {
-      uint16_t offset = getCode()->template read<uint16_t>();
-      getCode()->setReadIndex(offset);
-      break;
-    }*/
     case OP_JUMP_TRUE: {
       uint16_t offset = getCode()->template read<uint16_t>();
       Ref<Object> object = pop();
@@ -591,15 +586,6 @@ bool ff::VM::executeInstruction(Opcode op) {
       getCode()->setReadIndex(getCode()->getReadIndex() - offset);
       break;
     }
-    /*case OP_JUMP_TRUE_ABS: {
-      uint16_t offset = getCode()->template read<uint16_t>();
-      callMember(pop(), "__bool__", 0);
-      Ref<Bool> object = popCheckType(BoolType::getInstance()).asRefTo<Bool>();
-      if (object->value) {
-        getCode()->setReadIndex(offset);
-      }
-      break;
-    }*/
     case OP_CALL: {
       call(pop(), popCheckType(IntType::getInstance()).asRefTo<Int>()->value);
       break;
@@ -618,7 +604,6 @@ bool ff::VM::executeInstruction(Opcode op) {
     case OP_CAST: {
       Ref<String> typeName = popCheckType(StringType::getInstance()).asRefTo<String>();
       Ref<Object> object = pop();
-      // std::string castFnName = "__as_" + typeName->s + "__";
       push(Object::cast(this, object, typeName->value));
       break;
     }
@@ -701,7 +686,7 @@ bool ff::VM::executeInstruction(Opcode op) {
 #ifdef _DEBUG
       runtimeBreakpoint();
 #else
-      throw createError("Breakpoints are not supported in prod builds (compile with DEBUG=1)");
+      throw createError("Breakpoints are not supported in release builds (compile with -p debug)");
 #endif
       break;
     }
