@@ -28,6 +28,8 @@ def dependencies(ctx):
 
 @build.subtask('dependencies')
 def mrt(ctx):
+    if not os.path.exists(cf('{topdir}/mrt')):
+        build.utils.die('Please download mrt')
     build.run_cmd(['make', '-C', cf('{topdir}/mrt'), 'PREFIX=' + cf('{build_dir}/{profile}')])
 
 @build.task(['libff'])
