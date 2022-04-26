@@ -1,0 +1,13 @@
+{
+  "build_dir": "{topdir}/target",
+  "cache_file": "{build_dir}/cache.json",
+
+  "cpp": {
+    "compiler": "g++",
+    "ar": "ar",
+    "cxxflags": ["-std=c++17", "-Wno-undefined-inline"],
+    "includes": ["{build_dir}/include"],
+    "libdirs": ["{build_dir}/lib"],
+    "libs": ["ff"]
+  }
+}

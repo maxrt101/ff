@@ -1,0 +1,80 @@
+#ifndef _FF_COMPILER_PARSER_H_
+#define _FF_COMPILER_PARSER_H_ 1
+
+#include <ff/compiler/type_annotation.h>
+#include <ff/compiler/token.h>
+#include <ff/errors.h>
+#include <ff/ast.h>
+#include <exception>
+#include <vector>
+#include <string>
+
+/*
+_FF_DEBUG_PARSER
+1
+2
+3
+4 - tokens & fn calls
+*/
+
+namespace ff {
+
+class Parser {
+ private:
+  std::string m_filename;
+  std::vector<Token> m_tokens;
+  ast::Node* m_root = nullptr;
+  int m_currentIndex = 0;
+  bool m_hadError = false;
+  bool m_panicMode = false;
+
+ public:
+  Parser(const std::string& filename, const std::vector<Token>& tokens);
+
+  ast::Node* parse();
+
+ private:
+  // Error Handling
+  void parserWarning(Token token, const std::string& msg);
+  void syncronize();
+
+  // Utility for Tokens
+  bool isAtEnd() const;
+  bool match(const std::vector<TokenType>& types);
+  bool check(TokenType type) const;
+  Token consume(TokenType type, const std::string& msg = "Unecpected token");
+  Token advance();
+  Token peek(int idx = 0) const;
+  Token previous() const;
+
+  // Grammar parsing functions
+  ast::Node* program();
+  ast::Node* fndecl();
+  ast::Node* vardecl(bool isConst = false);
+  ast::Node* statement();
+  ast::Node* ifstmt();
+  ast::Node* forstmt();
+  ast::Node* whilestmt();
+  ast::Node* loopstmt();
+  ast::Node* block();
+  std::vector<ast::Node*> statementList();
+  std::vector<ast::Node*> expressionList();
+  ast::VarDeclList* varDeclList();
+  ast::Node* call(ast::Node* callee, bool isReturnValueExpected);
+  ast::Node* lambda();
+  ast::Node* expression();
+  ast::Node* equality();
+  ast::Node* comparison();
+  ast::Node* term();
+  ast::Node* factor();
+  ast::Node* unary();
+  ast::Node* cast();
+  ast::Node* rvalue();
+  ast::Node* lvalue();
+
+  Ref<TypeAnnotation> typeAnnotation();
+};
+
+} /* namespace ff */
+
+#endif /* _FF_COMPILER_PARSER_H_ */

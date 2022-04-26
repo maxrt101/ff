@@ -1,0 +1,21 @@
+
+# C++
+*.a
+*.o
+*.so
+*.out
+
+# Python
+__pycache__
+*.pyc
+
+# MacOS
+.DS_Store
+
+# Editors
+.vscode
+.*.sw*
+.sw*
+
+# Project specific
+target/
