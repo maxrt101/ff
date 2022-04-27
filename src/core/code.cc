@@ -1,4 +1,5 @@
 #include <ff/code.h>
+#include <algorithm>
 #include <cstdio>
 
 ff::Code::Code(const std::string& filename) : m_filename(filename) {}

@@ -190,14 +190,14 @@ ff::ast::Node* ff::Parser::fndecl() {
     consume(TOKEN_SEMICOLON, "Expected ';' after function body");
   }
 
-  std::vector<Ref<TypeAnnotation>> argsTypes;
+  std::vector<Ref<TypeAnnotation>> argTypes;
   if (args) {
     for (auto varDecl : args->getList()) {
-      argsTypes.push_back(varDecl->getVarType());
+      argTypes.push_back(varDecl->getVarType());
     }
   }
 
-  auto type = FunctionAnnotation::create(argsTypes, returnType);
+  auto type = FunctionAnnotation::create(argTypes, returnType);
 
   return new ast::Function(name, args, type, body);
 }
@@ -670,7 +670,31 @@ ff::Ref<ff::TypeAnnotation> ff::Parser::typeAnnotation() {
       return id;
     }
   } else if (peek().type == TOKEN_LEFT_PAREN) {
-    throw ParseError(peek(), m_filename, "Function type annotations are unimlemented");
+    consume(TOKEN_LEFT_PAREN);
+    ast::VarDeclList* args = nullptr;
+    Ref<TypeAnnotation> returnType = TypeAnnotation::create("any");
+
+    if (peek().type != TOKEN_RIGHT_PAREN) {
+      args = varDeclList();
+    }
+
+    if (!match({TOKEN_RIGHT_PAREN})) {
+      throw ParseError(peek(), m_filename, "Expected ')'");
+    }
+
+    if (!match({TOKEN_RIGHT_ARROW})) {
+      throw ParseError(peek(), m_filename, "Expected '->'");
+    }
+    returnType = typeAnnotation();
+
+    std::vector<Ref<TypeAnnotation>> argTypes;
+    if (args) {
+      for (auto varDecl : args->getList()) {
+        argTypes.push_back(varDecl->getVarType());
+      }
+    }
+
+    return FunctionAnnotation::create(argTypes, returnType).asRefTo<TypeAnnotation>();
   }
 
   throw ParseError(peek(), m_filename, "Unrecognized type annotation");

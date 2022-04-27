@@ -24,7 +24,11 @@ static std::map<ff::ast::NodeType, std::string> g_nodeTypes {
 };
 
 std::string ff::ast::nodeTypeToString(NodeType type) {
-  return g_nodeTypes[type];
+  auto itr = g_nodeTypes.find(type);
+  if (itr != g_nodeTypes.end()) {
+    return itr->second;
+  }
+  return "<unknown>";
 }
 
 ff::ast::Node::Node(NodeType type) : m_type(type) {}

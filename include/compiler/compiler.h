@@ -43,7 +43,6 @@ class Compiler {
   Ref<Code> m_rootCode;
   std::vector<Scope> m_scopes;
   std::vector<LoopRecord> m_loops;
-  // std::map<std::string, Ref<FunctionAnnotation>> m_functions;
 
   std::map<std::string, Variable> m_globalVariables;
 
@@ -107,6 +106,7 @@ class Compiler {
   void block(ast::Node* node);
   void ifstmt(ast::Node* node);
   void loopstmt(ast::Node* node);
+  void whilestmt(ast::Node* node);
 
   Ref<TypeAnnotation> evalSequenceStart(ast::Node* node);
   Ref<TypeAnnotation> evalSequenceElement(ast::Node* node);

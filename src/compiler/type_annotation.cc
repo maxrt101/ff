@@ -3,10 +3,11 @@
 
 static ff::Ref<ff::TypeAnnotation> g_any = ff::TypeAnnotation::create("any");
 static ff::Ref<ff::TypeAnnotation> g_nothing = ff::TypeAnnotation::create("nothing");
+static ff::Ref<ff::TypeAnnotation> g_type = ff::TypeAnnotation::create("type");
 
-ff::TypeAnnotation::TypeAnnotation(Type type, bool isInferred) : type(type), isInferred(isInferred) {}
+ff::TypeAnnotation::TypeAnnotation(Type type, bool isInferred) : annotationType(type), isInferred(isInferred) {}
 
-ff::TypeAnnotation::TypeAnnotation(const std::string& typeName, bool isInferred) : type(TATYPE_DEFAULT), typeName(typeName), isInferred(isInferred) {}
+ff::TypeAnnotation::TypeAnnotation(const std::string& typeName, bool isInferred) : annotationType(TATYPE_DEFAULT), typeName(typeName), isInferred(isInferred) {}
 
 bool ff::TypeAnnotation::operator==(const TypeAnnotation& rhs) const {
   return type == rhs.type && typeName == rhs.typeName;
@@ -32,11 +33,15 @@ ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::nothing() {
   return g_nothing;
 }
 
+ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::type() {
+  return g_type;
+}
+
 ff::FunctionAnnotation::FunctionAnnotation(std::vector<Ref<TypeAnnotation>> arguments, Ref<TypeAnnotation> returnType, bool isInferred)
   : TypeAnnotation(TypeAnnotation::TATYPE_FUNCTION, isInferred), arguments(arguments), returnType(returnType) {}
 
 bool ff::FunctionAnnotation::operator==(const TypeAnnotation& rhs) const {
-  if (type != rhs.type) return false;
+  if (annotationType != rhs.annotationType) return false;
 
   auto rhsf = (const FunctionAnnotation&) rhs;
 
@@ -72,7 +77,7 @@ ff::UnionAnnotation::UnionAnnotation(std::vector<ff::Ref<ff::TypeAnnotation>> ty
   : TypeAnnotation(TypeAnnotation::TATYPE_UNION, isInferred), types(types) {}
 
 bool ff::UnionAnnotation::operator==(const TypeAnnotation& rhs) const {
-  if (type != rhs.type) return false;
+  if (annotationType != rhs.annotationType) return false;
 
   auto rhsu = (const UnionAnnotation&) rhs;
 

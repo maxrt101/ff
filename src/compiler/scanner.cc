@@ -1,6 +1,7 @@
 #include <ff/compiler/scanner.h>
 #include <mrt/console/colors.h>
 #include <unistd.h>
+#include <cstring>
 #include <map>
 
 static std::map<ff::TokenType, std::string> g_tokenTypes {

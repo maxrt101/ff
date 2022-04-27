@@ -40,10 +40,16 @@ def _get_command_full(cmd: str | List[str]) -> str:
 def _get_command(cmd: str | List[str]) -> str:
     return cmd[0] if type(cmd) == list else cmd.split()[0]
 
+def _gen_cmd(cmd: str | List[str]) -> List[str]:
+    cmd = cmd if type(cmd) == list else cmd.split(' ')
+    if '' in cmd:
+        cmd.remove('')
+    return cmd
+
 def require(cmd: str | List[str], exit_on_fail: bool = True) -> str:
     try:
         vprint(f'{NOTE}: Execute:', ' '.join(cmd) if type(cmd) == list else cmd)
-        return subprocess.run(cmd if type(cmd) == list else cmd.split(' '), check=True, capture_output=True).stdout.decode('utf-8')
+        return subprocess.run(_gen_cmd(cmd), check=True, capture_output=True).stdout.decode('utf-8')
     except (subprocess.CalledProcessError, OSError) as e:
         if not exit_on_fail: return None
         clsprint(f'{ERROR}: Failed to execute "{_get_command_full(cmd)}": {e}')
@@ -53,7 +59,7 @@ def require(cmd: str | List[str], exit_on_fail: bool = True) -> str:
 def run_cmd(cmd: str | List[str], exit_on_fail: bool = True, print_stdout: bool = False, print_stderr: bool = False) -> Tuple[str, str]:
     try:
         vprint(f'{NOTE}: Execute:', ' '.join(cmd) if type(cmd) == list else cmd)
-        result = subprocess.run(cmd if type(cmd) == list else cmd.split(' '), check=True, capture_output=True)
+        result = subprocess.run(_gen_cmd(cmd), check=True, capture_output=True)
         if print_stdout and result.stdout: clsprint('\n' + result.stdout.decode('utf-8'))
         if print_stderr and result.stderr: clsprint('\n' + result.stderr.decode('utf-8'))
         return result.stdout.decode('utf-8'), result.stderr.decode('utf-8')

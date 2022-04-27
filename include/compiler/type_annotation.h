@@ -14,7 +14,7 @@ struct TypeAnnotation {
     TATYPE_UNION,
   };
 
-  Type type;
+  Type annotationType;
   std::string typeName;
   bool isInferred = false;
 
@@ -31,6 +31,7 @@ struct TypeAnnotation {
 
   static Ref<TypeAnnotation> any();
   static Ref<TypeAnnotation> nothing();
+  static Ref<TypeAnnotation> type();
 };
 
 struct FunctionAnnotation : public TypeAnnotation {

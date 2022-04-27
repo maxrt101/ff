@@ -81,7 +81,6 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       _printTree(ass->getAssignee());
       printf(" = ");
       _printTree(ass->getValue());
-      printf(";\n");
       break;
     }
     case NTYPE_RETURN: {

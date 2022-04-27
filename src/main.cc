@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -15,6 +16,9 @@
 #include <ff/config.h>
 #include <ff/ast.h>
 #include <ff/log.h>
+
+#include <ff/ast/assignment.h>
+#include <ff/ast/sequence.h>
 
 static void unwrapCode(ff::Ref<ff::Code> code, std::string prefix = " ") {
   code->disassemble(prefix + "| ");

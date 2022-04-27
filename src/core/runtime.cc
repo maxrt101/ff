@@ -189,6 +189,7 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
   if (!self.get()) {
     throw createError("cannot call member of null");
   }
+  bool implicitSelf = true;
   Ref<Object> fnObject;
   if (self->isInstance()) {
     if (self->hasField(memberName)) {
@@ -199,6 +200,7 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
       throw createError("Member '%s' cannot be found", memberName.c_str());
     }
   } else {
+    implicitSelf = false;
     if (self->hasField(memberName)) {
       fnObject = self->getField(memberName);
     } else {
@@ -207,19 +209,23 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
   }
   if (isOfType(fnObject, FunctionType::getInstance())) {
     Ref<Function> fn = fnObject.asRefTo<Function>();
-    if (fn->args.size()-1 != argc) {
+    if (fn->args.size() - (implicitSelf ? 1 : 0) != argc) {
       throw createError("Expected %d arguments, but got %d", fn->args.size()-1, argc);
     }
     std::vector<Ref<Object>> args = pop(argc);
-    args.insert(args.begin(), self);
+    if (implicitSelf) {
+      args.insert(args.begin(), self);
+    }
     callFunction(fn, args);
   } else if (isOfType(fnObject, NativeFunctionType::getInstance())) {
     Ref<NativeFunction> fn = fnObject.asRefTo<NativeFunction>();
-    if (fn->args.size()-1 != argc) {
+    if (fn->args.size() - (implicitSelf ? 1 : 0) != argc) {
       throw createError("Expected %d arguments, but got %d", fn->args.size()-1, argc);
     }
     std::vector<Ref<Object>> args = pop(argc);
-    args.insert(args.begin(), self);
+    if (implicitSelf) {
+      args.insert(args.begin(), self);
+    }
     callNativeFunction(fn, args);
   } else {
     throw createError("Attempt to call an object of type '%s'", fnObject.as<Instance>()->getType()->getTypeName().c_str());

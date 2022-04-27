@@ -46,7 +46,12 @@ void ff::CompileError::print() const {
   }
 }
 
-ff::Compiler::Compiler() {}
+ff::Compiler::Compiler() {
+  m_globalVariables["int"]    = {"int",    TypeAnnotation::type()};
+  m_globalVariables["float"]  = {"float",  TypeAnnotation::type()};
+  m_globalVariables["string"] = {"string", TypeAnnotation::type()};
+  m_globalVariables["bool"]   = {"bool",   TypeAnnotation::type()};
+}
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
   if (!node) {
@@ -412,7 +417,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
 
   Variable var {
     fn->getName().str,
-    // TypeAnnotation::create("function"),
     fn->getFunctionType().asRefTo<TypeAnnotation>(),
     false
   };
@@ -430,7 +434,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
   getCode()->pushInstruction(OP_SET_GLOBAL);
 
-  // m_functions[var.name] = fn->getFunctionType();
   return fn->getFunctionType().asRefTo<TypeAnnotation>();
 }
 
@@ -485,11 +488,13 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   }
 
   std::string functionName = call->getCallee()->as<ast::Identifier>()->getValue();
-  auto type = getVariableType(functionName);
+
+  // FIXME: infer type of member function
+  auto type = topLevelCallee ? getVariableType(functionName) : TypeAnnotation::any();
 
   for (int i = call->getArgs().size() - 1; i >= 0; i--) {
     auto argType = evalNode(call->getArgs()[i]);
-    if (type->type == TypeAnnotation::TATYPE_FUNCTION) {
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
       auto paramType = type.as<FunctionAnnotation>()->arguments[i];
       if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
         throw CompileError(m_filename, -1, "TypeMismatch: expected argument of type '%s', but got '%s'",
@@ -524,9 +529,18 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
   ast::Assignment* ass = node->as<ast::Assignment>();
   auto valueType = evalNode(ass->getValue());
   if (ass->getAssignee()->getType() == ast::NTYPE_SEQUENCE) {
-    auto seq = node->as<ast::Sequence>()->getSequence();
-    for (int i = 0; i < seq.size()-2; i++) {
-      evalNode(seq[i]);
+    auto seq = ass->getAssignee()->as<ast::Sequence>()->getSequence();
+
+    evalNode(seq.front());
+
+    if (seq.size() > 2) {
+      for (int i = 1; i < seq.size()-3; i++) {
+        if (seq[i]->getType() == ast::NTYPE_IDENTIFIER) {
+          emitConstant(String::createInstance(seq[i]->as<ast::Identifier>()->getValue()).asRefTo<Object>());
+        } else if (seq[i]->getType() == ast::NTYPE_CALL) {
+          call(seq[i], false);
+        }
+      }
     }
     if (seq.back()->getType() != ast::NTYPE_IDENTIFIER) {
       throw CompileError(m_filename, -1, "Cannot set anything other than a field");
@@ -550,7 +564,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node) {
   ast::Cast* cast = node->as<ast::Cast>();
   evalNode(cast->getValue());
   // FIXME: cast type can be anything (i.e. int | float | (int) -> int), we must recieve concrete type
-  if (cast->getCastType()->type != TypeAnnotation::TATYPE_DEFAULT) {
+  if (cast->getCastType()->annotationType != TypeAnnotation::TATYPE_DEFAULT) {
     throw CompileError(m_filename, -1, "Invalid type for cast '%s'", cast->getCastType()->toString().c_str());
   }
   emitConstant(String::createInstance(cast->getCastType()->toString()).asRefTo<Object>());
@@ -615,10 +629,34 @@ void ff::Compiler::loopstmt(ast::Node* node) {
   endLoop();
 }
 
+void ff::Compiler::whilestmt(ast::Node* node) {
+  ast::While* while_ = node->as<ast::While>();
+  uint16_t loopStart = getCode()->size();
+
+  evalNode(while_->getCondition());
+  uint16_t condition_jump = emitJump(OP_JUMP_FALSE);
+
+  beginLoop();
+  evalNode(while_->getBody());
+  emitLoop(loopStart);
+  patchJump(condition_jump);
+
+  for (int continue_jump : getLoop().continue_jumps) {
+    // See note in loopstmt for explanation
+    patchRemoteJump(continue_jump, continue_jump - loopStart + 2);
+  }
+
+  for (int break_jump : getLoop().break_jumps) {
+    patchJump(break_jump);
+  }
+
+  endLoop();
+}
+
 ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
   if (!node) return TypeAnnotation::nothing();
 #ifdef _FF_EVAL_NODE_DEBUG
-  printf("evalNode: type=%s\n", ast::nodeTypeToString(node->getType()).c_str());
+  printf("evalNode: ptr=%p type=%s\n", node, ast::nodeTypeToString(node->getType()).c_str());
 #endif
   switch (node->getType()) {
     case ast::NTYPE_FLOAT_LITERAL: {
@@ -645,7 +683,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
     }
     case ast::NTYPE_BINARY_EXPR: {
       return binaryExpr(node);
-      break;
     }
     case ast::NTYPE_IDENTIFIER: {
       return identifier(node);
@@ -681,6 +718,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       loopstmt(node);
       break;
     }
+    case ast::NTYPE_WHILE: {
+      whilestmt(node);
+      break;
+    }
     case ast::NTYPE_CONTINUE: {
       getLoop().continue_jumps.push_back(emitJump(OP_LOOP));
       return TypeAnnotation::nothing();
@@ -699,7 +740,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
     }
     case ast::NTYPE_FOR:
     case ast::NTYPE_FOREACH:
-    case ast::NTYPE_WHILE:
     case ast::NTYPE_REF:
     case ast::NTYPE_EXPR_LIST_EXPR: {
       throw CompileError(m_filename, -1, "Unimplemented");
@@ -720,7 +760,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
     }
 #endif
     default: {
-      throw CompileError(m_filename, -1, "Unknown AST node: type=%d str='%s'", (int)node->getType(), node->toString().c_str());
+      throw CompileError(m_filename, -1, "Unknown AST node: type=%d", (int)node->getType());
+      // throw CompileError(m_filename, -1, "Unknown AST node: type=%d str='%s'", (int)node->getType(), node->toString().c_str());
       break;
     }
   }
