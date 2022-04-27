@@ -7,14 +7,14 @@
 #define _DEFINE_BINARY_OP(name, T, op) \
   do { \
     setField(name, NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) { \
-      int lhs = args[0].as<Float>()->value; \
-      int rhs = 0; \
+      float lhs = args[0].as<Float>()->value; \
+      float rhs = 0; \
       if (isOfType(args[1], FloatType::getInstance())) { \
         rhs = args[1].as<Float>()->value; \
       } else if (isOfType(args[1], IntType::getInstance())) { \
         rhs = args[1].as<Int>()->value; \
       } else { \
-        rhs = Object::cast(context, args[1], "int").as<Float>()->value; \
+        rhs = Object::cast(context, args[1], "float").as<Float>()->value; \
       } \
       return T::createInstance(lhs op rhs).asRefTo<Object>(); \
     }, { \
@@ -30,7 +30,6 @@ ff::FloatType::FloatType() : Type("float") {
   _DEFINE_BINARY_OP("__sub__", Float, -);
   _DEFINE_BINARY_OP("__mul__", Float, *);
   _DEFINE_BINARY_OP("__div__", Float, /);
-  _DEFINE_BINARY_OP("__mod__", Float, %);
   _DEFINE_BINARY_OP("__eq__",  Bool, ==);
   _DEFINE_BINARY_OP("__neq__", Bool, !=);
   _DEFINE_BINARY_OP("__lt__",  Bool, <);
