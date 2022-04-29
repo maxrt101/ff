@@ -1,4 +1,5 @@
 #include <ff/compiler/scanner.h>
+#include <ff/strutils.h>
 #include <mrt/console/colors.h>
 #include <unistd.h>
 #include <cstring>
@@ -103,10 +104,7 @@ bool ff::Token::operator==(const std::string& s) const {
 }
 
 int32_t ff::Token::toInteger() const {
-  int base = 10;
-  if (str.size() > 2 && str[1] == 'b') base = 2;
-  if (str.size() > 2 && str[1] == 'x') base = 16;
-  return std::stoi(base != 10 ? str.substr(2) : str, nullptr, base);
+  return str::toInt(str);
 }
 
 float ff::Token::toFloat() const {

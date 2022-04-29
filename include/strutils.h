@@ -7,6 +7,7 @@ namespace ff {
 namespace str {
 
 std::string repeat(const std::string& s, int count);
+int toInt(const std::string& str);
 
 } /* namespace str */
 } /* namespace ff */

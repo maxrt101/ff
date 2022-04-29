@@ -652,7 +652,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   std::string functionName = call->getCallee()->as<ast::Identifier>()->getValue();
 
-  // Infer return type
+  // Get return type
   Ref<TypeAnnotation> type = TypeAnnotation::any();
   if (topLevelCallee) { // Means callee is an global variable
     type = getVariableType(functionName);

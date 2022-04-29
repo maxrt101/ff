@@ -1,4 +1,5 @@
 #include <ff/runtime.h>
+#include <ff/strutils.h>
 #include <ff/config.h>
 #include <mrt/strutils.h>
 #include <mrt/container_utils.h>
@@ -8,13 +9,6 @@
 static const char* _CMD_CONFIG_HELP = "Usage: config|cfg get|set|list|print [NAME] [VALUE]";
 static const char* _CMD_STACK_HELP  = "Usage: stack|stk [print|pop]";
 static const char* _CMD_JUMP_HELP   = "Usage: jump|jmp|j OFFSET";
-
-static int stringToInt(const std::string& str) {
-  int base = 10;
-  if (str.size() > 2 && str[1] == 'b') base = 2;
-  if (str.size() > 2 && str[1] == 'x') base = 16;
-  return std::stoi(base != 10 ? str.substr(2) : str, nullptr, base);
-}
 
 void ff::VM::runtimeBreakpoint() {
   while (1) {
@@ -84,7 +78,7 @@ void ff::VM::runtimeBreakpoint() {
         printf("%s\n", _CMD_JUMP_HELP);
         continue;
       }
-      getCode()->setReadIndex(stringToInt(tokens[1]));
+      getCode()->setReadIndex(str::toInt(tokens[1]));
     } else if (mrt::isIn(tokens[0], "exit", "e")) {
       exit(0);
     } else {
