@@ -67,7 +67,7 @@ fn return100() -> {
 
 var x = return100();
 ```
-Even though we didn't add any annotations, the compiler will infer type if `return100` as `() -> int` and type of `x` as `int`.  
+Even though we didn't add any annotations, the compiler will infer type of `return100` as `() -> int` and type of `x` as `int`.  
 
 But consider next example:
 ```
@@ -93,7 +93,7 @@ fn returnUnion(i: int): int | string -> {
 ...
 ```
 
-Union annotations are considered better.  
+Union annotations are considered better since they clearly show what to expect from a function.  
 
 ### 4. Variables
 Variables are declared with `var` keyword followed by variable name.  
