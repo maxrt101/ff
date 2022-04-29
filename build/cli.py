@@ -111,6 +111,8 @@ def parse_args():
             i += 1
         else:
             if options['task'] == '':
+                if len(sys.argv[i]) > 0 and sys.argv[i][0] == '-':
+                    utils.die(f'{ERROR}: Unknown option: "{sys.argv[i]}"')
                 options['task'], options['subtask'] = parse_task(sys.argv[i])
             else:
                 print(f'{ERROR}: Unknown argument: "{sys.argv[i]}"')
