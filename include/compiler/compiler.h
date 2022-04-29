@@ -20,8 +20,8 @@ class Compiler {
     std::string name;
     Ref<TypeAnnotation> type;
     bool isConst = false;
-    // bool isInitialized = false;
     std::map<std::string, Variable> fields;
+    // bool isInitialized = false;
 
     Variable() = default;
     Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, std::map<std::string, Variable> fields);
@@ -36,7 +36,6 @@ class Compiler {
 
   struct Scope {
     Ref<Code> code;
-    // std::map<std::string, Variable> localVariables;
     std::vector<Variable> localVariables;
     int prevLocalsLength = 0;
     bool isFunctionScope = false;

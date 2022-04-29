@@ -663,7 +663,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
     if (typeInfo.var) {
       auto itr = typeInfo.var->fields.find(functionName);
       if (itr != typeInfo.var->fields.end()) {
-        type = itr->second.type;
+        if (itr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+          type = itr->second.type.as<FunctionAnnotation>()->returnType;
+        } else {
+          throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
+            itr->second.type->toString().c_str());
+        }
       }
     } else {
       auto itr = m_globalVariables.find(typeInfo.type->toString());
@@ -672,6 +677,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
         if (titr != itr->second.fields.end()) {
           if (titr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
             type = titr->second.type.as<FunctionAnnotation>()->returnType;
+          } else {
+            throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
+              titr->second.type->toString().c_str());
           }
         }
       }
@@ -712,6 +720,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
+  // TODO: Check fields type
   ast::Assignment* ass = node->as<ast::Assignment>();
   auto valueType = evalNode(ass->getValue());
   if (ass->getAssignee()->getType() == ast::NTYPE_SEQUENCE) {
@@ -734,7 +743,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
     emitConstant(String::createInstance(seq.back()->as<ast::Identifier>()->getValue()).asRefTo<Object>());
     getCode()->pushInstruction(OP_SET_FIELD);
   } else if (ass->getAssignee()->getType() == ast::NTYPE_IDENTIFIER) {
-    auto variableType = resolveVariable(ass->getAssignee()->as<ast::Identifier>()->getValue(), OP_SET_LOCAL, OP_SET_LOCAL);
+    auto variableType = resolveVariable(ass->getAssignee()->as<ast::Identifier>()->getValue(), OP_SET_LOCAL, OP_SET_GLOBAL);
     if (*variableType != *TypeAnnotation::any() && *variableType != *valueType) {
       throw CompileError(m_filename, -1,
         "TypeMismatch during assignment (annotated type: %s, value type: %s)",
