@@ -39,7 +39,7 @@ def compile(file: str, prefix_folder: str = '', cxxflags: List[str] | str = ''):
     if not os.path.exists(output) or cache.changed(file) or config.get('force'):
         if not os.path.exists(dirs['obj'] + '/' + prefix_folder):
             os.mkdir(dirs['obj'] + '/' + prefix_folder)
-        
+
         if type(cxxflags) == str:
             cxxflags = cxxflags.split(' ')
         elif type(cxxflags) != list:

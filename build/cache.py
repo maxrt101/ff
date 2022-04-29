@@ -23,16 +23,12 @@ def load():
             'files': {},
             'last_build': {'compilation': {}, 'result': '', 'start_time': '', 'end_time': ''}
         }
-    # if 'files' not in _cache:
-    #     _cache['files'] = {}
-    # if 'last_build' not in _cache:
-    #     _cache['last_build'] = {'compilation': {}, 'result': '', 'start_time': '', 'end_time': ''}
 
 def save():
     open(config.get(CONFIG_CACHE_FILE), 'w').write(json.dumps(_cache, indent=4))
 
 def update():
-    for file in _cache.get('files', {}).keys():
+    for file in _cache[config.get('profile')]['files'].keys():
         add_file(file)
 
 def add_file(filename: str):
