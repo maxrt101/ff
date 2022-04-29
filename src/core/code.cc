@@ -211,6 +211,12 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_GE:
       printf("OP_GE\n");
       return;
+    case OP_AND:
+      printf("OP_AND\n");
+      return;
+    case OP_OR:
+      printf("OP_OR\n");
+      return;
     case OP_NEG:
       printf("OP_NEG\n");
       return;

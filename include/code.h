@@ -52,6 +52,8 @@ enum Opcode {
   OP_GT,
   OP_LE,
   OP_GE,
+  OP_AND,
+  OP_OR,
   OP_NEG,
   OP_NOT,
   OP_INC,

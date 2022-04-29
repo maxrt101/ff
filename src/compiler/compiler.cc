@@ -523,6 +523,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
       getCode()->pushInstruction(OP_GE);
       return TypeAnnotation::create("bool", true);
     }
+    case TOKEN_AND: {
+      getCode()->pushInstruction(OP_AND);
+      return TypeAnnotation::create("bool", true);
+    }
+    case TOKEN_OR: {
+      getCode()->pushInstruction(OP_OR);
+      return TypeAnnotation::create("bool", true);
+    }
     default: {
       throw CompileError(m_filename, binary->getOperator().line, "Unknown binary operator '%s'", binary->getOperator().str.c_str());
     }

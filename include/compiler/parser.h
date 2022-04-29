@@ -55,6 +55,7 @@ class Parser {
   ast::Node* call(ast::Node* callee, bool isReturnValueExpected);
   ast::Node* lambda();
   ast::Node* expression(bool isReturnValueExpected);
+  ast::Node* logic(bool isReturnValueExpected);
   ast::Node* equality(bool isReturnValueExpected);
   ast::Node* comparison(bool isReturnValueExpected);
   ast::Node* term(bool isReturnValueExpected);

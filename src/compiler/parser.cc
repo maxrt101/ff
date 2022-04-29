@@ -465,7 +465,19 @@ ff::ast::Node* ff::Parser::lambda() {
 }
 
 ff::ast::Node* ff::Parser::expression(bool isReturnValueExpected) {
-  return equality(isReturnValueExpected);
+  return logic(isReturnValueExpected);
+}
+
+ff::ast::Node* ff::Parser::logic(bool isReturnValueExpected) {
+  ast::Node* expr = equality(isReturnValueExpected);
+
+  while (match({TOKEN_AND, TOKEN_OR})) {
+    Token op = previous();
+    ast::Node* right = equality(isReturnValueExpected);
+    expr = new ast::Binary(op, expr, right);
+  }
+
+  return expr;
 }
 
 ff::ast::Node* ff::Parser::equality(bool isReturnValueExpected) {

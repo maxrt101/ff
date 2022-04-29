@@ -426,6 +426,12 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_GE:
         printf("OP_GE\n");
         break;
+      case OP_AND:
+        printf("OP_AND\n");
+        break;
+      case OP_OR:
+        printf("OP_OR\n");
+        break;
       case OP_NOT:
         printf("OP_NOT\n");
         break;
@@ -685,6 +691,50 @@ bool ff::VM::executeInstruction(Opcode op) {
       Ref<Object> rhs = pop();
       Ref<Object> lhs = pop();
       callMember(lhs, "__ge__", {lhs, rhs});
+      break;
+    }
+    case OP_AND: {
+      Ref<Object> rhs = pop();
+      Ref<Object> lhs = pop();
+
+      bool result;
+      if (isOfType(lhs, BoolType::getInstance())) {
+        result = lhs.as<Bool>()->value;
+      } else {
+        callMember(lhs, "__bool__", 0);
+        result = popCheckType(BoolType::getInstance()).asRefTo<Bool>()->value;
+      }
+
+      if (isOfType(rhs, BoolType::getInstance())) {
+        result = rhs.as<Bool>()->value;
+      } else {
+        callMember(rhs, "__bool__", 0);
+        result = result && popCheckType(BoolType::getInstance()).asRefTo<Bool>()->value;
+      }
+
+      push(Bool::createInstance(result).asRefTo<Object>());
+      break;
+    }
+    case OP_OR: {
+      Ref<Object> rhs = pop();
+      Ref<Object> lhs = pop();
+
+      bool result;
+      if (isOfType(lhs, BoolType::getInstance())) {
+        result = lhs.as<Bool>()->value;
+      } else {
+        callMember(lhs, "__bool__", 0);
+        result = popCheckType(BoolType::getInstance()).asRefTo<Bool>()->value;
+      }
+
+      if (isOfType(rhs, BoolType::getInstance())) {
+        result = result || rhs.as<Bool>()->value;
+      } else {
+        callMember(rhs, "__bool__", 0);
+        result = result || popCheckType(BoolType::getInstance()).asRefTo<Bool>()->value;
+      }
+
+      push(Bool::createInstance(result).asRefTo<Object>());
       break;
     }
     case OP_NOT: {
