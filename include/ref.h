@@ -71,7 +71,7 @@ class Ref {
     rhs.m_data = nullptr;
     rhs.m_count = nullptr;
 #ifdef _FF_REF_DEBUG
-    std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ") move (&count=" << m_count << ", cpunt" << (int)(m_count ? *m_count : -1) << ")\n";
+    std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ") move (&count=" << m_count << ", count=" << (int)(m_count ? *m_count : -1) << ")\n";
 #endif
     return *this;
   }
