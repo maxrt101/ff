@@ -41,10 +41,14 @@ class CompileError : public std::exception {
   int m_line;
   std::string m_filename;
   std::string m_message;
+  std::string m_note;
 
  public:
   CompileError(const std::string& filename, int line, const std::string& msg);
   CompileError(const std::string& filename, int line, const char* fmt, ...);
+
+  CompileError& addNote(const std::string& msg);
+  CompileError& addNote(const char* fmt, ...);
 
   const char* what() const noexcept override;
 
