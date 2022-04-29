@@ -46,6 +46,12 @@ ff::StringType::StringType() : Type("string") {
   }, {
     {"self", TypeAnnotation::create("string")}
   }, TypeAnnotation::create("int")).asRefTo<Object>());
+
+  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    return String::createInstance(args[0].as<String>()->value).asRefTo<Object>();
+  }, {
+    {"self", TypeAnnotation::create("string")}
+  }, TypeAnnotation::create("string")).asRefTo<Object>());
 }
 
 ff::StringType::~StringType() {}

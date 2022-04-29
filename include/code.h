@@ -22,6 +22,7 @@ enum Opcode {
   OP_TRUE,
   OP_FALSE,
   OP_NEW,
+  OP_COPY,
   OP_LOAD_CONSTANT,
   OP_NEW_GLOBAL,
   OP_GET_GLOBAL,
@@ -53,6 +54,8 @@ enum Opcode {
   OP_GE,
   OP_NEG,
   OP_NOT,
+  OP_INC,
+  OP_DEC,
   OP_BREAKPOINT,
 };
 

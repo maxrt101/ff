@@ -22,6 +22,8 @@ static std::map<ff::TokenType, std::string> g_tokenTypes {
   {ff::TOKEN_PERCENT, "TOKEN_PERCENT"},
   {ff::TOKEN_AMP, "TOKEN_AMP"},
   {ff::TOKEN_VBAR, "TOKEN_VBAR"},
+  {ff::TOKEN_INCREMENT, "TOKEN_INCREMENT"},
+  {ff::TOKEN_DECREMENT, "TOKEN_DECREMENT"},
   {ff::TOKEN_AT, "TOKEN_AT"},
   {ff::TOKEN_BANG, "TOKEN_BANG"},
   {ff::TOKEN_BANG_EQUAL, "TOKEN_BANG_EQUAL"},
@@ -148,8 +150,8 @@ ff::Token ff::Scanner::scanToken() {
     case ':': return makeToken(TOKEN_COLON);
     case ',': return makeToken(TOKEN_COMMA);
     case '.': return makeToken(TOKEN_DOT);
-    case '-': return makeToken(match('>') ? TOKEN_RIGHT_ARROW : TOKEN_MINUS);
-    case '+': return makeToken(TOKEN_PLUS);
+    case '-': return makeToken(match('>') ? TOKEN_RIGHT_ARROW : (match('-') ? TOKEN_DECREMENT : TOKEN_MINUS));
+    case '+': return makeToken(match('+') ? TOKEN_INCREMENT : TOKEN_PLUS);
     case '/': return makeToken(TOKEN_SLASH);
     case '*': return makeToken(TOKEN_STAR);
     case '%': return makeToken(TOKEN_PERCENT);
@@ -335,7 +337,6 @@ ff::TokenType ff::Scanner::identifierType() {
       }
       break;
     }
-    // case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
     case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
     case 'r': {
       if (m_current - m_start > 1) {
@@ -343,7 +344,7 @@ ff::TokenType ff::Scanner::identifierType() {
           case 'e': {
             if (m_current - m_start > 2) {
               switch (m_start[2]) {
-                case 'f': return TOKEN_REF;
+                case 'f': return checkKeyword(2, 1, "f", TOKEN_REF);
                 case 't': return checkKeyword(3, 3, "urn", TOKEN_RETURN);
               }
             }

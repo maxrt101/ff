@@ -121,6 +121,9 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_NEW:
       printf("OP_NEW\n");
       return;
+    case OP_COPY:
+      printf("OP_COPY\n");
+      return;
     case OP_LOAD_CONSTANT:
       printf("OP_LOAD_CONSTANT %u\n", read<uint32_t>());
       return;
@@ -154,18 +157,12 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_JUMP:
       printf("OP_JUMP %u\n", read<uint16_t>());
       return;
-    // case OP_JUMP_ABS:
-    //   printf("OP_JUMP_ABS\n");
-    //   return;
     case OP_JUMP_TRUE:
       printf("OP_JUMP_TRUE %u\n", read<uint16_t>());
       return;
     case OP_JUMP_FALSE:
       printf("OP_JUMP_FALSE %u\n", read<uint16_t>());
       return;
-    // case OP_JUMP_TRUE_ABS:
-    //   printf("OP_JUMP_TRUE_ABS\n");
-    //   return;
     case OP_LOOP:
       printf("OP_LOOP %u\n", read<uint16_t>());
       return;
@@ -182,43 +179,49 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
       printf("OP_CAST\n");
       return;
     case OP_PRINT:
-      printf("OP_PRINT\n"); 
+      printf("OP_PRINT\n");
       return;
     case OP_ADD:
-      printf("OP_ADD\n"); 
+      printf("OP_ADD\n");
       return;
     case OP_SUB:
-      printf("OP_SUB\n"); 
+      printf("OP_SUB\n");
       return;
     case OP_MUL:
-      printf("OP_MUL\n"); 
+      printf("OP_MUL\n");
       return;
     case OP_DIV:
-      printf("OP_DIV\n"); 
+      printf("OP_DIV\n");
       return;
     case OP_EQ:
-      printf("OP_EQ\n"); 
+      printf("OP_EQ\n");
       return;
     case OP_NEQ:
-      printf("OP_NEQ\n"); 
+      printf("OP_NEQ\n");
       return;
     case OP_LT:
-      printf("OP_LT\n"); 
+      printf("OP_LT\n");
       return;
     case OP_GT:
-      printf("OP_GT\n"); 
+      printf("OP_GT\n");
       return;
     case OP_LE:
-      printf("OP_LE\n"); 
+      printf("OP_LE\n");
       return;
     case OP_GE:
-      printf("OP_GE\n"); 
+      printf("OP_GE\n");
       return;
     case OP_NEG:
-      printf("OP_NEG\n"); 
+      printf("OP_NEG\n");
+      return;
+    case OP_INC:
+      printf("OP_INC\n");
+      return;
+    case OP_DEC:
+      printf("OP_DEC\n");
       return;
     case OP_NOT:
-      printf("OP_NOT\n"); 
+      printf("OP_NOT\n");
       return;
   }
 }

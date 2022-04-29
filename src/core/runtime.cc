@@ -336,6 +336,9 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_NEW:
         printf("OP_NEW\n");
         break;
+      case OP_COPY:
+        printf("OP_COPY\n");
+        break;
       case OP_LOAD_CONSTANT:
         printf("OP_LOAD_CONSTANT\n");
         break;
@@ -391,43 +394,49 @@ bool ff::VM::executeInstruction(Opcode op) {
         printf("OP_CAST\n");
         break;
       case OP_PRINT:
-        printf("OP_PRINT\n"); 
+        printf("OP_PRINT\n");
         break;
       case OP_ADD:
-        printf("OP_ADD\n"); 
+        printf("OP_ADD\n");
         break;
       case OP_SUB:
-        printf("OP_SUB\n"); 
+        printf("OP_SUB\n");
         break;
       case OP_MUL:
-        printf("OP_MUL\n"); 
+        printf("OP_MUL\n");
         break;
       case OP_DIV:
-        printf("OP_DIV\n"); 
+        printf("OP_DIV\n");
         break;
       case OP_EQ:
-        printf("OP_EQ\n"); 
+        printf("OP_EQ\n");
         break;
       case OP_NEQ:
-        printf("OP_NEQ\n"); 
+        printf("OP_NEQ\n");
         break;
       case OP_LT:
-        printf("OP_LT\n"); 
+        printf("OP_LT\n");
         break;
       case OP_GT:
-        printf("OP_GT\n"); 
+        printf("OP_GT\n");
         break;
       case OP_LE:
-        printf("OP_LE\n"); 
+        printf("OP_LE\n");
         break;
       case OP_GE:
-        printf("OP_GE\n"); 
+        printf("OP_GE\n");
         break;
       case OP_NOT:
-        printf("OP_NOT\n"); 
+        printf("OP_NOT\n");
         break;
       case OP_NEG:
-        printf("OP_NEG\n"); 
+        printf("OP_NEG\n");
+        break;
+      case OP_INC:
+        printf("OP_INC\n");
+        break;
+      case OP_DEC:
+        printf("OP_DEC\n");
         break;
       case OP_BREAKPOINT:
         printf("OP_BREAKPOINT\n");
@@ -481,6 +490,11 @@ bool ff::VM::executeInstruction(Opcode op) {
     }
     case OP_NEW: { // ast::NewNode
       throw createError("OP_NEW: Unimplemented");
+      break;
+    }
+    case OP_COPY: {
+      Ref<Object> object = pop();
+      callMember(object, "__copy__", 0);
       break;
     }
     case OP_LOAD_CONSTANT: {
@@ -681,6 +695,16 @@ bool ff::VM::executeInstruction(Opcode op) {
     case OP_NEG: {
       Ref<Object> operand = pop();
       callMember(operand, "__neg__", {operand});
+      break;
+    }
+    case OP_INC: {
+      Ref<Object> operand = pop();
+      callMember(operand, "__inc__", {operand});
+      break;
+    }
+    case OP_DEC: {
+      Ref<Object> operand = pop();
+      callMember(operand, "__dec__", {operand});
       break;
     }
     case OP_BREAKPOINT: {

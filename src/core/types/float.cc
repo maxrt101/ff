@@ -66,6 +66,12 @@ ff::FloatType::FloatType() : Type("float") {
   }, {
     {"self", TypeAnnotation::create("float")}
   }, TypeAnnotation::create("bool")).asRefTo<Object>());
+
+  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    return Float::createInstance(args[0].as<Float>()->value).asRefTo<Object>();
+  }, {
+    {"self", TypeAnnotation::create("float")}
+  }, TypeAnnotation::create("float")).asRefTo<Object>());
 }
 
 ff::FloatType::~FloatType() {}

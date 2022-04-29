@@ -517,7 +517,7 @@ ff::ast::Node* ff::Parser::factor(bool isReturnValueExpected) {
 }
 
 ff::ast::Node* ff::Parser::unary(bool isReturnValueExpected) {
-  if (match({TOKEN_BANG, TOKEN_MINUS})) {
+  if (match({TOKEN_BANG, TOKEN_MINUS, TOKEN_INCREMENT, TOKEN_DECREMENT})) {
     Token op = previous();
     ast::Node* expr = unary(isReturnValueExpected);
     return new ast::Unary(op, expr);

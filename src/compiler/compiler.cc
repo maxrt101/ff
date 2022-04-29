@@ -308,7 +308,6 @@ void ff::Compiler::emitLoop(int loopStart) {
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& name, Opcode local, Opcode global) {
-  // printScopes();
   int localsSize = mrt::reduce(m_scopes, [](int value, const Scope& scope) {
     return value + scope.localVariables.size();
   }, 0);
@@ -356,12 +355,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::getVariableType(const std::string& nam
   return TypeAnnotation::any();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, ast::Node* value) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, ast::Node* value, bool copyValue) {
   if (localExists(var.name)) {
     throw CompileError(m_filename, line, "Redeclaration of local variable");
   }
   if (value) {
-    auto type = evalNode(value);
+    auto type = evalNode(value, copyValue);
     if (*type == *TypeAnnotation::nothing()) {
       throw CompileError(m_filename, line, "Value of type 'nothing' is invalid");
     }
@@ -453,24 +452,35 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceStart(ast::Node* node) {
   return {TypeAnnotation::any(), nullptr};
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node, bool copyValue) {
   ast::Identifier* ident = node->as<ast::Identifier>();
-  return resolveVariable(ident->getValue());
+  auto type = resolveVariable(ident->getValue());
+  if (type->annotationType != TypeAnnotation::TATYPE_FUNCTION) {
+    if (copyValue) {
+      getCode()->pushInstruction(OP_COPY);
+    }
+  }
+  return type;
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::sequence(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::sequence(ast::Node* node, bool copyValue) {
   auto seq = node->as<ast::Sequence>()->getSequence();
   TypeInfo typeInfo = evalSequenceStart(seq.front());
   for (int i = 1; i < seq.size(); i++) {
     typeInfo = evalSequenceElement(typeInfo, seq[i]);
+  }
+  if (typeInfo.type->annotationType != TypeAnnotation::TATYPE_FUNCTION) {
+    if (copyValue) {
+      getCode()->pushInstruction(OP_COPY);
+    }
   }
   return typeInfo.type;
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
   ast::Binary* binary = node->as<ast::Binary>();
-  auto leftType = evalNode(binary->getLeft());
-  auto rightType = evalNode(binary->getRight());
+  auto leftType = evalNode(binary->getLeft(), false);
+  auto rightType = evalNode(binary->getRight(), false);
   // TODO: Infer type from globals[leftType]->fields[__add__]->returnType if impossible, return leftType
   switch (binary->getOperator().type) {
     case TOKEN_PLUS: {
@@ -522,7 +532,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
   ast::Unary* unary = node->as<ast::Unary>();
-  auto type = evalNode(unary->getValue());
+  auto type = evalNode(unary->getValue(), false);
   switch (unary->getOperator().type) {
     case TOKEN_BANG: {
       getCode()->pushInstruction(OP_NOT);
@@ -530,6 +540,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
     }
     case TOKEN_MINUS: {
       getCode()->pushInstruction(OP_NEG);
+      return type;
+    }
+    case TOKEN_INCREMENT: {
+      getCode()->pushInstruction(OP_INC);
+      return type;
+    }
+    case TOKEN_DECREMENT: {
+      getCode()->pushInstruction(OP_DEC);
       return type;
     }
     default: {
@@ -598,7 +616,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   return fn->getFunctionType().asRefTo<TypeAnnotation>();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
   Variable var {
     varNode->getName().str,
@@ -615,6 +633,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
     getCode()->pushInstruction(OP_NEW_GLOBAL);
 
     auto type = evalNode(varNode->getValue());
+    if (copyValue) {
+      getCode()->pushInstruction(OP_COPY);
+    }
     if (*type == *TypeAnnotation::nothing()) {
       throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
     }
@@ -637,7 +658,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
     getCode()->pushInstruction(OP_SET_GLOBAL);
     return m_globalVariables[var.name].type;
   } else {
-    return defineLocal(var, varNode->getName().line, varNode->getValue());
+    return defineLocal(var, varNode->getName().line, varNode->getValue(), copyValue);
   }
 
   return TypeAnnotation::any();
@@ -687,7 +708,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   }
 
   for (int i = call->getArgs().size() - 1; i >= 0; i--) {
-    auto argType = evalNode(call->getArgs()[i]);
+    auto argType = evalNode(call->getArgs()[i]); // copy ?
     if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
       auto paramType = type.as<FunctionAnnotation>()->arguments[i];
       if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
@@ -702,7 +723,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   emitConstant(Int::createInstance(call->getArgs().size()).asRefTo<Object>());
 
   if (topLevelCallee) {
-    evalNode(call->getCallee());
+    evalNode(call->getCallee(), false);
     getCode()->pushInstruction(OP_CALL);
   } else {
     size_t nargs = call->getArgs().size();
@@ -719,14 +740,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   return type;
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node, bool copyValue) {
   // TODO: Check fields type
   ast::Assignment* ass = node->as<ast::Assignment>();
-  auto valueType = evalNode(ass->getValue());
+  auto valueType = evalNode(ass->getValue(), copyValue);
   if (ass->getAssignee()->getType() == ast::NTYPE_SEQUENCE) {
     auto seq = ass->getAssignee()->as<ast::Sequence>()->getSequence();
 
-    evalNode(seq.front());
+    evalNode(seq.front(), false);
 
     if (seq.size() > 2) {
       for (int i = 1; i < seq.size()-3; i++) {
@@ -755,7 +776,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
   return valueType;
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node, bool copyValue) {
   ast::Cast* cast = node->as<ast::Cast>();
   evalNode(cast->getValue());
   // NOTE: cast type can be anything (i.e. int | float | (int) -> int), so it must be checked that we recieved a concrete type
@@ -763,11 +784,19 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node) {
     throw CompileError(m_filename, -1, "Invalid type for cast '%s'", cast->getCastType()->toString().c_str());
   }
   // NOTE: If cast type is `any` the value is returned as-is and it's type is assumed by the compiler to be `any`
+  if (copyValue) {
+    getCode()->pushInstruction(OP_COPY);
+  }
   if (*cast->getCastType() != *TypeAnnotation::any()) {
     emitConstant(String::createInstance(cast->getCastType()->toString()).asRefTo<Object>());
     getCode()->pushInstruction(OP_CAST);
   }
   return cast->getCastType();
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::ref(ast::Node* node) {
+  ast::Ref* ref = node->as<ast::Ref>();
+  return evalNode(ref->getValue(), false);
 }
 
 void ff::Compiler::returnCall(ast::Node* node) {
@@ -880,7 +909,56 @@ void ff::Compiler::whilestmt(ast::Node* node) {
   endLoop();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
+void ff::Compiler::forstmt(ast::Node* node) {
+  ast::For* for_ = node->as<ast::For>();
+
+  beginBlock();
+
+  evalNode(for_->getInit());
+
+  int loopStart = getCode()->size();
+
+  int loopExit = -1;
+  if (for_->getCondition()) {
+    evalNode(for_->getCondition());
+    loopExit = emitJump(OP_JUMP_FALSE);
+  }
+
+  if (for_->getIncrement()) {
+    int bodyJump = emitJump(OP_JUMP);
+    int incrementStart = getCode()->size();
+
+    evalNode(for_->getIncrement());
+    getCode()->pushInstruction(OP_POP);
+
+    emitLoop(loopStart);
+    loopStart = incrementStart;
+    patchJump(bodyJump);
+  }
+
+  beginLoop();
+  evalNode(for_->getBody());
+
+  emitLoop(loopStart);
+
+  if (loopExit != -1) {
+    patchJump(loopExit);
+  }
+
+  for (int continue_jump : getLoop().continue_jumps) {
+    // NOTE: See note in loopstmt for explanation
+    patchRemoteJump(continue_jump, continue_jump - loopStart + 2);
+  }
+
+  for (int break_jump : getLoop().break_jumps) {
+    patchJump(break_jump);
+  }
+
+  endLoop();
+  endBlock();
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyValue) {
   if (!node) return TypeAnnotation::nothing();
 #ifdef _FF_EVAL_NODE_DEBUG
   printf("evalNode: ptr=%p type=%s\n", node, ast::nodeTypeToString(node->getType()).c_str());
@@ -903,7 +981,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       return TypeAnnotation::create("null");
     }
     case ast::NTYPE_GROUP_EXPR: {
-      return evalNode(node->as<ast::Group>()->getValue());
+      return evalNode(node->as<ast::Group>()->getValue(), copyValue);
     }
     case ast::NTYPE_UNARY_EXPR: {
       return unaryExpr(node);
@@ -912,22 +990,22 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       return binaryExpr(node);
     }
     case ast::NTYPE_IDENTIFIER: {
-      return identifier(node);
+      return identifier(node, copyValue);
     }
     case ast::NTYPE_SEQUENCE: {
-      return sequence(node);
+      return sequence(node, copyValue);
     }
     case ast::NTYPE_FUNCTION: {
       return fndecl(node);
     }
     case ast::NTYPE_VAR_DECL: {
-      return vardecl(node);
+      return vardecl(node, copyValue);
     }
     case ast::NTYPE_CALL: {
       return call(node, true);
     }
     case ast::NTYPE_ASSIGNMENT: {
-      return assignment(node);
+      return assignment(node, copyValue);
     }
     case ast::NTYPE_RETURN: {
       returnCall(node);
@@ -949,6 +1027,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       whilestmt(node);
       break;
     }
+    case ast::NTYPE_FOR: {
+      forstmt(node);
+      break;
+    }
     case ast::NTYPE_CONTINUE: {
       getLoop().continue_jumps.push_back(emitJump(OP_LOOP));
       return TypeAnnotation::nothing();
@@ -965,18 +1047,19 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
       getCode()->pushInstruction(OP_FALSE);
       return TypeAnnotation::create("bool");
     }
-    case ast::NTYPE_FOR:
+    case ast::NTYPE_REF: {
+      return ref(node);
+    }
     case ast::NTYPE_FOREACH:
-    case ast::NTYPE_REF:
     case ast::NTYPE_EXPR_LIST_EXPR: {
       throw CompileError(m_filename, -1, "Unimplemented");
       break;
     }
     case ast::NTYPE_CAST_EXPR: {
-      return cast(node);
+      return cast(node, false);
     }
     case ast::NTYPE_PRINT: {
-      evalNode(node->as<ast::Print>()->getValue());
+      evalNode(node->as<ast::Print>()->getValue(), false);
       getCode()->pushInstruction(OP_PRINT);
       return TypeAnnotation::nothing();
     }

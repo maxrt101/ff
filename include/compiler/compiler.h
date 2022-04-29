@@ -72,7 +72,7 @@ class Compiler {
   bool isTopScope() const;
 
   /* Returns generated value type */
-  Ref<TypeAnnotation> evalNode(ast::Node* node);
+  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true);
 
   void beginScope();
   void beginFunctionScope(Ref<TypeAnnotation> returnType);
@@ -94,7 +94,7 @@ class Compiler {
 
   Ref<TypeAnnotation> resolveVariable(const std::string& name, Opcode local = OP_GET_LOCAL, Opcode global = OP_GET_GLOBAL);
   Ref<TypeAnnotation> getVariableType(const std::string& name);
-  Ref<TypeAnnotation> defineLocal(Variable var, int line = 0, ast::Node* value = nullptr);
+  Ref<TypeAnnotation> defineLocal(Variable var, int line = 0, ast::Node* value = nullptr, bool copyValue = true);
 
   std::vector<Function::Argument> parseArgs(ast::VarDeclList* args);
   void defineArgs(ast::VarDeclList* args);
@@ -105,20 +105,22 @@ class Compiler {
   void printGlobals();
 
   /* Nodes */
-  Ref<TypeAnnotation> identifier(ast::Node* node);
-  Ref<TypeAnnotation> sequence(ast::Node* node);
+  Ref<TypeAnnotation> identifier(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> sequence(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> binaryExpr(ast::Node* node);
   Ref<TypeAnnotation> unaryExpr(ast::Node* node);
   Ref<TypeAnnotation> fndecl(ast::Node* node);
-  Ref<TypeAnnotation> vardecl(ast::Node* node);
-  Ref<TypeAnnotation> assignment(ast::Node* node);
-  Ref<TypeAnnotation> cast(ast::Node* node);
+  Ref<TypeAnnotation> vardecl(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> assignment(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> ref(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr});
   void returnCall(ast::Node* node);
   void block(ast::Node* node);
   void ifstmt(ast::Node* node);
   void loopstmt(ast::Node* node);
   void whilestmt(ast::Node* node);
+  void forstmt(ast::Node* node);
 
   TypeInfo evalSequenceStart(ast::Node* node);
   TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node);

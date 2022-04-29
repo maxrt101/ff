@@ -41,17 +41,19 @@ static void run(const std::string& filename, std::string src) {
     ff::Scanner scanner(filename, src);
     auto tokens = scanner.tokenize();
 #ifdef _FF_TOKENS_DEBUG
-    for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
-    putchar('\n');
+    if (ff::config::get("debug") != "0") {
+      for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
+      putchar('\n');
+    }
 #endif
     ff::Parser parser(filename, tokens);
     auto tree = parser.parse();
-    if (ff::config::get("debug") == "1") {
+    if (ff::config::get("debug") != "0") {
       ff::ast::printTree(tree);
     }
     ff::Compiler compiler;
     ff::Ref<ff::Code> code = compiler.compile(filename, tree);
-    if (ff::config::get("debug") == "1") {
+    if (ff::config::get("debug") != "0") {
       printf("=== Code ===\n\\\n");
       unwrapCode(code);
     }

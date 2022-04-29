@@ -44,6 +44,22 @@ ff::IntType::IntType() : Type("int") {
     {"self", TypeAnnotation::create("int")}
   }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
+  setField("__inc__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    auto res = Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
+    args[0].as<Int>()->value++;
+    return res;
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
+
+  setField("__dec__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    auto res = Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
+    args[0].as<Int>()->value--;
+    return res;
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
+
   setField("__as_int__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
   }, {
@@ -68,9 +84,11 @@ ff::IntType::IntType() : Type("int") {
     {"self", TypeAnnotation::create("int")}
   }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
-  /*setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {{"self", "int"}, {"other", "any"}}).asRefTo<Object>());*/
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
 }
 
 ff::IntType::~IntType() {}

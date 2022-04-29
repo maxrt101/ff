@@ -164,3 +164,95 @@ while (i < 10) {
   i = i + 1;
 }
 ```
+
+### 8. References
+All values are allocated on the heap and passed around as references (pointers).  
+By default values are copied, when the value is assigned to some variable or unary operator is called on it.  
+The values are copied using `__copy__` method.  
+You can prevent the value from being copied by using `ref` keyword.  
+
+Example:  
+```
+var i = 10;
+print i;
+
+var a = i;
+print a;
+
+++i;
+print i;
+print a;
+```
+Output:  
+```
+10
+10
+11
+10
+```
+
+Using `ref`:  
+```
+var i = 10;
+print i;
+
+var a = ref i;
+print a;
+
+++i;
+print i;
+print a;
+```
+
+Output:  
+```
+10
+10
+11
+11
+```
+
+References and functions.  
+If you want to pass a reference to value, use `ref` on an argument.  
+
+```
+fn modify(x: int) -> {
+  ++x;
+}
+
+fn main() -> {
+  var i = 10;
+  print i;
+
+  modify(ref i);
+  print i;
+}
+```
+
+Output:  
+```
+10
+11
+```
+
+Note that `x` holds a reference to `i`, if you try to assign another value to it the reference will get overwritten.  
+```
+fn modify(x: int) -> {
+  ++x;
+  x = 100;
+}
+
+fn main() -> {
+  var i = 10;
+  print i;
+
+  modify(ref i);
+  print i;
+}
+```
+
+Output:  
+```
+10
+11
+```
