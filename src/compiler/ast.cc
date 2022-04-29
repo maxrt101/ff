@@ -44,6 +44,9 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       _printTree(fn->getArgs());
       printf("): %s -> ", fn->getFunctionType().asRefTo<ff::FunctionAnnotation>()->returnType->toString().c_str());
       _printTree(fn->getBody(), "  ", true);
+      if (fn->getBody()->getType() != NTYPE_BLOCK) {
+        printf(";");
+      }
       break;
     }
     case NTYPE_VAR_DECL: {
