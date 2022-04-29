@@ -17,6 +17,7 @@ class Sequence : public Node {
   ~Sequence() = default;
 
   std::vector<Node*> getSequence() const;
+  bool hasFunctionCalls() const;
 
   std::string toString() const override;
 };

@@ -77,17 +77,23 @@ ff::UnionAnnotation::UnionAnnotation(std::vector<ff::Ref<ff::TypeAnnotation>> ty
   : TypeAnnotation(TypeAnnotation::TATYPE_UNION, isInferred), types(types) {}
 
 bool ff::UnionAnnotation::operator==(const TypeAnnotation& rhs) const {
-  if (annotationType != rhs.annotationType) return false;
+  if (rhs.annotationType == TATYPE_UNION) {
+    auto rhsu = (const UnionAnnotation&) rhs;
 
-  auto rhsu = (const UnionAnnotation&) rhs;
+    if (types.size() != rhsu.types.size()) return false;
 
-  if (types.size() != rhsu.types.size()) return false;
+    for (int i = 0; i < types.size(); i++) {
+      if (*types[i] != *rhsu.types[i]) return false;
+    }
 
-  for (int i = 0; i < types.size(); i++) {
-    if (*types[i] != *rhsu.types[i]) return false;
+    return true;
+  } else {
+    for (int i = 0; i < types.size(); i++) {
+      if (*types[i] == rhs) return true;
+    }
+
+    return false;
   }
-
-  return true;
 }
 
 std::string ff::UnionAnnotation::toString() const {

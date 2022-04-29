@@ -21,6 +21,17 @@ class Compiler {
     Ref<TypeAnnotation> type;
     bool isConst = false;
     // bool isInitialized = false;
+    std::map<std::string, Variable> fields;
+
+    Variable() = default;
+    Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, std::map<std::string, Variable> fields);
+
+    static Variable fromObject(const std::string& name, Ref<Object> object);
+  };
+
+  struct TypeInfo {
+    Ref<TypeAnnotation> type;
+    Variable* var;
   };
 
   struct Scope {
@@ -29,7 +40,8 @@ class Compiler {
     std::vector<Variable> localVariables;
     int prevLocalsLength = 0;
     bool isFunctionScope = false;
-    Ref<TypeAnnotation> returnType;
+    Ref<TypeAnnotation> returnType = TypeAnnotation::any();
+    std::vector<Ref<TypeAnnotation>> returnStatements;
   };
 
   struct LoopRecord {
@@ -91,6 +103,7 @@ class Compiler {
   /* DEBUG */
   void printScopes();
   void printScope(int i, std::string prefix);
+  void printGlobals();
 
   /* Nodes */
   Ref<TypeAnnotation> identifier(ast::Node* node);
@@ -101,15 +114,15 @@ class Compiler {
   Ref<TypeAnnotation> vardecl(ast::Node* node);
   Ref<TypeAnnotation> assignment(ast::Node* node);
   Ref<TypeAnnotation> cast(ast::Node* node);
-  Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false);
+  Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr});
   void returnCall(ast::Node* node);
   void block(ast::Node* node);
   void ifstmt(ast::Node* node);
   void loopstmt(ast::Node* node);
   void whilestmt(ast::Node* node);
 
-  Ref<TypeAnnotation> evalSequenceStart(ast::Node* node);
-  Ref<TypeAnnotation> evalSequenceElement(ast::Node* node);
+  TypeInfo evalSequenceStart(ast::Node* node);
+  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node);
 };
 
 Ref<Code> compile(const std::string& src, const std::string& filename = "<input>");

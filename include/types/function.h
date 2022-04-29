@@ -47,6 +47,9 @@ class Function : public Instance {
   Function(ValueType code, const std::vector<Argument>& args, Ref<TypeAnnotation> returnType);
   ~Function();
 
+  std::vector<Argument> getArgs();
+  Ref<TypeAnnotation> getReturnType();
+
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 

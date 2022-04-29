@@ -43,6 +43,10 @@ void ff::Object::setField(const std::string& key, Ref<Object> value) {
   m_fields[key] = value;
 }
 
+std::map<std::string, ff::Ref<ff::Object>>& ff::Object::getFields() {
+  return m_fields;
+}
+
 ff::Ref<ff::Object> ff::Object::cast(VM* context, Ref<Object> object, const std::string& typeName) {
   const std::string castFunctionName = "__as_" + typeName + "__";
   context->callMember(object, castFunctionName);

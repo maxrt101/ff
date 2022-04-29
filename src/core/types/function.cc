@@ -1,7 +1,6 @@
 #include <ff/types/function.h>
 #include <ff/memory.h>
 #include <sstream>
-// #include <cstdlib>
 
 ff::Ref<ff::FunctionType> ff::FunctionType::m_instance = nullptr;
 
@@ -27,6 +26,14 @@ ff::Function::Function(ValueType code, const std::vector<Argument>& args, Ref<Ty
   : Instance(FunctionType::getInstance().asRefTo<Type>()), code(code), args(args), returnType(returnType) {}
 
 ff::Function::~Function() {}
+
+std::vector<ff::Function::Argument> ff::Function::getArgs() {
+  return args;
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Function::getReturnType() {
+  return returnType;
+}
 
 std::string ff::Function::toString() const {
   std::stringstream ss;

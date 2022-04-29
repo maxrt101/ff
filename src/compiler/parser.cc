@@ -186,7 +186,7 @@ ff::ast::Node* ff::Parser::fndecl() {
   if (peek().type == TOKEN_LEFT_BRACE) {
     body = block();
   } else {
-    body = expression();
+    body = expression(true);
     consume(TOKEN_SEMICOLON, "Expected ';' after function body");
   }
 
@@ -213,7 +213,7 @@ ff::ast::Node* ff::Parser::vardecl(bool isConst) {
     type = typeAnnotation();
   }
   if (match({TOKEN_EQUAL})) {
-    value = expression();
+    value = expression(true);
   }
   return new ast::VarDecl(name, type, value, isConst);
 }
@@ -222,7 +222,7 @@ ff::ast::Node* ff::Parser::ifstmt() {
   if (!match({TOKEN_LEFT_PAREN})) {
     throw ParseError(peek(), m_filename, "Expected a '(' after 'if'");
   }
-  ast::Node* condition = expression();
+  ast::Node* condition = expression(true);
   if (!match({TOKEN_RIGHT_PAREN})) {
     throw ParseError(peek(), m_filename, "Expected a ')' after a condition");
   }
@@ -230,7 +230,7 @@ ff::ast::Node* ff::Parser::ifstmt() {
   if (peek().type == TOKEN_LEFT_BRACE) {
     body = block();
   } else {
-    body = expression();
+    body = expression(false);
     consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
   }
   ast::Node* elseBody = nullptr;
@@ -241,7 +241,7 @@ ff::ast::Node* ff::Parser::ifstmt() {
       consume(TOKEN_IF);
       elseBody = ifstmt();
     } else {
-      elseBody = expression();
+      elseBody = expression(false);
       consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
     }
   }
@@ -261,7 +261,7 @@ ff::ast::Node* ff::Parser::forstmt() {
         consume(TOKEN_VAR);
         init = vardecl();
       } else {
-        init = expression();
+        init = expression(true);
       }
     }
 
@@ -270,7 +270,7 @@ ff::ast::Node* ff::Parser::forstmt() {
     }
 
     if (peek().type != TOKEN_SEMICOLON) {
-      cond = expression();
+      cond = expression(true);
     }
 
     if (!match({TOKEN_SEMICOLON})) {
@@ -278,7 +278,7 @@ ff::ast::Node* ff::Parser::forstmt() {
     }
 
     if (peek().type != TOKEN_RIGHT_PAREN) {
-      incr = expression();
+      incr = expression(true);
     }
 
     if (!match({TOKEN_RIGHT_PAREN})) {
@@ -289,7 +289,7 @@ ff::ast::Node* ff::Parser::forstmt() {
     if (peek().type == TOKEN_LEFT_BRACE) {
       body = block();
     } else {
-      body = expression();
+      body = expression(true);
       if (!match({TOKEN_SEMICOLON})) {
         throw ParseError(peek(), m_filename, "Expected ')' after 'for' body");
       }
@@ -302,7 +302,7 @@ ff::ast::Node* ff::Parser::forstmt() {
       throw ParseError(peek(), m_filename, "Expected 'in' after variable declaration in foreach");
     }
 
-    ast::Node* iter = expression();
+    ast::Node* iter = expression(true);
     if (peek().type != TOKEN_LEFT_BRACE) {
       throw ParseError(peek(), m_filename, "Expected '{' after foreach iter");
     }
@@ -320,7 +320,7 @@ ff::ast::Node* ff::Parser::whilestmt() {
     throw ParseError(peek(), m_filename, "Expected '(' after 'while'");
   }
 
-  ast::Node* cond = expression();
+  ast::Node* cond = expression(true);
 
   if (!match({TOKEN_RIGHT_PAREN})) {
     throw ParseError(peek(), m_filename, "Expected ')' after 'while' condition");
@@ -330,7 +330,7 @@ ff::ast::Node* ff::Parser::whilestmt() {
   if (peek().type == TOKEN_LEFT_BRACE) {
     body = block();
   } else {
-    body = expression();
+    body = expression(true);
     if (!match({TOKEN_SEMICOLON})) {
       throw ParseError(peek(), m_filename, "Expected ')' after 'while' body");
     }
@@ -348,13 +348,16 @@ ff::ast::Node* ff::Parser::statement() {
     case TOKEN_LEFT_BRACE:
       return block();
     case TOKEN_IDENTIFIER: {
-      ast::Node* value = lvalue();
+      ast::Node* value = lvalue(false);
+      // NOTE: setIsReturnValueExpected patches expectance of value if that value is used in call or assignment
       if (peek().type == TOKEN_LEFT_PAREN) {
         consume(TOKEN_LEFT_PAREN);
+        ((ast::Call*)value)->setIsReturnValueExpected(true);
         value = call(value, false);
       } else if (peek().type == TOKEN_EQUAL) {
         consume(TOKEN_EQUAL);
-        value = new ast::Assignment(value, expression());
+        ((ast::Call*)value)->setIsReturnValueExpected(true);
+        value = new ast::Assignment(value, expression(true));
       } /*else {
         throw ParseError(peek(), m_filename, "Expected call or assignment");
       }*/
@@ -368,7 +371,7 @@ ff::ast::Node* ff::Parser::statement() {
       return vardecl(true);
     case TOKEN_RETURN:
       consume(TOKEN_RETURN);
-      return new ast::Return(expression());
+      return new ast::Return(expression(true));
     case TOKEN_IF:
       consume(TOKEN_IF);
       return ifstmt();
@@ -391,7 +394,7 @@ ff::ast::Node* ff::Parser::statement() {
       throw ParseError(peek(), m_filename, "Unimplemented");
     case TOKEN_PRINT:
       consume(TOKEN_PRINT);
-      return new ast::Print(expression());
+      return new ast::Print(expression(true));
 #ifdef _DEBUG
     case TOKEN_BREAKPOINT: {
       consume(TOKEN_BREAKPOINT);
@@ -399,15 +402,11 @@ ff::ast::Node* ff::Parser::statement() {
     }
 #endif
     default:
-      return expression();
+      return expression(true);
   }
 }
 
 ff::ast::Node* ff::Parser::block() {
-#if _FF_DEBUG_PARSER > 3
-  printf("block(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-
   std::vector<ast::Node*> result;
   consume(TOKEN_LEFT_BRACE, "Expected '{' at the begining of the block");
   if (peek().type != TOKEN_RIGHT_BRACE) {
@@ -436,10 +435,10 @@ std::vector<ff::ast::Node*> ff::Parser::statementList() {
   return nodes;
 }
 
-std::vector<ff::ast::Node*> ff::Parser::expressionList() {
-  std::vector<ast::Node*> nodes {expression()};
+std::vector<ff::ast::Node*> ff::Parser::expressionList(bool isReturnValueExpected) {
+  std::vector<ast::Node*> nodes {expression(isReturnValueExpected)};
   while (match({TOKEN_COMMA})) {
-    nodes.push_back(expression());
+    nodes.push_back(expression(isReturnValueExpected));
   }
   return nodes;
 }
@@ -455,7 +454,7 @@ ff::ast::VarDeclList* ff::Parser::varDeclList() {
 ff::ast::Node* ff::Parser::call(ast::Node* callee, bool isReturnValueExpected) {
   std::vector<ast::Node*> args;
   if (peek().type != TOKEN_RIGHT_PAREN) {
-    args = expressionList();
+    args = expressionList(isReturnValueExpected);
   }
   consume(TOKEN_RIGHT_PAREN, "Expected ')' after function call");
   return new ast::Call(callee, args, isReturnValueExpected);
@@ -465,91 +464,70 @@ ff::ast::Node* ff::Parser::lambda() {
   return nullptr;
 }
 
-ff::ast::Node* ff::Parser::expression() {
-#if _FF_DEBUG_PARSER > 3
-  printf("expression(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  return equality();
+ff::ast::Node* ff::Parser::expression(bool isReturnValueExpected) {
+  return equality(isReturnValueExpected);
 }
 
-ff::ast::Node* ff::Parser::equality() {
-#if _FF_DEBUG_PARSER > 3
-  printf("equality(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  ast::Node* expr = comparison();
+ff::ast::Node* ff::Parser::equality(bool isReturnValueExpected) {
+  ast::Node* expr = comparison(isReturnValueExpected);
 
   while (match({TOKEN_BANG_EQUAL, TOKEN_EQUAL_EQUAL})) {
     Token op = previous();
-    ast::Node* right = comparison();
+    ast::Node* right = comparison(isReturnValueExpected);
     expr = new ast::Binary(op, expr, right);
   }
 
   return expr;
 }
 
-ff::ast::Node* ff::Parser::comparison() {
-#if _FF_DEBUG_PARSER > 3
-  printf("comparison(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  ast::Node* expr = term();
+ff::ast::Node* ff::Parser::comparison(bool isReturnValueExpected) {
+  ast::Node* expr = term(isReturnValueExpected);
 
   while (match({TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_LESS, TOKEN_LESS_EQUAL})) {
     Token op = previous();
-    ast::Node* right = term();
+    ast::Node* right = term(isReturnValueExpected);
     expr = new ast::Binary(op, expr, right);
   }
 
   return expr;
 }
 
-ff::ast::Node* ff::Parser::term() {
-#if _FF_DEBUG_PARSER > 3
-  printf("term(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  ast::Node* expr = factor();
+ff::ast::Node* ff::Parser::term(bool isReturnValueExpected) {
+  ast::Node* expr = factor(isReturnValueExpected);
 
   while (match({TOKEN_MINUS, TOKEN_PLUS})) {
     Token op = previous();
-    ast::Node* right = factor();
+    ast::Node* right = factor(isReturnValueExpected);
     expr = new ast::Binary(op, expr, right);
   }
 
   return expr;
 }
 
-ff::ast::Node* ff::Parser::factor() {
-#if _FF_DEBUG_PARSER > 3
-  printf("factor(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  ast::Node* expr = unary();
+ff::ast::Node* ff::Parser::factor(bool isReturnValueExpected) {
+  ast::Node* expr = unary(isReturnValueExpected);
 
   while (match({TOKEN_SLASH, TOKEN_STAR})) {
     Token op = previous();
-    ast::Node* right = unary();
+    ast::Node* right = unary(isReturnValueExpected);
     expr = new ast::Binary(op, expr, right);
   }
 
   return expr;
 }
 
-ff::ast::Node* ff::Parser::unary() {
-#if _FF_DEBUG_PARSER > 3
-  printf("unary(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
+ff::ast::Node* ff::Parser::unary(bool isReturnValueExpected) {
   if (match({TOKEN_BANG, TOKEN_MINUS})) {
     Token op = previous();
-    ast::Node* expr = unary();
+    ast::Node* expr = unary(isReturnValueExpected);
     return new ast::Unary(op, expr);
   }
 
-  return cast();
+  return cast(isReturnValueExpected);
 }
 
-ff::ast::Node* ff::Parser::cast() {
-#if _FF_DEBUG_PARSER > 3
-    printf("cast(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-  ast::Node* expr = rvalue();
+ff::ast::Node* ff::Parser::cast(bool isReturnValueExpected) {
+  ast::Node* expr = rvalue(isReturnValueExpected);
 
   if (match({TOKEN_AS})) {
     return new ast::Cast(typeAnnotation(), expr);
@@ -558,11 +536,8 @@ ff::ast::Node* ff::Parser::cast() {
   return expr;
 }
 
-ff::ast::Node* ff::Parser::rvalue() {
+ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
   if (match({TOKEN_NUMBER})) {
-#if _FF_DEBUG_PARSER > 3
-    printf("rvalue(): Number\n");
-#endif
     if (previous().str.find('.') != std::string::npos) {
       return new ast::FloatLiteral(previous());
     } else {
@@ -593,22 +568,22 @@ ff::ast::Node* ff::Parser::rvalue() {
 #if _FF_DEBUG_PARSER > 3
     printf("rvalue(): Group\n");
 #endif
-    ast::Node* expr = expression();
+    ast::Node* expr = expression(isReturnValueExpected);
     consume(TOKEN_RIGHT_PAREN, "Expected ')' after an expression");
     return new ast::Group(expr);
   }
 
   if (match({TOKEN_REF})) {
-    ast::Node* lval = lvalue();
+    ast::Node* lval = lvalue(isReturnValueExpected);
     return new ast::Ref(lval);
   }
 
-  ast::Node* lval = lvalue();
+  ast::Node* lval = lvalue(isReturnValueExpected);
 
   return lval;
 }
 
-ff::ast::Node* ff::Parser::lvalue() {
+ff::ast::Node* ff::Parser::lvalue(bool isReturnValueExpected) {
 #if _FF_DEBUG_PARSER > 3
     printf("lvalue(): %s\n", tokenTypeToString(peek().type).c_str());
 #endif
@@ -620,17 +595,30 @@ ff::ast::Node* ff::Parser::lvalue() {
     }
     auto id = advance();
     if (match({TOKEN_LEFT_PAREN})) {
-      nodes.push_back(call(new ast::Identifier(id), true));
+      // NOTE: Return value is expected only if there is next chain element
+      ast::Call* callNode = (ast::Call*)call(new ast::Identifier(id), false);
+      if (peek().type == TOKEN_DOT) {
+        callNode->setIsReturnValueExpected(true);
+      }
+      nodes.push_back(callNode);
     } else {
       nodes.push_back(new ast::Identifier(id));
     }
   } while (match({TOKEN_DOT}));
+  // NOTE: Patch return value expectance based on environment
   if (nodes.size() == 1) {
+    if (nodes.front()->getType() == ast::NTYPE_CALL) {
+      ((ast::Call*)nodes.front())->setIsReturnValueExpected(isReturnValueExpected);
+    }
     return nodes[0];
   } else if (nodes.size() > 1) {
+    if (nodes.back()->getType() == ast::NTYPE_CALL) {
+      ((ast::Call*)nodes.back())->setIsReturnValueExpected(isReturnValueExpected);
+    }
     return new ast::Sequence(nodes);
   }
 
+  // FIXME: Can happen if keyword is identified as an identifier (see scanner.cc)
   printf("DEV: CHECK FOR KEYWORDS\n");
   throw ParseError(peek(), m_filename, "Expected an expression");
 }

@@ -26,26 +26,26 @@ ff::StringType::StringType() : Type("string") {
   }, {
     {"self", TypeAnnotation::create("string")},
     {"rhs", TypeAnnotation::any()}
-  }).asRefTo<Object>());
+  }, TypeAnnotation::create("string")).asRefTo<Object>());
 
   setField("__eq__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Bool::createInstance(false).asRefTo<Object>();
   }, {
     {"self", TypeAnnotation::create("string")},
     {"rhs", TypeAnnotation::any()}
-  }).asRefTo<Object>());
+  }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
   setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Bool::createInstance(args[0].as<String>()->value.size() != 0).asRefTo<Object>();
   }, {
     {"self", TypeAnnotation::create("string")}
-  }).asRefTo<Object>());
+  }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
   setField("size", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(args[0].as<String>()->value.size()).asRefTo<Object>();
   }, {
     {"self", TypeAnnotation::create("string")}
-  }).asRefTo<Object>());
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
 }
 
 ff::StringType::~StringType() {}

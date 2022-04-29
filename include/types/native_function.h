@@ -3,6 +3,7 @@
 
 #include <ff/object.h>
 #include <ff/types/function.h>
+#include <ff/compiler/type_annotation.h>
 #include <ff/ref.h>
 #include <functional>
 #include <vector>
@@ -32,15 +33,19 @@ class NativeFunction : public Instance {
 
   ValueType func;
   std::vector<Function::Argument> args;
+  Ref<TypeAnnotation> returnType;
 
  public:
-  NativeFunction(ValueType func, std::vector<Function::Argument> args);
+  NativeFunction(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType);
   ~NativeFunction();
+
+  std::vector<Function::Argument> getArgs();
+  Ref<TypeAnnotation> getReturnType();
 
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 
-  static Ref<NativeFunction> createInstance(ValueType func, std::vector<Function::Argument> args);
+  static Ref<NativeFunction> createInstance(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType);
 };
 
 } /* namespace ff */

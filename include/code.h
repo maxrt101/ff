@@ -8,6 +8,8 @@
 #include <ff/ref.h>
 #include <ff/object.h>
 
+#include <cstdio>
+
 namespace ff {
 
 enum Opcode {

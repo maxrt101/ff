@@ -4,7 +4,7 @@
 #include <ff/types.h>
 #include <vector>
 
-#define _DEFINE_BINARY_OP(name, T, op) \
+#define _DEFINE_BINARY_OP(name, T, op, ret) \
   do { \
     setField(name, NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) { \
       int lhs = args[0].as<Int>()->value; \
@@ -20,43 +20,53 @@
     }, { \
       {"self", TypeAnnotation::create("int")}, \
       {"other", TypeAnnotation::create("any")} \
-    }).asRefTo<Object>()); \
+    }, TypeAnnotation::create(ret)).asRefTo<Object>()); \
   } while (0)
 
 ff::Ref<ff::IntType> ff::IntType::m_instance = nullptr;
 
 ff::IntType::IntType() : Type("int") {
-  _DEFINE_BINARY_OP("__add__", Int, +);
-  _DEFINE_BINARY_OP("__sub__", Int, -);
-  _DEFINE_BINARY_OP("__mul__", Int, *);
-  _DEFINE_BINARY_OP("__div__", Int, /);
-  _DEFINE_BINARY_OP("__mod__", Int, %);
-  _DEFINE_BINARY_OP("__eq__",  Bool, ==);
-  _DEFINE_BINARY_OP("__neq__", Bool, !=);
-  _DEFINE_BINARY_OP("__lt__",  Bool, <);
-  _DEFINE_BINARY_OP("__gt__",  Bool, >);
-  _DEFINE_BINARY_OP("__le__",  Bool, <=);
-  _DEFINE_BINARY_OP("__ge__",  Bool, >=);
+  _DEFINE_BINARY_OP("__add__", Int, +, "int");
+  _DEFINE_BINARY_OP("__sub__", Int, -, "int");
+  _DEFINE_BINARY_OP("__mul__", Int, *, "int");
+  _DEFINE_BINARY_OP("__div__", Int, /, "int");
+  _DEFINE_BINARY_OP("__mod__", Int, %, "int");
+  _DEFINE_BINARY_OP("__eq__",  Bool, ==, "bool");
+  _DEFINE_BINARY_OP("__neq__", Bool, !=, "bool");
+  _DEFINE_BINARY_OP("__lt__",  Bool, <,  "bool");
+  _DEFINE_BINARY_OP("__gt__",  Bool, >,  "bool");
+  _DEFINE_BINARY_OP("__le__",  Bool, <=, "bool");
+  _DEFINE_BINARY_OP("__ge__",  Bool, >=, "bool");
 
   setField("__neg__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(-args[0].as<Int>()->value).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("int")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
   setField("__as_int__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("int")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
 
   setField("__as_float__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Float::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("int")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("float")).asRefTo<Object>());
 
   setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return String::createInstance(std::to_string(args[0].as<Int>()->value)).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("int")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("string")).asRefTo<Object>());
 
   setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Bool::createInstance(args[0].as<Int>()->value != 0).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("int")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("bool")).asRefTo<Object>());
 
   /*setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();

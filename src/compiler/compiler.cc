@@ -1,12 +1,49 @@
 #include <ff/compiler/compiler.h>
 #include <ff/compiler/scanner.h>
 #include <ff/compiler/parser.h>
+#include <ff/strutils.h>
 #include <ff/memory.h>
+#include <ff/config.h>
+#include <ff/types.h>
 #include <ff/log.h>
 #include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
+#include <functional>
+#include <sstream>
 #include <climits>
 #include <cstdarg>
+
+
+ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, std::map<std::string, Variable> fields)
+  : name(name), type(type), isConst(isConst), fields(fields) {}
+
+ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& name, Ref<Object> object) {
+  Variable var;
+  var.name = name;
+  if (object->isInstance()) {
+    if (object.as<Instance>()->getType()->equals(NativeFunctionType::getInstance().asRefTo<Object>())) {
+      std::vector<Ref<TypeAnnotation>> argTypes;
+      for (auto arg : object.as<NativeFunction>()->getArgs()) {
+        argTypes.push_back(arg.type);
+      }
+
+      var.type = FunctionAnnotation::create(argTypes, object.as<NativeFunction>()->getReturnType()).asRefTo<TypeAnnotation>();
+    } else {
+      var.type = TypeAnnotation::create(object.as<Instance>()->getType()->getTypeName());
+    }
+    for (auto field : object->getFields()) {
+      var.fields[field.first] = Variable::fromObject(field.first, field.second);
+    }
+  } else if (object->isType()) {
+    var.type = TypeAnnotation::create("type");
+    for (auto field : object->getFields()) {
+      var.fields[field.first] = Variable::fromObject(field.first, field.second);
+    }
+  } else {
+    // throw CompieError // TODO:
+  }
+  return var;
+}
 
 void ff::Compiler::printScopes() {
   std::string prefix;
@@ -17,8 +54,32 @@ void ff::Compiler::printScopes() {
 }
 
 void ff::Compiler::printScope(int i, std::string prefix) {
+  if (i == -1) {
+    i = m_scopes.size() - 1;
+  }
   for (auto& var : m_scopes[i].localVariables) {
     printf("%s%s: %s\n", prefix.c_str(), var.name.c_str(), var.type->toString().c_str());
+  }
+}
+
+void ff::Compiler::printGlobals() {
+  std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](std::string prefix, Variable& var) {
+    // printf("%s%s: %s", prefix.c_str(), var.name.c_str(), var.type->toString().c_str()); // FIXME: can fail if var.type is nullptr
+    printf("%s%s: ", prefix.c_str(), var.name.c_str());
+    printf("%s",var.type->toString().c_str());
+    if (var.fields.size()) {
+      printf(" {\n");
+      for (auto& var : var.fields) {
+        printGlobal(prefix + "  ", var.second);
+        printf("\n");
+      }
+      printf("%s}", prefix.c_str());
+    }
+  };
+
+  for (auto& var : m_globalVariables) {
+    printGlobal("", var.second);
+    printf("\n");
   }
 }
 
@@ -34,6 +95,22 @@ ff::CompileError::CompileError(const std::string& filename, int line, const char
   delete [] buffer;
 }
 
+ff::CompileError& ff::CompileError::addNote(const std::string& note) {
+  m_note = note;
+  return *this;
+}
+
+ff::CompileError& ff::CompileError::addNote(const char* fmt, ...) {
+  char* buffer = new char[1024];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, 1024, fmt, args);
+  va_end(args);
+  m_note = buffer;
+  delete [] buffer;
+  return *this;
+}
+
 const char* ff::CompileError::what() const noexcept {
   return m_message.c_str();
 }
@@ -44,13 +121,17 @@ void ff::CompileError::print() const {
   } else {
     printf("%s:%d: %sCompileError%s: %s\n", m_filename.c_str(), m_line, mrt::console::RED, mrt::console::RESET, m_message.c_str());
   }
+  if (!m_note.empty()) {
+    info(m_note);
+  }
 }
 
 ff::Compiler::Compiler() {
-  m_globalVariables["int"]    = {"int",    TypeAnnotation::type()};
-  m_globalVariables["float"]  = {"float",  TypeAnnotation::type()};
-  m_globalVariables["string"] = {"string", TypeAnnotation::type()};
-  m_globalVariables["bool"]   = {"bool",   TypeAnnotation::type()};
+  // NOTE: Initialize info about built-in types
+  m_globalVariables["int"] = Variable::fromObject("int", IntType::getInstance().asRefTo<Object>());
+  m_globalVariables["float"] = Variable::fromObject("float", FloatType::getInstance().asRefTo<Object>());
+  m_globalVariables["bool"] = Variable::fromObject("bool", BoolType::getInstance().asRefTo<Object>());
+  m_globalVariables["string"] = Variable::fromObject("string", StringType::getInstance().asRefTo<Object>());
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -66,6 +147,12 @@ ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* 
   m_rootNode = node;
 
   evalNode(node);
+
+#ifdef _FF_DEBUG_GLOBALS
+  if (config::get("debug") != "0") {
+    printGlobals();
+  }
+#endif
 
   return m_scopes.back().code;
 }
@@ -90,13 +177,32 @@ std::vector<ff::Compiler::Variable>::iterator ff::Compiler::findLocal(const std:
 
 void ff::Compiler::beginScope() {
   m_scopes.push_back({memory::construct<Code>(m_filename)});
+#ifdef _FF_DEBUG_SCOPES
+  if (config::get("debug") != "0") {
+    std::string printPrefix = str::repeat("  ", m_scopes.size());
+    printf("%sscope begin\n", printPrefix.c_str());
+  }
+#endif
 }
 
 void ff::Compiler::beginFunctionScope(ff::Ref<ff::TypeAnnotation> returnType) {
   m_scopes.push_back({memory::construct<Code>(m_filename), {}, 0, true, returnType});
+#ifdef _FF_DEBUG_SCOPES
+  if (config::get("debug") != "0") {
+    std::string printPrefix = str::repeat("  ", m_scopes.size());
+    printf("%sfunction scope begin (ret=%s)\n", printPrefix.c_str(), returnType->toString().c_str());
+  }
+#endif
 }
 
 ff::Compiler::Scope ff::Compiler::endScope() {
+#ifdef _FF_DEBUG_SCOPES
+  if (config::get("debug") != "0") {
+    std::string printPrefix = str::repeat("  ", m_scopes.size());
+    printScope(-1, printPrefix + "  ");
+    printf("%sscope end\n", printPrefix.c_str());
+  }
+#endif
   if (!m_scopes.back().localVariables.empty()) {
     getCode()->pushInstruction(OP_ROLN);
     getCode()->push<uint16_t>(m_scopes.back().localVariables.size()+1);
@@ -104,7 +210,6 @@ ff::Compiler::Scope ff::Compiler::endScope() {
       getCode()->push<uint8_t>(OP_POP);
     }
   }
-  // printScopes();
   Scope scope = m_scopes.back();
   m_scopes.pop_back();
   return scope;
@@ -117,15 +222,27 @@ void ff::Compiler::beginBlock() {
     Ref<Code> code = m_scopes.back().code;
     m_scopes.push_back({code});
   }
+#ifdef _FF_DEBUG_SCOPES
+  if (config::get("debug") != "0") {
+    std::string printPrefix = str::repeat("  ", m_scopes.size());
+    printf("%sblock begin\n", printPrefix.c_str());
+  }
+#endif
 }
 
 void ff::Compiler::endBlock() {
+#ifdef _FF_DEBUG_SCOPES
+  if (config::get("debug") != "0") {
+    std::string printPrefix = str::repeat("  ", m_scopes.size());
+    printScope(-1, printPrefix + "  ");
+    printf("%sblock end\n", printPrefix.c_str());
+  }
+#endif
   for (auto& var : m_scopes.back().localVariables) {
     getCode()->push<uint8_t>(OP_POP);
   }
   if (m_scopes.size() > 1) {
     m_scopes.pop_back();
-    // printScopes();
   }
 }
 
@@ -249,7 +366,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, as
       throw CompileError(m_filename, line, "Value of type 'nothing' is invalid");
     }
 
-    if (*type == *TypeAnnotation::any() && *var.type == *TypeAnnotation::any() && !var.type->isInferred) {
+    if (*type == *TypeAnnotation::any() && *var.type == *TypeAnnotation::any() && !var.type->isInferred && !type->isInferred) {
       warning("Couldn't infer value type for '%s', assuming 'any'", var.name.c_str());
       info("Add explicit 'any' type annotation to silence the warning");
     }
@@ -283,11 +400,12 @@ std::vector<ff::Function::Argument> ff::Compiler::parseArgs(ast::VarDeclList* ar
 void ff::Compiler::defineArgs(ast::VarDeclList* args) {
   if (args) {
     for (auto& varDecl : args->getList()) {
-      Variable var {
+      Variable var(
         varDecl->getName().str,
         varDecl->getVarType(),
-        varDecl->getConst()
-      };
+        varDecl->getConst(),
+        {}
+      );
       if (localExists(var.name)) {
         throw CompileError(m_filename, varDecl->getName().line, "Redeclaration of local variable");
       }
@@ -296,27 +414,43 @@ void ff::Compiler::defineArgs(ast::VarDeclList* args) {
   }
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::evalSequenceElement(ast::Node* node) {
+ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Node* node) {
   if (node->getType() == ast::NTYPE_IDENTIFIER) {
-    emitConstant(String::createInstance(node->as<ast::Identifier>()->getValue()).asRefTo<Object>());
+    std::string name = node->as<ast::Identifier>()->getValue();
+    emitConstant(String::createInstance(name).asRefTo<Object>());
     getCode()->pushInstruction(OP_GET_FIELD);
+    Variable* var = nullptr;
+    auto type = TypeAnnotation::any();
+    if (prev.var) {
+      if (prev.var->fields.find(name) != prev.var->fields.end()) {
+        var = &prev.var->fields[name];
+        type = var->type;
+      }
+    }
+    return {type, var};
   } else if (node->getType() == ast::NTYPE_CALL) {
-    return call(node, false);
+    return {call(node, false, prev), nullptr};
   } else {
     throw CompileError(m_filename, -1, "Expected filed or call");
   }
-  return TypeAnnotation::any();
+  return {TypeAnnotation::any(), nullptr};
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::evalSequenceStart(ast::Node* node) {
+ff::Compiler::TypeInfo ff::Compiler::evalSequenceStart(ast::Node* node) {
   if (node->getType() == ast::NTYPE_IDENTIFIER) {
-    return resolveVariable(node->as<ast::Identifier>()->getValue());
+    std::string name = node->as<ast::Identifier>()->getValue();
+    auto type = resolveVariable(name);
+    if (m_globalVariables.find(name) != m_globalVariables.end()) {
+      return {type, &m_globalVariables[name]};
+    }
+    return {type, nullptr};
   } else if (node->getType() == ast::NTYPE_CALL) { // Call
-    return call(node, true);
+    auto type = call(node, true);
+    return {type, nullptr};
   } else {
     throw CompileError(m_filename, -1, "Expected identifier or call");
   }
-  return TypeAnnotation::any();
+  return {TypeAnnotation::any(), nullptr};
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node) {
@@ -326,17 +460,18 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node) {
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::sequence(ast::Node* node) {
   auto seq = node->as<ast::Sequence>()->getSequence();
-  auto type = evalSequenceStart(seq.front());
+  TypeInfo typeInfo = evalSequenceStart(seq.front());
   for (int i = 1; i < seq.size(); i++) {
-    type = evalSequenceElement(seq[i]);
+    typeInfo = evalSequenceElement(typeInfo, seq[i]);
   }
-  return type;
+  return typeInfo.type;
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
   ast::Binary* binary = node->as<ast::Binary>();
   auto leftType = evalNode(binary->getLeft());
   auto rightType = evalNode(binary->getRight());
+  // TODO: Infer type from globals[leftType]->fields[__add__]->returnType if impossible, return leftType
   switch (binary->getOperator().type) {
     case TOKEN_PLUS: {
       getCode()->pushInstruction(OP_ADD);
@@ -409,17 +544,43 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   ast::Function* fn = node->as<ast::Function>();
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
-  evalNode(fn->getBody());
+  auto bodyType = evalNode(fn->getBody());
   Scope scope = endScope();
+
+  if (*fn->getFunctionType()->returnType == *TypeAnnotation::any() && !fn->getFunctionType()->returnType->isInferred) {
+    fn->getFunctionType()->isInferred = true;
+    if (scope.returnStatements.empty()) {
+
+    } else {
+      // NOTE: All types in `returnStatements` are guarranteed to be the same if return type is `any` and it's not inferred
+      fn->getFunctionType()->returnType = scope.returnStatements.front();
+    }
+  }
+
+  if (fn->getBody()->getType() != ast::NTYPE_BLOCK) {
+    if (*fn->getFunctionType()->returnType != *TypeAnnotation::any()) {
+      if (*fn->getFunctionType()->returnType != *bodyType) {
+        throw CompileError(m_filename, -1,
+          "TypeMismatch of function value (annotated type: %s, actual type: %s)",
+          fn->getFunctionType()->returnType->toString().c_str(), bodyType->toString().c_str());
+      }
+    } else {
+      if (!fn->getFunctionType()->isInferred) {
+        fn->getFunctionType()->isInferred = true;
+        fn->getFunctionType()->returnType = bodyType;
+      }
+    }
+  }
 
   emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
   getCode()->pushInstruction(OP_NEW_GLOBAL);
 
-  Variable var {
+  Variable var(
     fn->getName().str,
     fn->getFunctionType().asRefTo<TypeAnnotation>(),
-    false
-  };
+    false,
+    {}
+  );
   m_globalVariables[var.name] = var;
 
   if (scope.code->size() == 0 || (*scope.code)[scope.code->size()-1] != OP_RETURN) {
@@ -442,7 +603,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
   Variable var {
     varNode->getName().str,
     varNode->getVarType(),
-    varNode->getConst()
+    varNode->getConst(),
+    {}
   };
   if (isTopScope()) {
     if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
@@ -457,7 +619,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
       throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
     }
 
-    if (*type == *TypeAnnotation::any() && *varNode->getVarType() == *TypeAnnotation::any() && !varNode->getVarType()->isInferred) {
+    if (*type == *TypeAnnotation::any() && *varNode->getVarType() == *TypeAnnotation::any() && !varNode->getVarType()->isInferred && !type->isInferred) {
       warning("Couldn't infer value type for '%s', assuming 'any'", var.name.c_str());
       info("Add explicit 'any' type annotation to silence the warning");
     }
@@ -473,14 +635,15 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node) {
     }
     emitConstant(String::createInstance(var.name).asRefTo<Object>());
     getCode()->pushInstruction(OP_SET_GLOBAL);
+    return m_globalVariables[var.name].type;
   } else {
     return defineLocal(var, varNode->getName().line, varNode->getValue());
   }
 
-  return m_globalVariables[var.name].type;
+  return TypeAnnotation::any();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCallee) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCallee, TypeInfo typeInfo) {
   ast::Call* call = node->as<ast::Call>();
 
   if (call->getCallee()->getType() != ast::NTYPE_IDENTIFIER) {
@@ -489,8 +652,31 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   std::string functionName = call->getCallee()->as<ast::Identifier>()->getValue();
 
-  // FIXME: infer type of member function
-  auto type = topLevelCallee ? getVariableType(functionName) : TypeAnnotation::any();
+  // Infer return type
+  Ref<TypeAnnotation> type = TypeAnnotation::any();
+  if (topLevelCallee) { // Means callee is an global variable
+    type = getVariableType(functionName);
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+      type = type.as<FunctionAnnotation>()->returnType;
+    }
+  } else { // Callee is a field of object (typeInfo holds info about that object)
+    if (typeInfo.var) {
+      auto itr = typeInfo.var->fields.find(functionName);
+      if (itr != typeInfo.var->fields.end()) {
+        type = itr->second.type;
+      }
+    } else {
+      auto itr = m_globalVariables.find(typeInfo.type->toString());
+      if (itr != m_globalVariables.end()) {
+        auto titr = itr->second.fields.find(functionName);
+        if (titr != itr->second.fields.end()) {
+          if (titr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+            type = titr->second.type.as<FunctionAnnotation>()->returnType;
+          }
+        }
+      }
+    }
+  }
 
   for (int i = call->getArgs().size() - 1; i >= 0; i--) {
     auto argType = evalNode(call->getArgs()[i]);
@@ -537,7 +723,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
       for (int i = 1; i < seq.size()-3; i++) {
         if (seq[i]->getType() == ast::NTYPE_IDENTIFIER) {
           emitConstant(String::createInstance(seq[i]->as<ast::Identifier>()->getValue()).asRefTo<Object>());
-        } else if (seq[i]->getType() == ast::NTYPE_CALL) {
+        } else if (seq[i]->getType() == ast::NTYPE_CALL) { // is this even legal?
           call(seq[i], false);
         }
       }
@@ -563,12 +749,15 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node) {
   ast::Cast* cast = node->as<ast::Cast>();
   evalNode(cast->getValue());
-  // FIXME: cast type can be anything (i.e. int | float | (int) -> int), we must recieve concrete type
+  // NOTE: cast type can be anything (i.e. int | float | (int) -> int), so it must be checked that we recieved a concrete type
   if (cast->getCastType()->annotationType != TypeAnnotation::TATYPE_DEFAULT) {
     throw CompileError(m_filename, -1, "Invalid type for cast '%s'", cast->getCastType()->toString().c_str());
   }
-  emitConstant(String::createInstance(cast->getCastType()->toString()).asRefTo<Object>());
-  getCode()->pushInstruction(OP_CAST);
+  // NOTE: If cast type is `any` the value is returned as-is and it's type is assumed by the compiler to be `any`
+  if (*cast->getCastType() != *TypeAnnotation::any()) {
+    emitConstant(String::createInstance(cast->getCastType()->toString()).asRefTo<Object>());
+    getCode()->pushInstruction(OP_CAST);
+  }
   return cast->getCastType();
 }
 
@@ -578,7 +767,36 @@ void ff::Compiler::returnCall(ast::Node* node) {
   for (auto& var : m_scopes.back().localVariables) {
     getCode()->pushInstruction(OP_POP);
   }
-  evalNode(node->as<ast::Return>()->getValue());
+  auto type = evalNode(node->as<ast::Return>()->getValue());
+
+  int i = m_scopes.size() - 1;
+  while (!m_scopes[i].isFunctionScope && i >= 0) {
+    i--;
+  }
+  if (i == 0 && !m_scopes[i].isFunctionScope) {
+    throw CompileError(m_filename, -1, "return: No surrounding function scope can be found");
+  }
+  m_scopes[i].returnStatements.push_back(type);
+  if (m_scopes[i].returnType.get()) {
+    if (*m_scopes[i].returnType != *TypeAnnotation::any()) {
+      if (*m_scopes[i].returnType != *type) {
+        throw CompileError(m_filename, -1,
+          "TypeMismatch of return type (expected type: %s, actual type: %s)",
+          m_scopes[i].returnType->toString().c_str(), type->toString().c_str());
+      }
+    } else {
+      if (!m_scopes[i].returnType->isInferred) {
+        for (auto& t : m_scopes[i].returnStatements) {
+          if (*t != *type) {
+            throw CompileError(m_filename, -1,
+              "TypeMismatch: return type conflicts with previously returned value (previous return type: %s, actual type: %s)",
+              t->toString().c_str(), type->toString().c_str())
+              .addNote("Add return type annotation to fix the error (any or union of possible return types)");
+          }
+        }
+      }
+    }
+  }
   getCode()->pushInstruction(OP_RETURN);
 }
 
@@ -614,7 +832,7 @@ void ff::Compiler::loopstmt(ast::Node* node) {
   uint16_t loopEnd = getCode()->size();
 
   for (int continue_jump : getLoop().continue_jumps) {
-    /* Patch an `OP_LOOP`
+    /* NOTE: Patch an `OP_LOOP`
        continue_jump - point from where he jump is made
        loopStart - destination
        since `OP_LOOP OFFSET` affecively does `ip -= OFFSET`,
@@ -642,7 +860,7 @@ void ff::Compiler::whilestmt(ast::Node* node) {
   patchJump(condition_jump);
 
   for (int continue_jump : getLoop().continue_jumps) {
-    // See note in loopstmt for explanation
+    // NOTE: See note in loopstmt for explanation
     patchRemoteJump(continue_jump, continue_jump - loopStart + 2);
   }
 
@@ -761,7 +979,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node) {
 #endif
     default: {
       throw CompileError(m_filename, -1, "Unknown AST node: type=%d", (int)node->getType());
-      // throw CompileError(m_filename, -1, "Unknown AST node: type=%d str='%s'", (int)node->getType(), node->toString().c_str());
+      // throw CompileError(m_filename, -1, "Unknown AST node: type=%d str='%s'", (int)node->getType(), node->toString().c_str()); // FIXME: can fail if node in nullptr
       break;
     }
   }

@@ -9,14 +9,6 @@
 #include <vector>
 #include <string>
 
-/*
-_FF_DEBUG_PARSER
-1
-2
-3
-4 - tokens & fn calls
-*/
-
 namespace ff {
 
 class Parser {
@@ -58,19 +50,19 @@ class Parser {
   ast::Node* loopstmt();
   ast::Node* block();
   std::vector<ast::Node*> statementList();
-  std::vector<ast::Node*> expressionList();
+  std::vector<ast::Node*> expressionList(bool isReturnValueExpected);
   ast::VarDeclList* varDeclList();
   ast::Node* call(ast::Node* callee, bool isReturnValueExpected);
   ast::Node* lambda();
-  ast::Node* expression();
-  ast::Node* equality();
-  ast::Node* comparison();
-  ast::Node* term();
-  ast::Node* factor();
-  ast::Node* unary();
-  ast::Node* cast();
-  ast::Node* rvalue();
-  ast::Node* lvalue();
+  ast::Node* expression(bool isReturnValueExpected);
+  ast::Node* equality(bool isReturnValueExpected);
+  ast::Node* comparison(bool isReturnValueExpected);
+  ast::Node* term(bool isReturnValueExpected);
+  ast::Node* factor(bool isReturnValueExpected);
+  ast::Node* unary(bool isReturnValueExpected);
+  ast::Node* cast(bool isReturnValueExpected);
+  ast::Node* rvalue(bool isReturnValueExpected);
+  ast::Node* lvalue(bool isReturnValueExpected);
 
   Ref<TypeAnnotation> typeAnnotation();
 };

@@ -270,10 +270,16 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, std::ve
 }
 
 void ff::VM::callFunction(Ref<Function> fn, std::vector<Ref<Object>> args) {
+  if (config::get("debug") != "0") {
+    printf("     | CALL %p\n", fn.get());
+  }
   runCode(fn->code, args);
 }
 
 void ff::VM::callNativeFunction(Ref<NativeFunction> fn, std::vector<Ref<Object>> args) {
+  if (config::get("debug") != "0") {
+    printf("     | CALL_NATIVE %p\n", fn.get());
+  }
   push(fn->func(this, args));
 }
 
@@ -287,11 +293,6 @@ void ff::VM::runCode(Ref<Code> code, std::vector<Ref<Object>> args) {
 
 void ff::VM::call(const std::string& functionName) {
   if (m_globals.find(functionName) != m_globals.end()) {
-    /*if (m_globals[functionName]->isInstance() && m_globals[functionName].as<Instance>()->getType() == FunctionType::getInstance().asRefTo<Type>()) {
-      callCode(m_globals[functionName].as<Function>()->code);
-    } else {
-      throw createError("Attempt to call a non-function object");
-    }*/
     call(m_globals[functionName]);
   } else {
     throw createError("Unknown variable");
@@ -368,18 +369,12 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_JUMP:
         printf("OP_JUMP\n");
         break;
-      // case OP_JUMP_ABS:
-      //   printf("OP_JUMP_ABS\n");
-      //   break;
       case OP_JUMP_TRUE:
         printf("OP_JUMP_TRUE\n");
         break;
       case OP_JUMP_FALSE:
         printf("OP_JUMP_FALSE\n");
         break;
-      // case OP_JUMP_TRUE_ABS:
-      //   printf("OP_JUMP_TRUE_ABS\n");
-      //   break;
       case OP_LOOP:
         printf("OP_LOOP\n");
         break;
@@ -448,7 +443,7 @@ bool ff::VM::executeInstruction(Opcode op) {
     case OP_PULL_UP: {
       uint16_t index = getCode()->template read<uint16_t>();
       Ref<Object> value = getStack()[getStack().size() - index];
-      getStack().getBuffer().erase(getStack().getBuffer().end() - index - 1);
+      getStack().getBuffer().erase(getStack().getBuffer().end() - index);
       push(value);
       break;
     }
@@ -510,7 +505,7 @@ bool ff::VM::executeInstruction(Opcode op) {
       if (m_globals.find(varName->value) == m_globals.end()) {
         throw createError("Undefined variable '%s'", varName->value.c_str());
       }
-      m_globals[varName->value] = pop(); // popCheckType(m_globals[varName->value].type); ???
+      m_globals[varName->value] = pop(); // TODO: check: popCheckType(m_globals[varName->value].type); ???
       break;
     }
     case OP_GET_LOCAL: {

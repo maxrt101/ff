@@ -14,3 +14,7 @@ std::vector<ff::ast::Node*> ff::ast::Call::getArgs() const {
 bool ff::ast::Call::isReturnValueExpected() const {
   return m_isReturnValueExpected;
 }
+
+void ff::ast::Call::setIsReturnValueExpected(bool value) {
+  m_isReturnValueExpected = value;
+}

@@ -20,6 +20,8 @@ class Call : public Node {
   Node* getCallee() const;
   std::vector<Node*> getArgs() const;
   bool isReturnValueExpected() const;
+
+  void setIsReturnValueExpected(bool value);
 };
 
 } /* namespace ast */

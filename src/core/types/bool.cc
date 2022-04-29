@@ -12,7 +12,15 @@ ff::Ref<ff::BoolType> ff::BoolType::m_instance = nullptr;
 ff::BoolType::BoolType() : Type("bool") {
   setField("__not__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
     return (args[0].as<Bool>()->value ? g_false : g_true).asRefTo<Object>();
-  }, {{"self", TypeAnnotation::create("bool")}}).asRefTo<Object>());
+  }, {
+    {"self", TypeAnnotation::create("bool")}
+  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+
+  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    return String::createInstance(args[0].as<Bool>()->value ? "true" : "false").asRefTo<Object>();
+  }, {{
+    "self", TypeAnnotation::create("bool")}
+  }, TypeAnnotation::create("string")).asRefTo<Object>());
 }
 
 ff::BoolType::~BoolType() {}
