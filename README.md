@@ -20,7 +20,7 @@ Executable will appear in `target/release/bin`, headers and libraries in `target
 
 For more verbose output use `-v`  
 
-To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of debug fatures with `--feature FEATURES`.  
+To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of debug features with `--feature FEATURES`.  
 Supported debug features are `MEM`, `REF`, `EVAL`, `TOKEN`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
 
 Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
@@ -34,9 +34,9 @@ Numeric and string literals are supported, as well as `true` and `false` for boo
 Numeric literals can be decimal, hexadecimal or binary.  
 String literals are enclosed in `"` and support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
 
-Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `!`, and `as`.  
+Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`, `!`, and `as`.  
 
-Operators work by calling an operator method on an object.  
+Operators work by calling an operator method on an object (except for `&&`, `||` and `as`).  
 Currently supported are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
 
 Also there is `__bool__` that returns boolean for an object.  
@@ -80,7 +80,7 @@ fn returnUnion(i: int) -> {
 }
 ```
 
-In this example the compiler will produce a `TypeMismatch`, since there are 2 `return`s and each of them evaluates to a different type.  
+In this example the compiler will produce a `TypeMismatch` error, since there are 2 `return`s and each of them evaluates to a different type.  
 There are 2 solutions to this problems:  
 1. Add `any`:  
 ```
@@ -167,7 +167,7 @@ while (i < 10) {
 
 ### 8. References
 All values are allocated on the heap and passed around as references (pointers).  
-By default values are copied, when the value is assigned to some variable or unary operator is called on it.  
+By default values are copied, when the value is assigned to some variable.  
 The values are copied using `__copy__` method.  
 You can prevent the value from being copied by using `ref` keyword.  
 
@@ -213,7 +213,7 @@ Output:
 ```
 
 References and functions.  
-If you want to pass a reference to value, use `ref` on an argument.  
+If you want to pass variable reference to a function, use `ref` on an argument.  
 
 ```
 fn modify(x: int) -> {
