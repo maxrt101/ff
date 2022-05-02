@@ -34,18 +34,26 @@ Numeric and string literals are supported, as well as `true` and `false` for boo
 Numeric literals can be decimal, hexadecimal or binary.  
 String literals are enclosed in `"` and support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
 
-Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `++`, `--`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`, `!`, and `as`.  
+Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `++`, `--`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `!`, `&&`, `||`, `=`, `:=`, and `as`.  
 
-Operators work by calling an operator method on an object (except for `&&`, `||` and `as`).  
+Operators work by calling an operator method on an object (except for `&&`, `||`, `=`, `:=` and `as`).  
 Currently supported are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__inc__`, `__dec__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
 
-Also there are some special methods like `__bool__` and `__copy__`.  
+Also there are some special methods like `__bool__`, `__copy__` and `__assign__`.  
 
 `__bool__` returns boolean for an object.  
 For example a `string.__bool__` might return `false` if string is empty and `true` otherwise.  
 `__bool__` is called on a value that is expected to be boolean, but is not. For example in `if`'s condition.  
 
 `__copy__` returns a copy of the value.  
+
+`__assign__` sets a value of a reference.  
+Used for setting a value of a variable that is a reference for another variable.  
+```
+var x = 10;
+var r = ref x;
+r := 20; // same as r.__assign__(20)
+```
 
 ### 2. Types
 Every value has a type.  
@@ -54,7 +62,7 @@ You can provide a type to a variable or function by annotating it with `identifi
 Types of some values can be inferred, if type cannot be inferred, `any` is used.  
 `any` is basically a wildcard, variables of such type can hold anything.  
 
-Type casting. To cast a value to some other type, `as` operator is used:
+Type casting. To cast a value to some other type, `as` operator is used:  
 ```
 var a = 10 as string;
 var b = 5 as float;
@@ -63,7 +71,7 @@ Casting works by calling a special method that handles the cast.
 For `x as string`, where `x` is of type `T`, `T` has to implement `__as_string__`, for `x as int`, `T` has to implement `__as_int__`.  
 
 ### 3. Type Inferring
-As was mentioned above - types of some values can be inferred, for example:
+As was mentioned above - types of some values can be inferred, for example:  
 ```
 fn return100() -> {
   return 100;
@@ -270,4 +278,25 @@ Output:
 ```
 10
 11
+```
+
+To set a value to a reference, use `:=` operator:  
+```
+fn modify(x: int) -> {
+  x := 100;
+}
+
+fn main() -> {
+  var i = 10;
+  print i;
+
+  modify(ref i);
+  print i;
+}
+```
+
+Output:  
+```
+10
+100
 ```

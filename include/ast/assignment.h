@@ -11,13 +11,15 @@ class Assignment : public Node {
  private:
   Node* m_assignee;
   Node* m_value;
+  bool m_isRefAssignment;
 
  public:
-  Assignment(Node* assignee, Node* value);
+  Assignment(Node* assignee, Node* value, bool m_isRefAssignment = false);
   ~Assignment() = default;
 
   Node* getAssignee() const;
   Node* getValue() const;
+  bool getIsRefAssignment() const;
 };
 
 } /* namespace ast */

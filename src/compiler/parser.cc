@@ -358,6 +358,10 @@ ff::ast::Node* ff::Parser::statement() {
         consume(TOKEN_EQUAL);
         ((ast::Call*)value)->setIsReturnValueExpected(true);
         value = new ast::Assignment(value, expression(true));
+      } else if (peek().type == TOKEN_COLON_EQUAL) {
+        consume(TOKEN_COLON_EQUAL);
+        ((ast::Call*)value)->setIsReturnValueExpected(true);
+        value = new ast::Assignment(value, expression(true), true);
       } /*else {
         throw ParseError(peek(), m_filename, "Expected call or assignment");
       }*/

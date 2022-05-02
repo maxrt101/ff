@@ -351,11 +351,17 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_SET_GLOBAL:
         printf("OP_SET_GLOBAL\n");
         break;
+      case OP_SET_GLOBAL_REF:
+        printf("OP_SET_GLOBAL_REF\n");
+        break;
       case OP_GET_LOCAL:
         printf("OP_GET_LOCAL\n");
         break;
       case OP_SET_LOCAL:
         printf("OP_SET_LOCAL\n");
+        break;
+      case OP_SET_LOCAL_REF:
+        printf("OP_SET_LOCAL_REF\n");
         break;
       case OP_MAKECONST:
         printf("OP_MAKECONST\n");
@@ -365,6 +371,9 @@ bool ff::VM::executeInstruction(Opcode op) {
         break;
       case OP_SET_FIELD:
         printf("OP_SET_FIELD\n");
+        break;
+      case OP_SET_FIELD_REF:
+        printf("OP_SET_FIELD_REF\n");
         break;
       case OP_GET_STATIC:
         printf("OP_GET_STATIC\n");
@@ -528,6 +537,16 @@ bool ff::VM::executeInstruction(Opcode op) {
       m_globals[varName->value] = pop(); // TODO: check: popCheckType(m_globals[varName->value].type); ???
       break;
     }
+    case OP_SET_GLOBAL_REF: {
+      Ref<String> varName = popCheckType(StringType::getInstance()).asRefTo<String>();
+      if (m_globals.find(varName->value) == m_globals.end()) {
+        throw createError("Undefined variable '%s'", varName->value.c_str());
+      }
+      Ref<Object> self = m_globals[varName->value];
+      callMember(self, "__assign__", {self, pop()});
+      pop();
+      break;
+    }
     case OP_GET_LOCAL: {
       uint32_t local = getCode()->template read<uint32_t>();
       push(getStack()[local]); // frame?
@@ -536,6 +555,13 @@ bool ff::VM::executeInstruction(Opcode op) {
     case OP_SET_LOCAL: {
       uint32_t local = getCode()->template read<uint32_t>();
       getStack()[local] = pop();
+      break;
+    }
+    case OP_SET_LOCAL_REF: {
+      uint32_t local = getCode()->template read<uint32_t>();
+      Ref<Object> self = getStack()[local];
+      callMember(self, "__assign__", {self, pop()});
+      pop();
       break;
     }
     case OP_MAKECONST: {
@@ -553,6 +579,15 @@ bool ff::VM::executeInstruction(Opcode op) {
       Ref<Object> object = pop();
       Ref<Object> value = pop();
       object->setField(fieldName->value, value);
+      break;
+    }
+    case OP_SET_FIELD_REF: { // [ name, obj, value ]
+      Ref<String> fieldName = popCheckType(StringType::getInstance()).asRefTo<String>();
+      Ref<Object> object = pop();
+      Ref<Object> value = pop();
+      Ref<Object> self = object->getField(fieldName->value);
+      callMember(self, "__assign__", {self, value});
+      pop();
       break;
     }
     case OP_GET_STATIC: {

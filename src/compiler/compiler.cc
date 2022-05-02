@@ -651,10 +651,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValu
     emitConstant(String::createInstance(var.name).asRefTo<Object>());
     getCode()->pushInstruction(OP_NEW_GLOBAL);
 
-    auto type = evalNode(varNode->getValue());
-    if (copyValue) {
-      getCode()->pushInstruction(OP_COPY);
-    }
+    auto type = evalNode(varNode->getValue(), copyValue);
     if (*type == *TypeAnnotation::nothing()) {
       throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
     }
@@ -829,9 +826,13 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node, bool copyV
       throw CompileError(m_filename, -1, "Cannot set anything other than a field");
     }
     emitConstant(String::createInstance(seq.back()->as<ast::Identifier>()->getValue()).asRefTo<Object>());
-    getCode()->pushInstruction(OP_SET_FIELD);
+    getCode()->pushInstruction(ass->getIsRefAssignment() ? OP_SET_FIELD_REF : OP_SET_FIELD);
   } else if (ass->getAssignee()->getType() == ast::NTYPE_IDENTIFIER) {
-    auto variableType = resolveVariable(ass->getAssignee()->as<ast::Identifier>()->getValue(), OP_SET_LOCAL, OP_SET_GLOBAL);
+    auto variableType = resolveVariable(
+      ass->getAssignee()->as<ast::Identifier>()->getValue(),
+      ass->getIsRefAssignment() ? OP_SET_LOCAL_REF  : OP_SET_LOCAL,
+      ass->getIsRefAssignment() ? OP_SET_GLOBAL_REF : OP_SET_GLOBAL
+    );
     if (*variableType != *TypeAnnotation::any() && *variableType != *valueType) {
       throw CompileError(m_filename, -1,
         "TypeMismatch during assignment (annotated type: %s, value type: %s)",

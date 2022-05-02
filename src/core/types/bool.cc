@@ -27,6 +27,14 @@ ff::BoolType::BoolType() : Type("bool") {
   }, {
     {"self", TypeAnnotation::create("bool")}
   }, TypeAnnotation::create("bool")).asRefTo<Object>());
+
+  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    args[0].as<Bool>()->value = args[1].as<Bool>()->value;
+    return Ref<Object>();
+  }, {
+    {"self", TypeAnnotation::create("bool")},
+    {"other", TypeAnnotation::create("bool")}
+  }, TypeAnnotation::nothing()).asRefTo<Object>());
 }
 
 ff::BoolType::~BoolType() {}

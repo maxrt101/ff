@@ -70,7 +70,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
     case NTYPE_VAR_DECL_LIST: {
       VarDeclList* list = node->as<VarDeclList>();
       for (auto& var : list->getList()) {
-        _printTree(var);
+        _printTree(var, "", false);
         printf(", ");
       }
       printf("\b\b  \b\b");
@@ -90,7 +90,11 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
     case NTYPE_ASSIGNMENT: {
       Assignment* ass = node->as<Assignment>();
       _printTree(ass->getAssignee());
-      printf(" = ");
+      if (ass->getIsRefAssignment()) {
+        printf(" := ");
+      } else {
+        printf(" = ");
+      }
       _printTree(ass->getValue());
       break;
     }
@@ -103,7 +107,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       printf("{\n");
       for (auto& bodyNode : node->as<Block>()->getBody()) {
         printf("%s", (prefix + "  ").c_str());
-        _printTree(bodyNode, prefix + "  ", flag);
+        _printTree(bodyNode, prefix + "  ", true);
         if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE)) {
           printf(";");
         }
@@ -210,6 +214,6 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
 }
 
 void ff::ast::printTree(Node* node) {
-  _printTree(node, "", false);
+  _printTree(node, "", true);
   printf("\n");
 }

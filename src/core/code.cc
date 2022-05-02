@@ -136,11 +136,17 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_SET_GLOBAL:
       printf("OP_SET_GLOBAL\n");
       return;
+    case OP_SET_GLOBAL_REF:
+      printf("OP_SET_GLOBAL_REF\n");
+      return;
     case OP_GET_LOCAL:
       printf("OP_GET_LOCAL %u\n", read<uint32_t>());
       return;
     case OP_SET_LOCAL:
       printf("OP_SET_LOCAL %u\n",read<uint32_t>());
+      return;
+    case OP_SET_LOCAL_REF:
+      printf("OP_SET_LOCAL_REF %u\n",read<uint32_t>());
       return;
     case OP_MAKECONST:
       printf("OP_MAKECONST\n");
@@ -150,6 +156,9 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
       return;
     case OP_SET_FIELD:
       printf("OP_SET_FIELD\n");
+      return;
+    case OP_SET_FIELD_REF:
+      printf("OP_SET_FIELD_REF\n");
       return;
     case OP_GET_STATIC:
       printf("OP_GET_STATIC\n");

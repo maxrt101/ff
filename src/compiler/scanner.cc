@@ -28,6 +28,7 @@ static std::map<ff::TokenType, std::string> g_tokenTypes {
   {ff::TOKEN_BANG, "TOKEN_BANG"},
   {ff::TOKEN_BANG_EQUAL, "TOKEN_BANG_EQUAL"},
   {ff::TOKEN_EQUAL, "TOKEN_EQUAL"},
+  {ff::TOKEN_COLON_EQUAL, "TOKEN_COLON_EQUAL"},
   {ff::TOKEN_EQUAL_EQUAL, "TOKEN_EQUAL_EQUAL"},
   {ff::TOKEN_GREATER, "TOKEN_GREATER"},
   {ff::TOKEN_GREATER_EQUAL, "TOKEN_GREATER_EQUAL"},
@@ -66,6 +67,9 @@ static std::map<ff::TokenType, std::string> g_tokenTypes {
 };
 
 std::string ff::tokenTypeToString(ff::TokenType type) {
+  if (g_tokenTypes.find(type) == g_tokenTypes.end()) {
+    return "<unknown>";
+  }
   return g_tokenTypes[type];
 }
 
@@ -147,7 +151,7 @@ ff::Token ff::Scanner::scanToken() {
     case '{': return makeToken(TOKEN_LEFT_BRACE);
     case '}': return makeToken(TOKEN_RIGHT_BRACE);
     case ';': return makeToken(TOKEN_SEMICOLON);
-    case ':': return makeToken(TOKEN_COLON);
+    case ':': return makeToken(match('=') ? TOKEN_COLON_EQUAL : TOKEN_COLON);
     case ',': return makeToken(TOKEN_COMMA);
     case '.': return makeToken(TOKEN_DOT);
     case '-': return makeToken(match('>') ? TOKEN_RIGHT_ARROW : (match('-') ? TOKEN_DECREMENT : TOKEN_MINUS));

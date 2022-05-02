@@ -89,6 +89,14 @@ ff::IntType::IntType() : Type("int") {
   }, {
     {"self", TypeAnnotation::create("int")}
   }, TypeAnnotation::create("int")).asRefTo<Object>());
+
+  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
+    args[0].as<Int>()->value = args[1].as<Int>()->value;
+    return Ref<Object>();
+  }, {
+    {"self", TypeAnnotation::create("int")},
+    {"other", TypeAnnotation::create("int")}
+  }, TypeAnnotation::create("int")).asRefTo<Object>());
 }
 
 ff::IntType::~IntType() {}
