@@ -153,7 +153,7 @@ For looping there are `loop`, `for` and `while` statements.
 ```
 var i = 0;
 loop {
-  i = i + 1;
+  ++i;
   if (i == 5) {
     break;
   }
@@ -162,7 +162,7 @@ loop {
 
 `for` has 2 subsets - ordinary `for` and `foreach`:
 ```
-for (var i = 0; i < 10; i = i + 1) {
+for (var i = 0; i < 10; ++i) {
   print i;
 }
 
@@ -176,7 +176,7 @@ for x in iterable {
 var i = 0;
 while (i < 10) {
   print i;
-  i = i + 1;
+  ++i;
 }
 ```
 
