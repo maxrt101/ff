@@ -285,8 +285,8 @@ void ff::VM::callNativeFunction(Ref<NativeFunction> fn, std::vector<Ref<Object>>
 
 void ff::VM::runCode(Ref<Code> code, std::vector<Ref<Object>> args) {
   m_callStack.push({Stack<Ref<Object>>(), 0, code});
-  for (auto& arg : args) {
-    push(arg);
+  for (auto itr = args.rbegin(); itr != args.rend(); itr++) {
+    push(*itr);
   }
   run();
 }

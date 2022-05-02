@@ -703,11 +703,14 @@ ff::Ref<ff::TypeAnnotation> ff::Parser::typeAnnotation() {
     }
   } else if (peek().type == TOKEN_LEFT_PAREN) {
     consume(TOKEN_LEFT_PAREN);
-    ast::VarDeclList* args = nullptr;
+    std::vector<Ref<TypeAnnotation>> args;
     Ref<TypeAnnotation> returnType = TypeAnnotation::create("any");
 
     if (peek().type != TOKEN_RIGHT_PAREN) {
-      args = varDeclList();
+      args.push_back(typeAnnotation());
+      while (match({TOKEN_COMMA})) {
+        args.push_back(typeAnnotation());
+      }
     }
 
     if (!match({TOKEN_RIGHT_PAREN})) {
@@ -719,14 +722,7 @@ ff::Ref<ff::TypeAnnotation> ff::Parser::typeAnnotation() {
     }
     returnType = typeAnnotation();
 
-    std::vector<Ref<TypeAnnotation>> argTypes;
-    if (args) {
-      for (auto varDecl : args->getList()) {
-        argTypes.push_back(varDecl->getVarType());
-      }
-    }
-
-    return FunctionAnnotation::create(argTypes, returnType).asRefTo<TypeAnnotation>();
+    return FunctionAnnotation::create(args, returnType).asRefTo<TypeAnnotation>();
   }
 
   throw ParseError(peek(), m_filename, "Unrecognized type annotation");

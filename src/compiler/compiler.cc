@@ -66,7 +66,7 @@ void ff::Compiler::printGlobals() {
   std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](std::string prefix, Variable& var) {
     // printf("%s%s: %s", prefix.c_str(), var.name.c_str(), var.type->toString().c_str()); // FIXME: can fail if var.type is nullptr
     printf("%s%s: ", prefix.c_str(), var.name.c_str());
-    printf("%s",var.type->toString().c_str());
+    printf("%s", var.type->toString().c_str());
     if (var.fields.size()) {
       printf(" {\n");
       for (auto& var : var.fields) {
@@ -327,7 +327,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& nam
     });
     if (itr != m_scopes[i].localVariables.end()) {
       getCode()->push<uint8_t>(local);
-      getCode()->push<uint32_t>(std::distance(m_scopes[i].localVariables.begin(), itr) + localsSize); // CHECK ORDER      return itr->type;
+      getCode()->push<uint32_t>(itr - m_scopes[i].localVariables.begin() + localsSize);
       return itr->type;
     }
   }
