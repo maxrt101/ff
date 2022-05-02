@@ -655,7 +655,7 @@ bool ff::VM::executeInstruction(Opcode op) {
     case OP_RETURN: {
       auto result = returnCall();
       push(result);
-      break;
+      return false;
     }
     case OP_CAST: {
       Ref<String> typeName = popCheckType(StringType::getInstance()).asRefTo<String>();
