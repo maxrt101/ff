@@ -34,14 +34,18 @@ Numeric and string literals are supported, as well as `true` and `false` for boo
 Numeric literals can be decimal, hexadecimal or binary.  
 String literals are enclosed in `"` and support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
 
-Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`, `!`, and `as`.  
+Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `++`, `--`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`, `!`, and `as`.  
 
 Operators work by calling an operator method on an object (except for `&&`, `||` and `as`).  
-Currently supported are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
+Currently supported are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__inc__`, `__dec__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
 
-Also there is `__bool__` that returns boolean for an object.  
+Also there are some special methods like `__bool__` and `__copy__`.  
+
+`__bool__` returns boolean for an object.  
 For example a `string.__bool__` might return `false` if string is empty and `true` otherwise.  
 `__bool__` is called on a value that is expected to be boolean, but is not. For example in `if`'s condition.  
+
+`__copy__` returns a copy of the value.  
 
 ### 2. Types
 Every value has a type.  
