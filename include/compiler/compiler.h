@@ -34,7 +34,13 @@ class Compiler {
     Variable* var;
   };
 
+  enum ScopeType {
+    SCOPE_FUNCTION,
+    SCOPE_BLOCK,
+  };
+
   struct Scope {
+    ScopeType type;
     Ref<Code> code;
     std::vector<Variable> localVariables;
     int prevLocalsLength = 0;
@@ -115,6 +121,7 @@ class Compiler {
   Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> ref(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr});
+  Ref<TypeAnnotation> lambda(ast::Node* node);
   void returnCall(ast::Node* node);
   void block(ast::Node* node);
   void ifstmt(ast::Node* node);

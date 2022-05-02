@@ -176,7 +176,7 @@ std::vector<ff::Compiler::Variable>::iterator ff::Compiler::findLocal(const std:
 }
 
 void ff::Compiler::beginScope() {
-  m_scopes.push_back({memory::construct<Code>(m_filename)});
+  m_scopes.push_back({SCOPE_BLOCK, memory::construct<Code>(m_filename)});
 #ifdef _FF_DEBUG_SCOPES
   if (config::get("debug") != "0") {
     std::string printPrefix = str::repeat("  ", m_scopes.size());
@@ -186,7 +186,14 @@ void ff::Compiler::beginScope() {
 }
 
 void ff::Compiler::beginFunctionScope(ff::Ref<ff::TypeAnnotation> returnType) {
-  m_scopes.push_back({memory::construct<Code>(m_filename), {}, 0, true, returnType});
+  m_scopes.push_back({
+    SCOPE_FUNCTION,
+    memory::construct<Code>(m_filename),
+    {},
+    0,
+    true,
+    returnType
+  });
 #ifdef _FF_DEBUG_SCOPES
   if (config::get("debug") != "0") {
     std::string printPrefix = str::repeat("  ", m_scopes.size());
@@ -217,10 +224,10 @@ ff::Compiler::Scope ff::Compiler::endScope() {
 
 void ff::Compiler::beginBlock() {
   if (m_scopes.size() == 0) {
-    m_scopes.push_back({memory::construct<Code>(m_filename)});
+    m_scopes.push_back({SCOPE_BLOCK, memory::construct<Code>(m_filename)});
   } else {
     Ref<Code> code = m_scopes.back().code;
-    m_scopes.push_back({code});
+    m_scopes.push_back({SCOPE_BLOCK, code});
   }
 #ifdef _FF_DEBUG_SCOPES
   if (config::get("debug") != "0") {
@@ -308,9 +315,11 @@ void ff::Compiler::emitLoop(int loopStart) {
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& name, Opcode local, Opcode global) {
-  int localsSize = mrt::reduce(m_scopes, [](int value, const Scope& scope) {
-    return value + scope.localVariables.size();
-  }, 0);
+  int localsSize = 0;
+  for (int i = m_scopes.size() - 1; i > 0; i--) {
+    localsSize += m_scopes[i].localVariables.size();
+    if (m_scopes[i].type == SCOPE_FUNCTION) break;
+  }
   for (int i = m_scopes.size() - 1; i > 0; i--) {
     localsSize -= m_scopes[i].localVariables.size();
     auto itr = std::find_if(m_scopes[i].localVariables.begin(), m_scopes[i].localVariables.end(), [&name](auto var) {
@@ -406,7 +415,7 @@ void ff::Compiler::defineArgs(ast::VarDeclList* args) {
         {}
       );
       if (localExists(var.name)) {
-        throw CompileError(m_filename, varDecl->getName().line, "Redeclaration of local variable");
+        throw CompileError(m_filename, varDecl->getName().line, "Redeclaration of local variable in argument list");
       }
       getLocals().push_back(var);
     }
@@ -576,7 +585,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   if (*fn->getFunctionType()->returnType == *TypeAnnotation::any() && !fn->getFunctionType()->returnType->isInferred) {
     fn->getFunctionType()->isInferred = true;
     if (scope.returnStatements.empty()) {
-
+      if (fn->getBody()->getType() == ast::NTYPE_BLOCK) {
+        fn->getFunctionType()->returnType = TypeAnnotation::nothing();
+      }
     } else {
       // NOTE: All types in `returnStatements` are guarranteed to be the same if return type is `any` and it's not inferred
       fn->getFunctionType()->returnType = scope.returnStatements.front();
@@ -746,6 +757,54 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   }
 
   return type;
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::lambda(ast::Node* node) {
+  ast::Lambda* lambda = node->as<ast::Lambda>();
+
+  beginFunctionScope(lambda->getFunctionType()->returnType);
+  defineArgs(lambda->getArgs());
+  auto bodyType = evalNode(lambda->getBody());
+  Scope scope = endScope();
+
+  if (*lambda->getFunctionType()->returnType == *TypeAnnotation::any() && !lambda->getFunctionType()->returnType->isInferred) {
+    lambda->getFunctionType()->isInferred = true;
+    if (scope.returnStatements.empty()) {
+      if (lambda->getBody()->getType() == ast::NTYPE_BLOCK) {
+        lambda->getFunctionType()->returnType = TypeAnnotation::nothing();
+      }
+    } else {
+      // NOTE: All types in `returnStatements` are guarranteed to be the same if return type is `any` and it's not inferred
+      lambda->getFunctionType()->returnType = scope.returnStatements.front();
+    }
+  }
+
+  if (lambda->getBody()->getType() != ast::NTYPE_BLOCK) {
+    if (*lambda->getFunctionType()->returnType != *TypeAnnotation::any()) {
+      if (*lambda->getFunctionType()->returnType != *bodyType) {
+        throw CompileError(m_filename, -1,
+          "TypeMismatch of function value (annotated type: %s, actual type: %s)",
+          lambda->getFunctionType()->returnType->toString().c_str(), bodyType->toString().c_str());
+      }
+    } else {
+      if (!lambda->getFunctionType()->isInferred) {
+        lambda->getFunctionType()->isInferred = true;
+        lambda->getFunctionType()->returnType = bodyType;
+      }
+    }
+  }
+
+  if (scope.code->size() == 0 || (*scope.code)[scope.code->size()-1] != OP_RETURN) {
+    scope.code->pushInstruction(OP_RETURN);
+  }
+
+  emitConstant(Function::createInstance(
+    scope.code,
+    parseArgs(lambda->getArgs()),
+    lambda->getFunctionType().as<FunctionAnnotation>()->returnType
+  ).asRefTo<Object>());
+
+  return lambda->getFunctionType().asRefTo<TypeAnnotation>();
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node, bool copyValue) {
@@ -1014,6 +1073,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     }
     case ast::NTYPE_ASSIGNMENT: {
       return assignment(node, copyValue);
+    }
+    case ast::NTYPE_LAMBDA: {
+      return lambda(node);
     }
     case ast::NTYPE_RETURN: {
       returnCall(node);

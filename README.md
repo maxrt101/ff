@@ -21,7 +21,7 @@ Executable will appear in `target/release/bin`, headers and libraries in `target
 For more verbose output use `-v`  
 
 To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of debug features with `--feature FEATURES`.  
-Supported debug features are `MEM`, `REF`, `EVAL`, `TOKEN`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
+Supported debug features are `MEM`, `REF`, `EVAL`, `TOKENS`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
 
 Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
 
@@ -119,6 +119,17 @@ fn add(a: int, b: int): int -> a + b;
 fn main() -> {
   var res = add(10, 20);
 }
+```
+
+Inline functions (lambdas).
+```
+fn main() -> {
+  var printer = fn(x) -> { print x; };
+  var addone = fn(x) -> x + 1;
+
+  printer(addone(10));
+}
+
 ```
 
 ### 6. Conditionals

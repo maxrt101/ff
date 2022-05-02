@@ -12,6 +12,7 @@
 #include <ff/ast/sequence.h>
 #include <ff/ast/cast.h>
 #include <ff/ast/function.h>
+#include <ff/ast/lambda.h>
 #include <ff/ast/block.h>
 #include <ff/ast/var_decl.h>
 #include <ff/ast/var_decl_list.h>

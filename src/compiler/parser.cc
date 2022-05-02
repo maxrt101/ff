@@ -454,14 +454,52 @@ ff::ast::VarDeclList* ff::Parser::varDeclList() {
 ff::ast::Node* ff::Parser::call(ast::Node* callee, bool isReturnValueExpected) {
   std::vector<ast::Node*> args;
   if (peek().type != TOKEN_RIGHT_PAREN) {
-    args = expressionList(isReturnValueExpected);
+    args = expressionList(true);
   }
   consume(TOKEN_RIGHT_PAREN, "Expected ')' after function call");
   return new ast::Call(callee, args, isReturnValueExpected);
 }
 
 ff::ast::Node* ff::Parser::lambda() {
-  return nullptr;
+  ast::VarDeclList* args = nullptr;
+  ast::Node* body = nullptr;
+  if (!match({TOKEN_LEFT_PAREN})) {
+    throw ParseError(peek(), m_filename, "Expected '('");
+  }
+
+  if (peek().type != TOKEN_RIGHT_PAREN) {
+    args = varDeclList();
+  }
+
+  if (!match({TOKEN_RIGHT_PAREN})) {
+    throw ParseError(peek(), m_filename, "Expected ')'");
+  }
+
+  Ref<TypeAnnotation> returnType = TypeAnnotation::create("any");
+  if (match({TOKEN_COLON})) {
+    returnType = typeAnnotation();
+  }
+
+  if (!match({TOKEN_RIGHT_ARROW})) { // consume?
+    throw ParseError(peek(), m_filename, "Expected '->'");
+  }
+
+  if (peek().type == TOKEN_LEFT_BRACE) {
+    body = block();
+  } else {
+    body = expression(true);
+  }
+
+  std::vector<Ref<TypeAnnotation>> argTypes;
+  if (args) {
+    for (auto varDecl : args->getList()) {
+      argTypes.push_back(varDecl->getVarType());
+    }
+  }
+
+  auto type = FunctionAnnotation::create(argTypes, returnType);
+
+  return new ast::Lambda(args, type, body);
 }
 
 ff::ast::Node* ff::Parser::expression(bool isReturnValueExpected) {
@@ -558,9 +596,6 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
   }
 
   if (match({TOKEN_STRING})) {
-#if _FF_DEBUG_PARSER > 3
-    printf("rvalue(): String\n");
-#endif
     return new ast::StringLiteral(previous());
   }
 
@@ -577,9 +612,6 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
   }
 
   if (match({TOKEN_LEFT_PAREN})) {
-#if _FF_DEBUG_PARSER > 3
-    printf("rvalue(): Group\n");
-#endif
     ast::Node* expr = expression(isReturnValueExpected);
     consume(TOKEN_RIGHT_PAREN, "Expected ')' after an expression");
     return new ast::Group(expr);
@@ -590,16 +622,16 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
     return new ast::Ref(lval);
   }
 
+  if (match({TOKEN_FN})) {
+    return lambda();
+  }
+
   ast::Node* lval = lvalue(isReturnValueExpected);
 
   return lval;
 }
 
 ff::ast::Node* ff::Parser::lvalue(bool isReturnValueExpected) {
-#if _FF_DEBUG_PARSER > 3
-    printf("lvalue(): %s\n", tokenTypeToString(peek().type).c_str());
-#endif
-
   std::vector<ast::Node*> nodes;
   do {
     if (peek().type != TOKEN_IDENTIFIER) {

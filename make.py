@@ -10,7 +10,7 @@ def features(profile, feature_list):
         if 'MEM'     in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_MEMORY_DEBUG')
         if 'REF'     in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_REF_DEBUG')
         if 'EVAL'    in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_EVAL_NODE_DEBUG')
-        if 'TOKEN'   in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_TOKENS_DEBUG')
+        if 'TOKENS'  in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_TOKENS_DEBUG')
         if 'SCOPES'  in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_DEBUG_SCOPES')
         if 'GLOBALS' in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_DEBUG_GLOBALS')
         if 'NOCATCH' in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_DEBUG_DONT_CATCH_EXCEPTIONS')

@@ -49,6 +49,14 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       }
       break;
     }
+    case NTYPE_LAMBDA: {
+      Lambda* lambda = node->as<Lambda>();
+      printf("fn(");
+      _printTree(lambda->getArgs());
+      printf("): %s -> ", lambda->getFunctionType().asRefTo<ff::FunctionAnnotation>()->returnType->toString().c_str());
+      _printTree(lambda->getBody(), "  ", true);
+      break;
+    }
     case NTYPE_VAR_DECL: {
       VarDecl* var = node->as<VarDecl>();
       if (flag) printf("%s ", var->getConst() ? "const" : "var");
@@ -150,6 +158,9 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
     case NTYPE_FOR: {
       For* for_ = node->as<For>();
       printf("for (");
+      if (for_->getInit()->getType() == NTYPE_VAR_DECL) {
+        printf("var ");
+      }
       _printTree(for_->getInit());
       printf("; ");
       _printTree(for_->getCondition());
