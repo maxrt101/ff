@@ -691,13 +691,13 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   // Get return type
   Ref<FunctionAnnotation> type = FunctionAnnotation::create({}, TypeAnnotation::any());
-  if (topLevelCallee) { // Means callee is a global variable
+  if (topLevelCallee) { // Callee is a global variable
     auto varType = getVariableType(functionName);
     if (varType->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
       type = varType.as<FunctionAnnotation>();
     }
-  } else { // Callee is a field of object (typeInfo holds info about that object)
-    if (typeInfo.var) {
+  } else { // Callee is a field of an object (typeInfo holds info about that object)
+    if (typeInfo.var) { // Get function type from type of field variable
       auto itr = typeInfo.var->fields.find(functionName);
       if (itr != typeInfo.var->fields.end()) {
         if (itr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
@@ -707,7 +707,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
             itr->second.type->toString().c_str());
         }
       }
-    } else {
+    } else { // Get function type from type of field
       auto itr = m_globalVariables.find(typeInfo.type->toString());
       if (itr != m_globalVariables.end()) {
         auto titr = itr->second.fields.find(functionName);
@@ -731,6 +731,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
         paramType->toString().c_str(),
         argType->toString().c_str()
       );
+    }
+    if (paramType->isRef && !argType->isRef) {
+      warning("Expected '%s' but got '%s' for argument %d of function '%s'",
+        paramType->toString().c_str(),
+        argType->toString().c_str(),
+        i,
+        functionName.c_str());
+      info("To silence the warning - pass a 'ref' or remove 'ref' from argument type annotation");
     }
   }
 
