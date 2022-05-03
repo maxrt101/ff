@@ -20,6 +20,7 @@ ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> ty
 ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& name, Ref<Object> object) {
   Variable var;
   var.name = name;
+  var.type = TypeAnnotation::any();
   if (object->isInstance()) {
     if (object.as<Instance>()->getType()->equals(NativeFunctionType::getInstance().asRefTo<Object>())) {
       std::vector<Ref<TypeAnnotation>> argTypes;
@@ -343,9 +344,11 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& nam
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::getVariableType(const std::string& name) {
-  int localsSize = mrt::reduce(m_scopes, [](int value, const Scope& scope) {
-    return value + scope.localVariables.size();
-  }, 0);
+  int localsSize = 0;
+  for (int i = m_scopes.size() - 1; i > 0; i--) {
+    localsSize += m_scopes[i].localVariables.size();
+    if (m_scopes[i].type == SCOPE_FUNCTION) break;
+  }
   for (int i = m_scopes.size() - 1; i > 0; i--) {
     localsSize -= m_scopes[i].localVariables.size();
     auto itr = std::find_if(m_scopes[i].localVariables.begin(), m_scopes[i].localVariables.end(), [&name](auto var) {
@@ -437,7 +440,11 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
     }
     return {type, var};
   } else if (node->getType() == ast::NTYPE_CALL) {
-    return {call(node, false, prev), nullptr};
+    bool explicitSelf = false;
+    if (prev.var) {
+      explicitSelf = prev.type->toString() == prev.var->name;
+    }
+    return {call(node, false, prev, explicitSelf), nullptr};
   } else {
     throw CompileError(m_filename, -1, "Expected filed or call");
   }
@@ -680,7 +687,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValu
   return TypeAnnotation::any();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCallee, TypeInfo typeInfo) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCallee, TypeInfo typeInfo, bool explicitSelf) {
   ast::Call* call = node->as<ast::Call>();
 
   if (call->getCallee()->getType() != ast::NTYPE_IDENTIFIER) {
@@ -689,56 +696,65 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   std::string functionName = call->getCallee()->as<ast::Identifier>()->getValue();
 
-  // Get return type
-  Ref<FunctionAnnotation> type = FunctionAnnotation::create({}, TypeAnnotation::any());
-  if (topLevelCallee) { // Callee is a global variable
-    auto varType = getVariableType(functionName);
-    if (varType->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-      type = varType.as<FunctionAnnotation>();
+  Ref<TypeAnnotation> type = TypeAnnotation::any();
+
+  if (topLevelCallee) {
+    type = getVariableType(functionName);
+    if (type->annotationType != TypeAnnotation::TATYPE_FUNCTION) {
+      warning("Type of `%s` is not callable ('%s')", functionName.c_str(), type->toString().c_str());
+      type = TypeAnnotation::any();
     }
-  } else { // Callee is a field of an object (typeInfo holds info about that object)
-    if (typeInfo.var) { // Get function type from type of field variable
-      auto itr = typeInfo.var->fields.find(functionName);
-      if (itr != typeInfo.var->fields.end()) {
-        if (itr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-          type = itr->second.type.as<FunctionAnnotation>();
+  } else {
+    auto itr = m_globalVariables.find(typeInfo.type->toString());
+    if (itr != m_globalVariables.end()) {
+      auto fitr = itr->second.fields.find(functionName);
+      if (fitr != itr->second.fields.end()) {
+        if (fitr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+          type = fitr->second.type;
         } else {
-          throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
-            itr->second.type->toString().c_str());
+          warning("Type of `%s` is not callable ('%s')", functionName.c_str(), fitr->second.type->toString().c_str());
         }
       }
-    } else { // Get function type from type of field
-      auto itr = m_globalVariables.find(typeInfo.type->toString());
-      if (itr != m_globalVariables.end()) {
-        auto titr = itr->second.fields.find(functionName);
-        if (titr != itr->second.fields.end()) {
-          if (titr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-            type = titr->second.type.as<FunctionAnnotation>();
-          } else {
-            throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
-              titr->second.type->toString().c_str());
-          }
+    } else if (typeInfo.var) {
+      auto fitr = typeInfo.var->fields.find(functionName);
+      if (fitr != typeInfo.var->fields.end()) {
+        if (fitr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+          type = fitr->second.type;
+        } else {
+          warning("Type of `%s` is not callable ('%s')", functionName.c_str(), fitr->second.type->toString().c_str());
         }
       }
     }
   }
 
-  for (int i = call->getArgs().size() - 1; i >= 0; i--) {
-    auto argType = evalNode(call->getArgs()[i]); // copy ?
-    auto paramType = type.as<FunctionAnnotation>()->arguments[i];
-    if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
-      throw CompileError(m_filename, -1, "TypeMismatch: expected argument of type '%s', but got '%s'",
-        paramType->toString().c_str(),
-        argType->toString().c_str()
-      );
-    }
-    if (paramType->isRef && !argType->isRef) {
-      warning("Expected '%s' but got '%s' for argument %d of function '%s'",
-        paramType->toString().c_str(),
-        argType->toString().c_str(),
-        i,
-        functionName.c_str());
-      info("To silence the warning - pass a 'ref' or remove 'ref' from argument type annotation");
+  auto args = call->getArgs();
+
+  for (int i = args.size() - 1; i >= 0; i--) {
+    auto argType = evalNode(args[i]); // copy ?
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+      Ref<TypeAnnotation> paramType = TypeAnnotation::any();
+      if (topLevelCallee) {
+        paramType = type.asRefTo<FunctionAnnotation>()->arguments[i];
+      } else {
+        paramType = type.asRefTo<FunctionAnnotation>()->arguments[explicitSelf ? i : i + 1];
+      }
+      if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
+        throw CompileError(m_filename, -1, "TypeMismatch: expected '%s', but got '%s' for argument %d of function '%s'",
+          paramType->toString().c_str(),
+          argType->toString().c_str(),
+          i,
+          functionName.c_str()
+        );
+      }
+      if (paramType->isRef && !argType->isRef) {
+        warning("Expected '%s' but got '%s' for argument %d of function '%s'",
+          paramType->toString().c_str(),
+          argType->toString().c_str(),
+          i,
+          functionName.c_str()
+        );
+        info("To silence the warning - pass a 'ref' or remove 'ref' from argument type annotation");
+      }
     }
   }
 
@@ -759,7 +775,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
     getCode()->pushInstruction(OP_POP);
   }
 
-  return type->returnType;
+  if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+    return type.asRefTo<FunctionAnnotation>()->returnType;
+  }
+  return TypeAnnotation::any();
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::lambda(ast::Node* node) {

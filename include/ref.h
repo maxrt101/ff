@@ -40,7 +40,7 @@ class Ref {
   }
 
   inline Ref(Ref&& rhs) {
-    *this = std::move(rhs);
+    *this = rhs;
   }
 
   inline Ref& operator=(T* ptr) {

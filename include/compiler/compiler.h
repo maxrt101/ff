@@ -30,8 +30,8 @@ class Compiler {
   };
 
   struct TypeInfo {
-    Ref<TypeAnnotation> type;
-    Variable* var;
+    Ref<TypeAnnotation> type = TypeAnnotation::any();
+    Variable* var = nullptr;
   };
 
   enum ScopeType {
@@ -120,7 +120,7 @@ class Compiler {
   Ref<TypeAnnotation> assignment(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> ref(ast::Node* node);
-  Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr});
+  Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr}, bool explicitSelf = false);
   Ref<TypeAnnotation> lambda(ast::Node* node);
   Ref<TypeAnnotation> dict(ast::Node* node);
   Ref<TypeAnnotation> vector(ast::Node* node);

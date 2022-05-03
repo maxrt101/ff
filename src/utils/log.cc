@@ -42,9 +42,11 @@ void ff::vflogf(FILE* dest, LogLevel level, const std::string& format, va_list a
 
 void ff::vlogf(LogLevel level, const std::string& format, va_list args) {
   FILE* dest = stdout;
+#ifdef _FF_LOG_STDOUT_ONLY
   if (level > LogLevel::INFO) {
     dest = stderr;
   }
+#endif
 
   vflogf(dest, level, format, args);
 }
