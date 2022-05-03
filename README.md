@@ -20,8 +20,9 @@ Executable will appear in `target/release/bin`, headers and libraries in `target
 
 For more verbose output use `-v`  
 
-To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of debug features with `--feature FEATURES`.  
-Supported debug features are `MEM`, `REF`, `EVAL`, `TOKENS`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
+To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of features with `--feature FEATURES`.  
+Supported features: `LOG_STDOUT_ONLY`.  
+Supported debug features: `MEM`, `REF`, `EVAL`, `TOKENS`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
 
 Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
 
@@ -29,7 +30,7 @@ Build system keeps track of changed source files, and on subsequent builds will 
 
 ### 1. Values and operators
 Every value is an object. `null` is used to mark an absence of value.  
-Built-in types are `int`, `float`, `string`, `bool`.  
+Built-in types are `int`, `float`, `string`, `bool`, `function`, `dict`, `vector`.  
 Numeric and string literals are supported, as well as `true` and `false` for booleans.  
 Numeric literals can be decimal, hexadecimal or binary.  
 String literals are enclosed in `"` and support escape sequences, such as `\n`, `\t`, `\r`, `\"`.  
@@ -93,7 +94,7 @@ fn returnUnion(i: int) -> {
 ```
 
 In this example the compiler will produce a `TypeMismatch` error, since there are 2 `return`s and each of them evaluates to a different type.  
-There are 2 solutions to this problems:  
+There are 2 solutions to this problem:  
 1. Add `any`:  
 ```
 fn returnUnion(i: int): any -> {
@@ -260,7 +261,7 @@ Output:
 
 Note that `x` holds a reference to `i`, if you try to assign another value to it the reference will get overwritten.  
 ```
-fn modify(x: int) -> {
+fn modify(x: ref int) -> {
   ++x;
   x = 100;
 }
@@ -282,7 +283,7 @@ Output:
 
 To set a value to a reference, use `:=` operator:  
 ```
-fn modify(x: int) -> {
+fn modify(x: ref int) -> {
   x := 100;
 }
 
