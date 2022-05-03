@@ -38,7 +38,7 @@ class VM {
 
   void push(Ref<Object> obj);
   Ref<Object> pop();
-  std::vector<Ref<Object>> pop(int count);
+  std::vector<Ref<Object>> pop(int count, bool reverse = false);
   std::vector<Ref<Object>> popFrom(int frameOffset, int count);
 
   void jumpForward(uint32_t offset);

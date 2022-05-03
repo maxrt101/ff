@@ -62,6 +62,8 @@ ff::VM::VM() {
   m_globals["bool"]   = BoolType::getInstance().asRefTo<Object>();
   m_globals["float"]  = FloatType::getInstance().asRefTo<Object>();
   m_globals["string"] = StringType::getInstance().asRefTo<Object>();
+  m_globals["dict"]   = DictType::getInstance().asRefTo<Object>();
+  m_globals["vector"] = VectorType::getInstance().asRefTo<Object>();
 }
 
 ff::VM::~VM() {}
@@ -110,10 +112,14 @@ ff::Ref<ff::Object> ff::VM::pop() {
   return getStack().pop();
 }
 
-std::vector<ff::Ref<ff::Object>> ff::VM::pop(int count) {
+std::vector<ff::Ref<ff::Object>> ff::VM::pop(int count, bool reverse) {
   std::vector<Ref<Object>> result;
   for (int i = 0; i < count; i++) {
-    result.push_back(getStack().pop());
+    if (reverse) {
+      result.insert(result.begin(), getStack().pop());
+    } else {
+      result.push_back(getStack().pop());
+    }
   }
   return result;
 }
@@ -163,7 +169,7 @@ void ff::VM::call(Ref<Object> object, int argc) {
     if (fn->args.size() != argc) {
       throw createError("Expected %d arguments, but got %d", fn->args.size(), argc);
     }
-    callFunction(fn, pop(fn->args.size()));
+    callFunction(fn, pop(fn->args.size(), true));
   } else if (isOfType(object, NativeFunctionType::getInstance())) {
     Ref<NativeFunction> fn = object.asRefTo<NativeFunction>();
     if (fn->args.size() != argc) {
@@ -321,9 +327,6 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_ROL:
         printf("OP_ROL\n");
         break;
-      case OP_ROLN:
-        printf("OP_ROLN\n");
-        break;
       case OP_DUP:
         printf("OP_DUP\n");
         break;
@@ -479,20 +482,6 @@ bool ff::VM::executeInstruction(Opcode op) {
       Ref<Object> b = pop();
       push(a);
       push(b);
-      break;
-    }
-    case OP_ROLN: {
-      throw createError("OP_ROLN: Deprecated");
-      uint16_t count = getCode()->template read<uint16_t>();
-      /* FIXME: Hack for functions with nothing to return,
-         OP_ROLN shouldn't be generated if there is nothing to return */
-      if (count > 0 && count <= getStack().size()) {
-        auto objects = pop(count);
-        push(objects.back());
-        for (int i = objects.size()-2; i >= 0; i--) {
-          push(objects[i]);
-        }
-      }
       break;
     }
     case OP_DUP: {

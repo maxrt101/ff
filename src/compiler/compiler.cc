@@ -213,8 +213,6 @@ ff::Compiler::Scope ff::Compiler::endScope() {
   }
 #endif
   if (!m_scopes.back().localVariables.empty() && m_scopes.back().type != SCOPE_FUNCTION) {
-    // getCode()->pushInstruction(OP_ROLN);
-    // getCode()->push<uint16_t>(m_scopes.back().localVariables.size()+1);
     for (auto& var : getLocals()) {
       getCode()->push<uint8_t>(OP_POP);
     }
@@ -870,11 +868,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::ref(ast::Node* node) {
 }
 
 void ff::Compiler::returnCall(ast::Node* node) {
-  // getCode()->pushInstruction(OP_ROLN);
-  // getCode()->push<uint16_t>(m_scopes.back().localVariables.size());
-  // for (auto& var : m_scopes.back().localVariables) {
-  //   getCode()->pushInstruction(OP_POP);
-  // }
   auto type = evalNode(node->as<ast::Return>()->getValue());
 
   int i = m_scopes.size() - 1;

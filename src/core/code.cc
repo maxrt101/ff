@@ -106,9 +106,6 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_ROL:
       printf("OP_ROL\n");
       return;
-    case OP_ROLN:
-      printf("OP_ROLN %u\n", read<uint16_t>());
-      return;
     case OP_DUP:
       printf("OP_DUP\n");
       return;
