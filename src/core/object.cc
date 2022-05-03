@@ -47,6 +47,10 @@ std::map<std::string, ff::Ref<ff::Object>>& ff::Object::getFields() {
   return m_fields;
 }
 
+const std::map<std::string, ff::Ref<ff::Object>>& ff::Object::getFields() const {
+  return m_fields;
+}
+
 ff::Ref<ff::Object> ff::Object::cast(VM* context, Ref<Object> object, const std::string& typeName) {
   const std::string castFunctionName = "__as_" + typeName + "__";
   context->callMember(object, castFunctionName);

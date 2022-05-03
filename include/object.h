@@ -32,6 +32,7 @@ class Object {
   Ref<Object> getField(const std::string& key);
   void setField(const std::string& key, Ref<Object> value);
   std::map<std::string, Ref<Object>>& getFields();
+  const std::map<std::string, Ref<Object>>& getFields() const;
 
   virtual std::string toString() const;
   virtual bool equals(Ref<Object> other) const;

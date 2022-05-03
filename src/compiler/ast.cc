@@ -63,7 +63,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       printf("%s: %s", var->getName().str.c_str(), var->getVarType()->toString().c_str());
       if (var->getValue()) {
         printf(" = ");
-        _printTree(var->getValue());
+        _printTree(var->getValue(), prefix + "  ");
       }
       break;
     }
@@ -114,6 +114,31 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
         printf("\n");
       }
       printf("%s}", prefix.c_str());
+      break;
+    }
+    case NTYPE_DICT: {
+      printf("{");
+      int count = 0;
+      auto fields = node->as<Dict>()->getFields();
+      for (auto& p : fields) {
+        printf("%s -> ", p.first.c_str());
+        _printTree(p.second, prefix, true);
+        if (count + 1 < fields.size()) printf(", ");
+        count++;
+      }
+      printf("}");
+      break;
+    }
+    case NTYPE_VECTOR: {
+      printf("{");
+      auto elements = node->as<Vector>()->getElements();
+      for (int i = 0; i < elements.size(); i++) {
+        _printTree(elements[i], prefix, true);
+        if (i + 1 < elements.size()) {
+          printf(", ");
+        }
+      }
+      printf("}");
       break;
     }
     case NTYPE_EXPR_LIST_EXPR: {

@@ -226,23 +226,20 @@ ff::ast::Node* ff::Parser::ifstmt() {
   if (!match({TOKEN_RIGHT_PAREN})) {
     throw ParseError(peek(), m_filename, "Expected a ')' after a condition");
   }
-  ast::Node* body = nullptr;
-  if (peek().type == TOKEN_LEFT_BRACE) {
-    body = block();
-  } else {
-    body = expression(false);
+  ast::Node* body = statement(true);
+  if (body->getType() != ast::NTYPE_BLOCK) {
     consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
   }
   ast::Node* elseBody = nullptr;
   if (match({TOKEN_ELSE})) {
-    if (peek().type == TOKEN_LEFT_BRACE) {
-      elseBody = block();
-    } else if (peek().type == TOKEN_IF) {
+    if (peek().type == TOKEN_IF) {
       consume(TOKEN_IF);
       elseBody = ifstmt();
     } else {
-      elseBody = expression(false);
-      consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
+      elseBody = statement(true);
+      if (elseBody->getType() != ast::NTYPE_BLOCK) {
+        consume(TOKEN_SEMICOLON, "Expected ';' after an expression");
+      }
     }
   }
   return new ast::If(condition, body, elseBody);
@@ -285,11 +282,8 @@ ff::ast::Node* ff::Parser::forstmt() {
       throw ParseError(peek(), m_filename, "Expected ')' after 'for' increment");
     }
 
-    ast::Node* body = nullptr;
-    if (peek().type == TOKEN_LEFT_BRACE) {
-      body = block();
-    } else {
-      body = expression(true);
+    ast::Node* body = statement(true);
+    if (body->getType() != ast::NTYPE_BLOCK) {
       if (!match({TOKEN_SEMICOLON})) {
         throw ParseError(peek(), m_filename, "Expected ')' after 'for' body");
       }
@@ -326,11 +320,8 @@ ff::ast::Node* ff::Parser::whilestmt() {
     throw ParseError(peek(), m_filename, "Expected ')' after 'while' condition");
   }
 
-  ast::Node* body = nullptr;
-  if (peek().type == TOKEN_LEFT_BRACE) {
-    body = block();
-  } else {
-    body = expression(true);
+  ast::Node* body = statement(true);
+  if (body->getType() != ast::NTYPE_BLOCK) {
     if (!match({TOKEN_SEMICOLON})) {
       throw ParseError(peek(), m_filename, "Expected ')' after 'while' body");
     }
@@ -343,7 +334,14 @@ ff::ast::Node* ff::Parser::loopstmt() {
   return new ast::Loop(block());
 }
 
-ff::ast::Node* ff::Parser::statement() {
+ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
+  if (isInOtherStatement) {
+    if (peek().type == TOKEN_VAR || peek().type == TOKEN_CONST) {
+      throw ParseError(peek(), m_filename, "Variable declaration is not allowed here");
+    } else if (peek().type == TOKEN_CLASS) {
+      throw ParseError(peek(), m_filename, "Class declaration is not allowed here");
+    }
+  } 
   switch (peek().type) {
     case TOKEN_LEFT_BRACE:
       return block();
@@ -506,6 +504,59 @@ ff::ast::Node* ff::Parser::lambda() {
   return new ast::Lambda(args, type, body);
 }
 
+ff::ast::Node* ff::Parser::initializer(bool isReturnValueExpected) {
+  ast::NodeType type = ast::NTYPE_DICT;
+  std::map<std::string, ast::Node*> fields;
+  std::vector<ast::Node*> elements;
+
+  auto getFirst = [&]() {
+    if (peek().type != TOKEN_STRING) {
+      type = ast::NTYPE_VECTOR;
+      elements.push_back(expression(isReturnValueExpected));
+    } else {
+      std::string key = peek().str;
+      consume(TOKEN_STRING);
+      if (!match({TOKEN_RIGHT_ARROW})) {
+        type = ast::NTYPE_VECTOR;
+        elements.push_back(new ast::StringLiteral(previous()));
+      } else {
+        fields[key] = expression(isReturnValueExpected);
+      }
+    }
+  };
+
+  auto getNext = [&]() {
+    if (type == ast::NTYPE_DICT) {
+      if (peek().type != TOKEN_STRING) {
+        throw ParseError(peek(), m_filename, "Expected string as key");
+      }
+      std::string key = peek().str;
+      consume(TOKEN_STRING);
+      if (!match({TOKEN_RIGHT_ARROW})) {
+        throw ParseError(peek(), m_filename, "Expected '->'");
+      }
+      fields[key] = expression(isReturnValueExpected);
+    } else {
+      elements.push_back(expression(isReturnValueExpected));
+    }
+  };
+
+  getFirst();
+  while (match({TOKEN_COMMA})) {
+    getNext();
+  }
+
+  if (!match({TOKEN_RIGHT_BRACE})) {
+    throw ParseError(peek(), m_filename, "Expected '}'");
+  }
+
+  if (type == ast::NTYPE_DICT) {
+    return new ast::Dict(fields);
+  } else {
+    return new ast::Vector(elements);
+  }
+}
+
 ff::ast::Node* ff::Parser::expression(bool isReturnValueExpected) {
   return logic(isReturnValueExpected);
 }
@@ -628,6 +679,10 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
 
   if (match({TOKEN_FN})) {
     return lambda();
+  }
+
+  if (match({TOKEN_LEFT_BRACE})) {
+    return initializer(isReturnValueExpected);
   }
 
   ast::Node* lval = lvalue(isReturnValueExpected);

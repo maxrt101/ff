@@ -17,7 +17,7 @@ enum Opcode {
   OP_PULL_UP,
   OP_ROL,
   OP_ROLN,
-  // OP_DUP, // TODO:
+  OP_DUP,
   OP_NULL,
   OP_TRUE,
   OP_FALSE,

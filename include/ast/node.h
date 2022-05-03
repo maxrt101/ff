@@ -28,6 +28,8 @@ enum NodeType {
   NTYPE_RETURN,
 
   NTYPE_BLOCK,
+  NTYPE_DICT,
+  NTYPE_VECTOR,
 
   NTYPE_IF,
   NTYPE_FOR,

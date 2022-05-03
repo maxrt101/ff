@@ -113,7 +113,7 @@ ff::Ref<ff::Object> ff::VM::pop() {
 std::vector<ff::Ref<ff::Object>> ff::VM::pop(int count) {
   std::vector<Ref<Object>> result;
   for (int i = 0; i < count; i++) {
-    result.insert(result.begin(), getStack().pop());
+    result.push_back(getStack().pop());
   }
   return result;
 }
@@ -324,6 +324,9 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_ROLN:
         printf("OP_ROLN\n");
         break;
+      case OP_DUP:
+        printf("OP_DUP\n");
+        break;
       case OP_NULL:
         printf("OP_NULL\n");
         break;
@@ -479,6 +482,7 @@ bool ff::VM::executeInstruction(Opcode op) {
       break;
     }
     case OP_ROLN: {
+      throw createError("OP_ROLN: Deprecated");
       uint16_t count = getCode()->template read<uint16_t>();
       /* FIXME: Hack for functions with nothing to return,
          OP_ROLN shouldn't be generated if there is nothing to return */
@@ -489,6 +493,10 @@ bool ff::VM::executeInstruction(Opcode op) {
           push(objects[i]);
         }
       }
+      break;
+    }
+    case OP_DUP: {
+      push(getStack().peek());
       break;
     }
     case OP_NULL: {

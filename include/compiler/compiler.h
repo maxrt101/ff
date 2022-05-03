@@ -122,6 +122,8 @@ class Compiler {
   Ref<TypeAnnotation> ref(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr});
   Ref<TypeAnnotation> lambda(ast::Node* node);
+  Ref<TypeAnnotation> dict(ast::Node* node);
+  Ref<TypeAnnotation> vector(ast::Node* node);
   void returnCall(ast::Node* node);
   void block(ast::Node* node);
   void ifstmt(ast::Node* node);

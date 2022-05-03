@@ -43,7 +43,7 @@ class Parser {
   ast::Node* program();
   ast::Node* fndecl();
   ast::Node* vardecl(bool isConst = false);
-  ast::Node* statement();
+  ast::Node* statement(bool isInOtherStatement = false);
   ast::Node* ifstmt();
   ast::Node* forstmt();
   ast::Node* whilestmt();
@@ -54,6 +54,7 @@ class Parser {
   ast::VarDeclList* varDeclList();
   ast::Node* call(ast::Node* callee, bool isReturnValueExpected);
   ast::Node* lambda();
+  ast::Node* initializer(bool isReturnValueExpected);
   ast::Node* expression(bool isReturnValueExpected);
   ast::Node* logic(bool isReturnValueExpected);
   ast::Node* equality(bool isReturnValueExpected);

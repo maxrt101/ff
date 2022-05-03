@@ -31,6 +31,8 @@
 #include <ff/ast/continue.h>
 #include <ff/ast/break.h>
 #include <ff/ast/ref.h>
+#include <ff/ast/dict.h>
+#include <ff/ast/vector.h>
 #include <ff/ast/breakpoint.h>
 
 namespace ff {

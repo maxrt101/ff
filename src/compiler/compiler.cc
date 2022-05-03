@@ -132,6 +132,8 @@ ff::Compiler::Compiler() {
   m_globalVariables["float"] = Variable::fromObject("float", FloatType::getInstance().asRefTo<Object>());
   m_globalVariables["bool"] = Variable::fromObject("bool", BoolType::getInstance().asRefTo<Object>());
   m_globalVariables["string"] = Variable::fromObject("string", StringType::getInstance().asRefTo<Object>());
+  m_globalVariables["dict"] = Variable::fromObject("dict", DictType::getInstance().asRefTo<Object>());
+  m_globalVariables["vector"] = Variable::fromObject("vector", VectorType::getInstance().asRefTo<Object>());
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -210,9 +212,9 @@ ff::Compiler::Scope ff::Compiler::endScope() {
     printf("%sscope end\n", printPrefix.c_str());
   }
 #endif
-  if (!m_scopes.back().localVariables.empty()) {
-    getCode()->pushInstruction(OP_ROLN);
-    getCode()->push<uint16_t>(m_scopes.back().localVariables.size()+1);
+  if (!m_scopes.back().localVariables.empty() && m_scopes.back().type != SCOPE_FUNCTION) {
+    // getCode()->pushInstruction(OP_ROLN);
+    // getCode()->push<uint16_t>(m_scopes.back().localVariables.size()+1);
     for (auto& var : getLocals()) {
       getCode()->push<uint8_t>(OP_POP);
     }
@@ -691,7 +693,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   // Get return type
   Ref<TypeAnnotation> type = TypeAnnotation::any();
-  if (topLevelCallee) { // Means callee is an global variable
+  if (topLevelCallee) { // Means callee is a global variable
     type = getVariableType(functionName);
     if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
       type = type.as<FunctionAnnotation>()->returnType;
@@ -868,11 +870,11 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::ref(ast::Node* node) {
 }
 
 void ff::Compiler::returnCall(ast::Node* node) {
-  getCode()->pushInstruction(OP_ROLN);
-  getCode()->push<uint16_t>(m_scopes.back().localVariables.size());
-  for (auto& var : m_scopes.back().localVariables) {
-    getCode()->pushInstruction(OP_POP);
-  }
+  // getCode()->pushInstruction(OP_ROLN);
+  // getCode()->push<uint16_t>(m_scopes.back().localVariables.size());
+  // for (auto& var : m_scopes.back().localVariables) {
+  //   getCode()->pushInstruction(OP_POP);
+  // }
   auto type = evalNode(node->as<ast::Return>()->getValue());
 
   int i = m_scopes.size() - 1;
@@ -904,6 +906,42 @@ void ff::Compiler::returnCall(ast::Node* node) {
     }
   }
   getCode()->pushInstruction(OP_RETURN);
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::dict(ast::Node* node) {
+  ast::Dict* dict = node->as<ast::Dict>();
+
+  emitConstant(Dict::createInstance({}).asRefTo<Object>());
+
+  for (auto& p : dict->getFields()) {
+    getCode()->pushInstruction(OP_DUP); // object
+    auto type = evalNode(p.second); // value
+    bool isRef = p.second->getType() == ast::NTYPE_REF;
+
+    getCode()->pushInstruction(OP_PULL_UP); // OP_SET_FIELD expects [ field, object, value ]
+    getCode()->push<uint16_t>(2);
+
+    emitConstant(String::createInstance(p.first).asRefTo<Object>()); // field
+    getCode()->pushInstruction(isRef ? OP_SET_FIELD_REF : OP_SET_FIELD);
+  }
+
+  return TypeAnnotation::create("dict");
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::vector(ast::Node* node) {
+  ast::Vector* vec = node->as<ast::Vector>();
+
+  emitConstant(Vector::createInstance({}).asRefTo<Object>());
+
+  auto type = TypeAnnotation::create("vector");
+
+  for (auto& e : vec->getElements()) {
+    getCode()->pushInstruction(OP_DUP);
+    ast::Node* call_ = new ast::Call(new ast::Identifier({TOKEN_IDENTIFIER, "append", -1}), {e}, false);
+    call(call_, false, {type, nullptr});
+  }
+
+  return type;
 }
 
 void ff::Compiler::block(ast::Node* node) {
@@ -1128,6 +1166,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     }
     case ast::NTYPE_CAST_EXPR: {
       return cast(node, false);
+    }
+    case ast::NTYPE_DICT: {
+      return dict(node);
+    }
+    case ast::NTYPE_VECTOR: {
+      return vector(node);
     }
     case ast::NTYPE_PRINT: {
       evalNode(node->as<ast::Print>()->getValue(), false);

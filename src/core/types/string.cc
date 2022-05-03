@@ -19,6 +19,10 @@ ff::StringType::StringType() : Type("string") {
       rhs = std::to_string(args[1].as<Int>()->value);
     } else if (isOfType(args[1], FloatType::getInstance())) {
       rhs = std::to_string(args[1].as<Float>()->value);
+    } else if (isOfType(args[1], BoolType::getInstance())) {
+      rhs = args[1].as<Bool>()->value ? "true" : "false";
+    } else if (args[1].get() == nullptr) {
+      rhs = "null";
     } else {
       rhs = Object::cast(context, args[1], "int").as<Int>()->value;
     }

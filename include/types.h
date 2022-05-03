@@ -8,6 +8,8 @@
 #include <ff/types/string.h>
 #include <ff/types/function.h>
 #include <ff/types/native_function.h>
+#include <ff/types/dict.h>
+#include <ff/types/vector.h>
 
 namespace ff {
 
@@ -16,7 +18,7 @@ class VM;
 template <typename O, typename T>
 inline bool isOfType(Ref<O> object, Ref<T> type) {
   if (!object.get()) {
-    throw RuntimeError::create("Null Pointer");
+    return false;
   }
   if (!object->isInstance()) {
     throw RuntimeError::create("Expected an object");
@@ -27,7 +29,7 @@ inline bool isOfType(Ref<O> object, Ref<T> type) {
 template <typename O>
 inline bool isOfType(Ref<O> object, const std::string& typeName) {
   if (!object.get()) {
-    throw RuntimeError::create("Null Pointer");
+    return false;
   }
   if (!object->isInstance()) {
     throw RuntimeError::create("Expected an object");
