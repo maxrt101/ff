@@ -5,6 +5,7 @@ import build, os, shutil
 
 @build.config.feature_handler
 def features(profile, feature_list):
+    if 'LOG_STDOUT_ONLY' in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_LOG_STDOUT_ONLY')
     if profile == 'debug':
         build.config.get('cpp', 'cxxflags').extend(['-g3', '-D_DEBUG'])
         if 'MEM'     in feature_list: build.config.get('cpp', 'cxxflags').append('-D_FF_MEMORY_DEBUG')
