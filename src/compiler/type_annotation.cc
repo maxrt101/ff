@@ -5,9 +5,9 @@ static ff::Ref<ff::TypeAnnotation> g_any = ff::TypeAnnotation::create("any");
 static ff::Ref<ff::TypeAnnotation> g_nothing = ff::TypeAnnotation::create("nothing");
 static ff::Ref<ff::TypeAnnotation> g_type = ff::TypeAnnotation::create("type");
 
-ff::TypeAnnotation::TypeAnnotation(Type type, bool isInferred) : annotationType(type), isInferred(isInferred) {}
+ff::TypeAnnotation::TypeAnnotation(Type type, bool isInferred, bool isRef) : annotationType(type), isInferred(isInferred), isRef(isRef) {}
 
-ff::TypeAnnotation::TypeAnnotation(const std::string& typeName, bool isInferred) : annotationType(TATYPE_DEFAULT), typeName(typeName), isInferred(isInferred) {}
+ff::TypeAnnotation::TypeAnnotation(const std::string& typeName, bool isInferred, bool isRef) : annotationType(TATYPE_DEFAULT), typeName(typeName), isInferred(isInferred), isRef(isRef) {}
 
 bool ff::TypeAnnotation::operator==(const TypeAnnotation& rhs) const {
   return type == rhs.type && typeName == rhs.typeName;
@@ -18,11 +18,16 @@ bool ff::TypeAnnotation::operator!=(const TypeAnnotation& rhs) const {
 }
 
 std::string ff::TypeAnnotation::toString() const {
-  return typeName;
+  std::string ref = isRef ? "ref " : "";
+  return ref + typeName;
 }
 
-ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::create(const std::string& typeName, bool isInferred) {
-  return memory::construct<TypeAnnotation>(typeName, isInferred);
+ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::copy() {
+  return TypeAnnotation::create(typeName, isInferred, isRef);
+}
+
+ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::create(const std::string& typeName, bool isInferred, bool isRef) {
+  return memory::construct<TypeAnnotation>(typeName, isInferred, isRef);
 }
 
 ff::Ref<ff::TypeAnnotation> ff::TypeAnnotation::any() {
@@ -69,6 +74,10 @@ std::string ff::FunctionAnnotation::toString() const {
   return result;
 }
 
+ff::Ref<ff::TypeAnnotation> ff::FunctionAnnotation::copy() {
+  return FunctionAnnotation::create(arguments, returnType, isInferred).asRefTo<TypeAnnotation>();
+}
+
 ff::Ref<ff::FunctionAnnotation> ff::FunctionAnnotation::create(std::vector<Ref<TypeAnnotation>> arguments, Ref<TypeAnnotation> returnType, bool isInferred) {
   return memory::construct<FunctionAnnotation>(arguments, returnType, isInferred);
 }
@@ -107,6 +116,10 @@ std::string ff::UnionAnnotation::toString() const {
   }
 
   return result;
+}
+
+ff::Ref<ff::TypeAnnotation> ff::UnionAnnotation::copy() {
+  return UnionAnnotation::create(types, isInferred).asRefTo<TypeAnnotation>();
 }
 
 ff::Ref<ff::UnionAnnotation> ff::UnionAnnotation::create(std::vector<Ref<TypeAnnotation>> types, bool isInferred) {

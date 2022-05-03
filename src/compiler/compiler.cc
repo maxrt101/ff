@@ -690,18 +690,18 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   std::string functionName = call->getCallee()->as<ast::Identifier>()->getValue();
 
   // Get return type
-  Ref<TypeAnnotation> type = TypeAnnotation::any();
+  Ref<FunctionAnnotation> type = FunctionAnnotation::create({}, TypeAnnotation::any());
   if (topLevelCallee) { // Means callee is a global variable
-    type = getVariableType(functionName);
-    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-      type = type.as<FunctionAnnotation>()->returnType;
+    auto varType = getVariableType(functionName);
+    if (varType->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+      type = varType.as<FunctionAnnotation>();
     }
   } else { // Callee is a field of object (typeInfo holds info about that object)
     if (typeInfo.var) {
       auto itr = typeInfo.var->fields.find(functionName);
       if (itr != typeInfo.var->fields.end()) {
         if (itr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-          type = itr->second.type.as<FunctionAnnotation>()->returnType;
+          type = itr->second.type.as<FunctionAnnotation>();
         } else {
           throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
             itr->second.type->toString().c_str());
@@ -713,7 +713,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
         auto titr = itr->second.fields.find(functionName);
         if (titr != itr->second.fields.end()) {
           if (titr->second.type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-            type = titr->second.type.as<FunctionAnnotation>()->returnType;
+            type = titr->second.type.as<FunctionAnnotation>();
           } else {
             throw CompileError(m_filename, -1, "TypeMismatch: called value has a type '%s' which is not a function",
               titr->second.type->toString().c_str());
@@ -725,14 +725,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
 
   for (int i = call->getArgs().size() - 1; i >= 0; i--) {
     auto argType = evalNode(call->getArgs()[i]); // copy ?
-    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-      auto paramType = type.as<FunctionAnnotation>()->arguments[i];
-      if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
-        throw CompileError(m_filename, -1, "TypeMismatch: expected argument of type '%s', but got '%s'",
-          paramType->toString().c_str(),
-          argType->toString().c_str()
-        );
-      }
+    auto paramType = type.as<FunctionAnnotation>()->arguments[i];
+    if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
+      throw CompileError(m_filename, -1, "TypeMismatch: expected argument of type '%s', but got '%s'",
+        paramType->toString().c_str(),
+        argType->toString().c_str()
+      );
     }
   }
 
@@ -753,7 +751,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
     getCode()->pushInstruction(OP_POP);
   }
 
-  return type;
+  return type->returnType;
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::lambda(ast::Node* node) {
@@ -864,7 +862,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::cast(ast::Node* node, bool copyValue) 
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::ref(ast::Node* node) {
   ast::Ref* ref = node->as<ast::Ref>();
-  return evalNode(ref->getValue(), false);
+  auto type = evalNode(ref->getValue(), false);
+  type = type->copy();
+  type->isRef = true;
+  return type;
 }
 
 void ff::Compiler::returnCall(ast::Node* node) {

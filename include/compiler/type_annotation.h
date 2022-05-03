@@ -17,17 +17,19 @@ struct TypeAnnotation {
   Type annotationType;
   std::string typeName;
   bool isInferred = false;
+  bool isRef = false;
 
-  TypeAnnotation(Type type, bool isInferred = false);
-  TypeAnnotation(const std::string& typeName = "any", bool isInferred = false);
+  TypeAnnotation(Type type, bool isInferred = false, bool isRef = false);
+  TypeAnnotation(const std::string& typeName = "any", bool isInferred = false, bool isRef = false);
   virtual ~TypeAnnotation() = default;
 
   virtual bool operator==(const TypeAnnotation& rhs) const;
   virtual bool operator!=(const TypeAnnotation& rhs) const;
 
   virtual std::string toString() const;
+  virtual Ref<TypeAnnotation> copy();
 
-  static Ref<TypeAnnotation> create(const std::string& typeName = "any", bool isInferred = false);
+  static Ref<TypeAnnotation> create(const std::string& typeName = "any", bool isInferred = false, bool isRef = false);
 
   static Ref<TypeAnnotation> any();
   static Ref<TypeAnnotation> nothing();
@@ -43,6 +45,7 @@ struct FunctionAnnotation : public TypeAnnotation {
 
   bool operator==(const TypeAnnotation& rhs) const override;
   std::string toString() const override;
+  Ref<TypeAnnotation> copy() override;
 
   static Ref<FunctionAnnotation> create(std::vector<Ref<TypeAnnotation>> arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
 };
@@ -55,6 +58,7 @@ struct UnionAnnotation : public TypeAnnotation {
 
   bool operator==(const TypeAnnotation& rhs) const override;
   std::string toString() const override;
+  Ref<TypeAnnotation> copy() override;
 
   static Ref<UnionAnnotation> create(std::vector<Ref<TypeAnnotation>> types, bool isInferred = false);
 };

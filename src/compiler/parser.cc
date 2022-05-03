@@ -760,6 +760,12 @@ ff::Ref<ff::TypeAnnotation> ff::Parser::typeAnnotation() {
     } else {
       return id;
     }
+  } else if (peek().type == TOKEN_REF) {
+    consume(TOKEN_REF);
+    Ref<TypeAnnotation> annotation = typeAnnotation();
+    annotation = annotation->copy();
+    annotation->isRef = true;
+    return annotation;
   } else if (peek().type == TOKEN_LEFT_PAREN) {
     consume(TOKEN_LEFT_PAREN);
     std::vector<Ref<TypeAnnotation>> args;
