@@ -39,6 +39,18 @@ ff::ast::NodeType ff::ast::Node::getType() const {
   return m_type;
 }
 
+void ff::ast::Node::addAnnotation(const std::string& annotation) {
+  m_annotations.push_back(annotation);
+}
+
+void ff::ast::Node::addAnnotations(const std::vector<std::string>& annotations) {
+  m_annotations.insert(m_annotations.end(), annotations.begin(), annotations.end());
+}
+
+std::vector<std::string>& ff::ast::Node::getAnnotations() {
+  return m_annotations;
+}
+
 std::string ff::ast::Node::toString() const {
   return "Node<" + nodeTypeToString(getType()) + ">";
 }

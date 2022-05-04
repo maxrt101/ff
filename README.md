@@ -301,3 +301,30 @@ Output:
 10
 100
 ```
+
+### 9. Annotations
+You can annotate functions or variable declarations for convinience, or to inspect/alter their AST nodes.  
+```
+@print
+fn test(x: ref int, y: int) -> {
+  x := y;
+}
+```
+
+`print` annotation will print the AST node that it annotates.  
+In C++ code the implementation looks something like this:  
+```C++
+void ff::annotations::print(ast::Node* node) {
+  printTree(node);
+}
+```
+
+Function annotations are stores in `__annotations__` field.  
+```
+print test.__annotations__;
+```
+
+Output:
+```
+{print}
+```

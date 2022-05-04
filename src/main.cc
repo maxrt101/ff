@@ -34,7 +34,7 @@ static void unwrapCode(ff::Ref<ff::Code> code, std::string prefix = " ") {
   }
 }
 
-static void run(const std::string& filename, std::string src) {
+static int run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   try {
 #endif
@@ -62,14 +62,19 @@ static void run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   } catch (const ff::ScanError& e) {
     e.print();
+    return 1;
   } catch (const ff::ParseError& e) {
     e.print();
+    return 1;
   } catch (const ff::CompileError& e) {
     e.print();
+    return 1;
   } catch (const ff::RuntimeError& e) {
     e.print();
+    return 1;
   }
 #endif
+  return 0;
 }
 
 static void usage(const char* argv0) {
@@ -132,5 +137,5 @@ int main(int argc, char ** argv) {
   }
   std::string source((std::istreambuf_iterator<char>(sourceFile)), std::istreambuf_iterator<char>());
 
-  run(filename, source);
+  return run(filename, source);
 }

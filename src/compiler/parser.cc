@@ -135,18 +135,29 @@ ff::Token ff::Parser::previous() const {
 
 ff::ast::Node* ff::Parser::program() {
   std::vector<ast::Node*> nodes;
-  while (peek().type == TOKEN_FN || peek().type == TOKEN_VAR || peek().type == TOKEN_CONST) {
+  while (mrt::isIn(peek().type, TOKEN_FN, TOKEN_VAR, TOKEN_CONST, TOKEN_AT)) {
+    std::vector<std::string> annotations;
+
+    if (peek().type == TOKEN_AT) {
+      consume(TOKEN_AT);
+      annotations = processAnnotations();
+    }
+
     if (peek().type == TOKEN_FN) {
-      consume(TOKEN_FN, "");
+      consume(TOKEN_FN);
       nodes.push_back(fndecl());
     } else if (peek().type == TOKEN_VAR) {
-      consume(TOKEN_VAR, "");
+      consume(TOKEN_VAR);
       nodes.push_back(vardecl());
       consume(TOKEN_SEMICOLON, "Expected ';' after var declaration");
     } else if (peek().type == TOKEN_CONST) {
-      consume(TOKEN_CONST, "");
+      consume(TOKEN_CONST);
       nodes.push_back(vardecl(true));
       consume(TOKEN_SEMICOLON, "Expected ';' after const declaration");
+    }
+
+    if (annotations.size()) {
+      nodes.back()->addAnnotations(annotations);
     }
   }
   if (!isAtEnd() || peek().type != TOKEN_EOF) {
@@ -392,6 +403,9 @@ ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
     case TOKEN_BREAK:
       consume(TOKEN_BREAK);
       return new ast::Break();
+    case TOKEN_AT:
+      consume(TOKEN_BREAK);
+      return annotated(isInOtherStatement);
     case TOKEN_CLASS:
       throw ParseError(peek(), m_filename, "Unimplemented");
     case TOKEN_PRINT:
@@ -451,6 +465,45 @@ ff::ast::VarDeclList* ff::Parser::varDeclList() {
     nodes.push_back((ast::VarDecl*)vardecl());
   }
   return new ast::VarDeclList(nodes);
+}
+
+ff::ast::Node* ff::Parser::annotated(bool isInOtherStatement) {
+  std::vector<std::string> annotations = processAnnotations();
+  ast::Node* node = statement(isInOtherStatement);
+  node->addAnnotations(annotations);
+  return node;
+}
+
+std::vector<std::string> ff::Parser::processAnnotations() {
+  std::vector<std::string> result;
+
+  auto stringFromToken = [&]() {
+    // NOTE: allow any token to be annotaion name
+    // if (!match({TOKEN_IDENTIFIER})) {
+    //   throw ParseError(peek(), m_filename, "Expected identifier");
+    // }
+    return advance().str;
+  };
+
+  if (match({TOKEN_LEFT_BRACE})) {
+    result.push_back(stringFromToken());
+    while (match({TOKEN_COMMA})) {
+      result.push_back(stringFromToken());
+    }
+
+    if (!match({TOKEN_RIGHT_BRACE})) {
+      throw ParseError(peek(), m_filename, "Expected '}'");
+    }
+  } else {
+    result.push_back(stringFromToken());
+  }
+
+  if (match({TOKEN_AT})) {
+    std::vector<std::string> next = processAnnotations();
+    result.insert(result.end(), next.begin(), next.end());
+  }
+
+  return result;
 }
 
 ff::ast::Node* ff::Parser::call(ast::Node* callee, bool isReturnValueExpected) {

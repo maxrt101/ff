@@ -2,6 +2,7 @@
 #define _FF_COMPILER_COMPILER_H_ 1
 
 #include <ff/compiler/type_annotation.h>
+#include <ff/compiler/ast_annotation.h>
 #include <ff/errors.h>
 #include <ff/types.h>
 #include <ff/code.h>
@@ -60,8 +61,8 @@ class Compiler {
   Ref<Code> m_rootCode;
   std::vector<Scope> m_scopes;
   std::vector<LoopRecord> m_loops;
-
   std::map<std::string, Variable> m_globalVariables;
+  std::map<std::string, ASTAnnotation> m_annotations;
 
   bool m_hadError = false;
 

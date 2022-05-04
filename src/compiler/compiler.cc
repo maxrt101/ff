@@ -135,6 +135,8 @@ ff::Compiler::Compiler() {
   m_globalVariables["string"] = Variable::fromObject("string", StringType::getInstance().asRefTo<Object>());
   m_globalVariables["dict"] = Variable::fromObject("dict", DictType::getInstance().asRefTo<Object>());
   m_globalVariables["vector"] = Variable::fromObject("vector", VectorType::getInstance().asRefTo<Object>());
+
+  m_annotations["print"] = annotations::print;
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -497,7 +499,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
   ast::Binary* binary = node->as<ast::Binary>();
   auto leftType = evalNode(binary->getLeft(), false);
   auto rightType = evalNode(binary->getRight(), false);
-  // TODO: Infer type from globals[leftType]->fields[__add__]->returnType if impossible, return leftType
+  // TODO: Infer type from globals[leftType]->fields[__add__]->returnType, if impossible - return leftType
   switch (binary->getOperator().type) {
     case TOKEN_PLUS: {
       getCode()->pushInstruction(OP_ADD);
@@ -584,6 +586,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   ast::Function* fn = node->as<ast::Function>();
+
+  for (auto& annotation : node->getAnnotations()) {
+    auto aitr = m_annotations.find(annotation);
+    if (aitr != m_annotations.end()) {
+      aitr->second(node);
+    }
+  }
+
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
   auto bodyType = evalNode(fn->getBody());
@@ -631,11 +641,19 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
     scope.code->pushInstruction(OP_RETURN);
   }
 
-  emitConstant(Function::createInstance(
+  Ref<Function> function = Function::createInstance(
     scope.code,
     parseArgs(fn->getArgs()),
     fn->getFunctionType().as<FunctionAnnotation>()->returnType
-  ).asRefTo<Object>());
+  );
+
+  std::vector<Ref<Object>> annotations;
+  for (auto& annotation : fn->getAnnotations()) {
+    annotations.push_back(String::createInstance(annotation).asRefTo<Object>());
+  }
+  function->setField("__annotations__", Vector::createInstance(annotations).asRefTo<Object>());
+
+  emitConstant(function.asRefTo<Object>());
   emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
   getCode()->pushInstruction(OP_SET_GLOBAL);
 
@@ -644,6 +662,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
+
+  for (auto& annotation : node->getAnnotations()) {
+    auto aitr = m_annotations.find(annotation);
+    if (aitr != m_annotations.end()) {
+      aitr->second(node);
+    }
+  }
+
   Variable var {
     varNode->getName().str,
     varNode->getVarType(),

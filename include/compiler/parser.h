@@ -49,6 +49,8 @@ class Parser {
   ast::Node* whilestmt();
   ast::Node* loopstmt();
   ast::Node* block();
+  ast::Node* annotated(bool isInOtherStatement);
+  std::vector<std::string> processAnnotations();
   std::vector<ast::Node*> statementList();
   std::vector<ast::Node*> expressionList(bool isReturnValueExpected);
   ast::VarDeclList* varDeclList();

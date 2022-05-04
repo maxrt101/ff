@@ -2,9 +2,26 @@
 #include <mrt/container_utils.h>
 #include <string>
 
+static void printAnnotations(ff::ast::Node* node, std::string prefix = "") {
+  if (node->getAnnotations().size() == 0) return;
+  std::string annotations = "@";
+  if (node->getAnnotations().size() == 1) {
+    annotations += node->getAnnotations().front();
+  } else {
+    annotations += "{";
+    for (int i = 0; i < node->getAnnotations().size(); i++) {
+      annotations += node->getAnnotations()[i];
+      if (i + i < node->getAnnotations().size()) annotations += ", ";
+    }
+    annotations += "}";
+  }
+  printf("%s\n%s", annotations.c_str(), prefix.c_str());
+}
+
 static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag = false) {
   using namespace ff::ast;
   if (!node) return;
+  printAnnotations(node, prefix);
   switch (node->getType()) {
     case NTYPE_FLOAT_LITERAL:
       printf("%f", node->as<FloatLiteral>()->getValue());
@@ -43,7 +60,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       printf("fn %s(", fn->getName().str.c_str());
       _printTree(fn->getArgs());
       printf("): %s -> ", fn->getFunctionType().asRefTo<ff::FunctionAnnotation>()->returnType->toString().c_str());
-      _printTree(fn->getBody(), "  ", true);
+      _printTree(fn->getBody(), prefix, true);
       if (fn->getBody()->getType() != NTYPE_BLOCK) {
         printf(";");
       }
