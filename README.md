@@ -312,14 +312,14 @@ fn test(x: ref int, y: int) -> {
 ```
 
 `print` annotation will print the AST node that it annotates.  
-In C++ code the implementation looks something like this:  
+In C++ code the implementation of `print` looks something like this:  
 ```C++
 void ff::annotations::print(ast::Node* node) {
   printTree(node);
 }
 ```
 
-Function annotations are stores in `__annotations__` field.  
+Annotated function have their annotations stored in `__annotations__` field.  
 ```
 print test.__annotations__;
 ```
