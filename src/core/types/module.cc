@@ -60,8 +60,8 @@ ff::Ref<ff::Module> ff::Module::createInstance(const std::string& name) {
   return memory::construct<Module>(name);
 }
 
-ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::string& filename) {
-  Ref<Module> result = Module::createInstance(name);
+ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::string& filename, const std::string& parentModule) {
+  Ref<Module> module = Module::createInstance(name);
 
   std::ifstream sourceFile(filename);
   if (!sourceFile) {
@@ -77,6 +77,8 @@ ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::stri
     ast::printTree(tree);
   }
   ff::Compiler compiler;
+  compiler.setThisModule(name);
+  compiler.setParentModule(parentModule);
   ff::Ref<ff::Code> code = compiler.compile(filename, tree);
   if (config::get("debug") != "0") {
     printf("=== Code ===\n\\\n");
@@ -93,9 +95,18 @@ ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::stri
   auto& fields = globals[name]->getFields();
 
   for (auto& field : fields) {
-    result->setField(field.first, field.second);
+    module->setField(field.first, field.second);
   }
 
-  return {result, compiler.getGlobals()[name]};
+  Compiler::ModuleInfo result = {name, module, compiler.getGlobals()[name]};
+
+  for (auto& import : compiler.getImports()) {
+    if (!isOfType(globals[import], ModuleType::getInstance())) {
+      throw CompileError(filename, -1, "Import is not a module");
+    }
+    result.imports.push_back({import, globals[import].asRefTo<Module>(), compiler.getGlobals()[import]});
+  }
+
+  return result;
 }
 

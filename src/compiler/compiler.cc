@@ -7,9 +7,12 @@
 #include <ff/config.h>
 #include <ff/types.h>
 #include <ff/log.h>
+
 #include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
+
 #include <functional>
+#include <algorithm>
 #include <sstream>
 #include <climits>
 #include <cstdarg>
@@ -150,7 +153,6 @@ ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* 
   }
 
   m_filename = filename;
-  m_rootNode = node;
 
   evalNode(node);
 
@@ -181,8 +183,20 @@ std::vector<ff::Compiler::Variable>::iterator ff::Compiler::findLocal(const std:
   });
 }
 
+void ff::Compiler::setParentModule(const std::string& parentModule) {
+  m_parentModuleName = parentModule;
+}
+
+void ff::Compiler::setThisModule(const std::string& thisModule) {
+  m_thisModuleName = thisModule;
+}
+
 std::map<std::string, ff::Compiler::Variable>& ff::Compiler::getGlobals() {
   return m_globalVariables;
+}
+
+std::vector<std::string>& ff::Compiler::getImports() {
+  return m_imports;
 }
 
 void ff::Compiler::beginScope() {
@@ -1200,9 +1214,27 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
 
   for (auto& import : imp->getImports()) {
     std::string name = path::stripExtension(path::getFile(import));
-    ModuleInfo modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)));
+    if (std::find(m_imports.begin(), m_imports.end(), name) != m_imports.end()) {
+      warning("Module '%s' has already been imported, skipping", name.c_str());
+      continue;
+    }
+    if (name == m_parentModuleName) {
+      throw CompileError(m_filename, -1, "Circular import detected (module '%s' from module '%s')", name.c_str(), m_thisModuleName.empty() ? "<no name>" : m_thisModuleName.c_str());
+    }
+    ModuleInfo modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)), m_thisModuleName);
+
     getCode()->addModule(name, modInfo.module.asRefTo<Object>());
     m_globalVariables[name] = modInfo.var;
+    m_imports.push_back(name);
+
+    for (auto& module : modInfo.imports) {
+      if (std::find(m_imports.begin(), m_imports.end(), module.name) != m_imports.end()) {
+        continue;
+      }
+      getCode()->addModule(module.name, module.module.asRefTo<Object>());
+      m_globalVariables[module.name] = module.var;
+      m_imports.push_back(module.name);
+    }
   }
 }
 

@@ -36,8 +36,10 @@ class Compiler {
   };
 
   struct ModuleInfo {
+    std::string name;
     Ref<Module> module;
     Variable var;
+    std::vector<ModuleInfo> imports;
   };
 
   enum ScopeType {
@@ -62,21 +64,25 @@ class Compiler {
 
  private:
   std::string m_filename;
-  ast::Node* m_rootNode;
-  Ref<Code> m_rootCode;
-  std::vector<Scope> m_scopes;
-  std::vector<LoopRecord> m_loops;
+  std::vector<Scope> m_scopes;                        // Stack of scopes
+  std::vector<LoopRecord> m_loops;                    // Stack of loops
   std::map<std::string, Variable> m_globalVariables;
   std::map<std::string, ASTAnnotation> m_annotations;
-  std::vector<std::string> m_modules; // Stack for nested modules
-
-  bool m_hadError = false;
+  std::vector<std::string> m_modules;                 // Stack for module declarations
+  std::vector<std::string> m_imports;                 // List of imported modules, to prevent reimports and circular dependencies
+  std::string m_thisModuleName;                       // Current module
+  std::string m_parentModuleName;                     // Module that imports this module (assuming that the module is compiled)
 
  public:
   Compiler();
 
   Ref<Code> compile(const std::string& filename, ast::Node* node);
+
+  void setParentModule(const std::string& parentModule);
+  void setThisModule(const std::string& thisModule);
+
   std::map<std::string, Variable>& getGlobals();
+  std::vector<std::string>& getImports();
 
  private:
   Ref<Code>& getCode();
@@ -146,7 +152,7 @@ class Compiler {
   TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isFunction);
 };
 
-Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename);
+Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename, const std::string& parentModule);
 Ref<Code> compile(const std::string& src, const std::string& filename = "<input>");
 
 } /* namespace ff */

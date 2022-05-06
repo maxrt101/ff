@@ -1,8 +1,9 @@
 # ff programming language
 
 ## About
-ff is a general purpose programming language with dynamic and gradual typing.  
-It was developed to be easily used within C++ applications (which also means binding for other languages should be fairly easy to implement).  
+ff is a general purpose scripting language with dynamic and gradual typing.  
+It was developed to be easily used within C++ applications (which also means bindings for other languages should be fairly easy to implement).  
+
 
 ## Building
 ### Prerequisites:
@@ -53,7 +54,7 @@ Used for setting a value of a variable that is a reference for another variable.
 ```
 var x = 10;
 var r = ref x;
-r := 20; // same as r.__assign__(20)
+r := 20; // same as r.__assign__(20) (effectively calls x.__assign__(20))
 ```
 
 ### 2. Types
@@ -376,7 +377,7 @@ fn main() -> {
 }
 ```
 
-Compiler resolves a module filename, by appending an import name to a set of folders (folder where importer is and current working directory) and checking if the resulting path exists.  
+Compiler resolves a module filename, by appending an import name to a set of folders (folder where source file is located and current working directory) and checking if the resulting path exists.  
 Compiler will try to add `.ff` and `.ffmod` extensions to the import module name if the file with such name doesn't exist.  
 
-Note: if imported file has other declarations apart from the imported module declaration, they will be ignored.  
+Note: if imported file has other declarations apart from the imported module declaration, they will be ignored (except for imports).  
