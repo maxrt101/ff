@@ -1,6 +1,6 @@
 [![build](https://github.com/maxrt101/ff/actions/workflows/build.yml/badge.svg)](https://github.com/maxrt101/ff/actions/workflows/build.yml)
 
-# ff programming language
+# FF Programming Language
 
 ## About
 ff is a general purpose scripting language with dynamic and gradual typing.  
