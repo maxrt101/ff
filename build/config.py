@@ -34,7 +34,7 @@ def get(*args):
     for arg in args:
         try:
             value = value[arg]
-        except Exception as e:
+        except KeyError as e:
             die(f'{ERROR}: Can\'t get config for key "' + '.'.join(args) + f'": {e}')
     return format(value)
 
@@ -52,7 +52,7 @@ def require(*args):
     for arg in args:
         try:
             value = value[arg]
-        except:
+        except KeyError as e:
             clsprint(f'{ERROR}: Can\'t find required config for key "' + '.'.join(args) + '"')
             clsprint(f'{NOTE}: Add "' + '.'.join(args) + f'" key to {_filename} to fix this')
             sys.exit(1)

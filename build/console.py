@@ -61,12 +61,15 @@ class context:
     bar_total = 100
     bar_length = 50
 
+    @staticmethod
     def print_task(*args):
         clsprint(' ' * context.spaces + '[+]', *args)
 
+    @staticmethod
     def increment_progress():
         context.progress += context.increment
 
+    @staticmethod
     def print_progress():
         progress_bar(
             iteration=context.progress,
@@ -77,6 +80,7 @@ class context:
             clear_on_finish=True
         )
 
+    @staticmethod
     def new_task(*args):
         class Context:
             def __init__(self, *args):

@@ -1,6 +1,6 @@
 
 from typing import List, Callable
-from .console import ERROR, clsprint
+from .console import ERROR
 from .utils import die
 from . import console
 

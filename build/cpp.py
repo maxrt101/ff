@@ -1,6 +1,6 @@
 
 from . import config, cache, utils
-from .console import ERROR, NOTE, clsprint
+from .console import ERROR, NOTE
 from typing import List
 import os
 
