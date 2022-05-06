@@ -6,7 +6,6 @@
 #include <vector>
 #include <string>
 
-#include <mrt/console/readline.h>
 #include <mrt/file.h>
 #include <ff/compiler/compiler.h>
 #include <ff/compiler/scanner.h>
@@ -19,20 +18,6 @@
 
 #include <ff/ast/assignment.h>
 #include <ff/ast/sequence.h>
-
-static void unwrapCode(ff::Ref<ff::Code> code, std::string prefix = " ") {
-  code->disassemble(prefix + "| ");
-
-  int i = 0;
-  for (ff::Ref<ff::Object>& obj : code->getConstants()) {
-    printf("%s+ constant#%d: %s = %s\n", prefix.c_str(), i, (obj->isInstance() ? obj.as<ff::Instance>()->getType()->toString().c_str() : "type"), obj->toString().c_str());
-    if (obj->isInstance() && obj.as<ff::Instance>()->getType() == ff::FunctionType::getInstance().asRefTo<ff::Type>()) {
-      printf("%s \\\n", prefix.c_str());
-      unwrapCode(obj.as<ff::Function>()->code, prefix + "  ");
-    }
-    i++;
-  }
-}
 
 static int run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
@@ -55,7 +40,7 @@ static int run(const std::string& filename, std::string src) {
     ff::Ref<ff::Code> code = compiler.compile(filename, tree);
     if (ff::config::get("debug") != "0") {
       printf("=== Code ===\n\\\n");
-      unwrapCode(code);
+      ff::ast::unwrapCode(code);
     }
     ff::VM vm;
     vm.runMain(code);

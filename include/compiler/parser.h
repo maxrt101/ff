@@ -40,7 +40,9 @@ class Parser {
   Token previous() const;
 
   // Grammar parsing functions
-  ast::Node* program();
+  ast::Node* program(bool checkEnd = true);
+  ast::Node* module();
+  ast::Node* import();
   ast::Node* fndecl();
   ast::Node* vardecl(bool isConst = false);
   ast::Node* statement(bool isInOtherStatement = false);

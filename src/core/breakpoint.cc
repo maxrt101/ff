@@ -1,5 +1,5 @@
 #include <ff/runtime.h>
-#include <ff/strutils.h>
+#include <ff/utils/str.h>
 #include <ff/config.h>
 #include <mrt/strutils.h>
 #include <mrt/container_utils.h>

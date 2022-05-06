@@ -1,12 +1,14 @@
 #ifndef _FF_UTILS_STRUTILS_H_
 #define _FF_UTILS_STRUTILS_H_ 1
 
+#include <vector>
 #include <string>
 
 namespace ff {
 namespace str {
 
 std::string repeat(const std::string& s, int count);
+std::string join(std::vector<std::string> vec, std::string sep = "");
 int toInt(const std::string& str);
 
 } /* namespace str */

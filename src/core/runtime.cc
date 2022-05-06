@@ -100,6 +100,10 @@ ff::Stack<ff::VM::StackType>& ff::VM::getStack() {
   return currentFrame().context.stack;
 }
 
+std::map<std::string, ff::Ref<ff::Object>>& ff::VM::getGlobals() {
+  return m_globals;
+}
+
 ff::Ref<ff::Code>& ff::VM::getCode() {
   return currentFrame().context.code;
 }
@@ -198,6 +202,9 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
   bool implicitSelf = true;
   Ref<Object> fnObject;
   if (self->isInstance()) {
+    if (isOfType(self, ModuleType::getInstance())) {
+      implicitSelf = false;
+    }
     if (self->hasField(memberName)) {
       fnObject = self->getField(memberName);
     } else if (self.as<Instance>()->getType()->hasField(memberName)) {
@@ -291,6 +298,9 @@ void ff::VM::callNativeFunction(Ref<NativeFunction> fn, std::vector<Ref<Object>>
 
 void ff::VM::runCode(Ref<Code> code, std::vector<Ref<Object>> args) {
   m_callStack.push({Stack<Ref<Object>>(), 0, code});
+  for (auto& module : code->getModules()) {
+    m_globals[module.first] = module.second;
+  }
   for (auto itr = args.rbegin(); itr != args.rend(); itr++) {
     push(*itr);
   }

@@ -35,6 +35,7 @@ class VM {
   void stop();
 
   Stack<StackType>& getStack();
+  std::map<std::string, Ref<Object>>& getGlobals();
 
   void push(Ref<Object> obj);
   Ref<Object> pop();

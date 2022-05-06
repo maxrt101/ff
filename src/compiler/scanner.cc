@@ -1,5 +1,5 @@
 #include <ff/compiler/scanner.h>
-#include <ff/strutils.h>
+#include <ff/utils/str.h>
 #include <mrt/console/colors.h>
 #include <unistd.h>
 #include <cstring>
@@ -325,13 +325,14 @@ ff::TokenType ff::Scanner::identifierType() {
       if (m_current - m_start > 1) {
         switch (m_start[1]) {
           case 'f': return checkKeyword(1, 1, "f", TOKEN_IF);
+          case 'm': return checkKeyword(2, 4, "port", TOKEN_IMPORT);
           case 'n': return checkKeyword(1, 1, "n", TOKEN_IN);
         }
       }
       break;
     }
-    //return checkKeyword(1, 1, "f", TOKEN_IF);
     case 'l': return checkKeyword(1, 3, "oop", TOKEN_LOOP);
+    case 'm': return checkKeyword(1, 5, "odule", TOKEN_MODULE);
     case 'n': {
       if (m_current - m_start > 1) {
         switch (m_start[1]) {

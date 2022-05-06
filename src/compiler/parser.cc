@@ -2,6 +2,8 @@
 #include <ff/ast.h>
 #include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
+#include <vector>
+#include <string>
 
 /*
 program             : (top-level-decl)*
@@ -133,9 +135,9 @@ ff::Token ff::Parser::previous() const {
   return m_tokens[m_currentIndex - 1];
 }
 
-ff::ast::Node* ff::Parser::program() {
+ff::ast::Node* ff::Parser::program(bool checkEnd) {
   std::vector<ast::Node*> nodes;
-  while (mrt::isIn(peek().type, TOKEN_FN, TOKEN_VAR, TOKEN_CONST, TOKEN_AT)) {
+  while (mrt::isIn(peek().type, TOKEN_FN, TOKEN_VAR, TOKEN_CONST, TOKEN_AT, TOKEN_MODULE, TOKEN_IMPORT)) {
     std::vector<std::string> annotations;
 
     if (peek().type == TOKEN_AT) {
@@ -143,7 +145,13 @@ ff::ast::Node* ff::Parser::program() {
       annotations = processAnnotations();
     }
 
-    if (peek().type == TOKEN_FN) {
+    if (peek().type == TOKEN_MODULE) {
+      consume(TOKEN_MODULE);
+      nodes.push_back(module());
+    } else if (peek().type == TOKEN_IMPORT) {
+      consume(TOKEN_IMPORT);
+      nodes.push_back(import());
+    } else if (peek().type == TOKEN_FN) {
       consume(TOKEN_FN);
       nodes.push_back(fndecl());
     } else if (peek().type == TOKEN_VAR) {
@@ -160,10 +168,49 @@ ff::ast::Node* ff::Parser::program() {
       nodes.back()->addAnnotations(annotations);
     }
   }
-  if (!isAtEnd() || peek().type != TOKEN_EOF) {
+  if (checkEnd && (!isAtEnd() || peek().type != TOKEN_EOF)) {
     throw ParseError(peek(), m_filename, "Unexpected token");
   }
   return new ast::Block(nodes);
+}
+
+ff::ast::Node* ff::Parser::module() {
+  if (!match({TOKEN_IDENTIFIER})) {
+    throw ParseError(peek(), m_filename, "Expected identifier");
+  }
+  std::string name = previous().str;
+  consume(TOKEN_LEFT_BRACE, "Expected '{' at the beginning of the module");
+  ast::Node* body = program(false);
+  consume(TOKEN_RIGHT_BRACE, "Expected '}' at the end of the module");
+  return new ast::Module(name, body);
+}
+
+ff::ast::Node* ff::Parser::import() {
+  std::vector<std::string> imports;
+
+  auto getImport = [&]() {
+    if (!match({TOKEN_STRING})) {
+      throw ParseError(peek(), m_filename, "Import name must be a string");
+    }
+    return previous().str;
+  };
+
+  if (match({TOKEN_LEFT_BRACE})) {
+    imports.push_back(getImport());
+    while (match({TOKEN_COMMA})) {
+      imports.push_back(getImport());
+    }
+    if (!match({TOKEN_RIGHT_BRACE})) {
+      throw ParseError(peek(), m_filename, "Expected '}' after multiple imports");
+    }
+  } else {
+    imports.push_back(getImport());
+    if (!match({TOKEN_SEMICOLON})) {
+      throw ParseError(peek(), m_filename, "Expected ';' after single import");
+    }
+  }
+
+  return new ast::Import(imports);
 }
 
 ff::ast::Node* ff::Parser::fndecl() {

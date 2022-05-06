@@ -14,6 +14,7 @@ std::string get(const std::string& key);
 void set(const std::string& key, const std::string& value);
 std::map<std::string, std::string>& getAll();
 std::vector<std::string> getKeys();
+std::string format(const std::string& value);
 
 } /* namespace config */
 } /* namespace ff */

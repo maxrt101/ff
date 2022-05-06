@@ -328,3 +328,53 @@ Output:
 ```
 {print}
 ```
+
+### 10. Modules
+Modules are practically namespaces, which you can load from other files.  
+
+Example:  
+`test.ff`:  
+```
+module test {
+  var version = "1.0";
+
+  fn printInfo() -> {
+    print "This is module test v" + test.version;
+  }
+}
+```
+
+`main.ff`:  
+```
+import "test";
+
+fn main() -> {
+  test.printInfo();
+  print test.version;
+}
+```
+
+Modules can also be declared in source files and they can be nested:  
+```
+module mod {
+  var x = 10;
+
+  module nested {
+    var y = 125;
+  }
+
+  fn function() -> {
+    print "test";
+  }
+}
+
+fn main() -> {
+  mod.nested.y = 1;
+  print mod.x;
+  print mod.nested.y;
+  mod.function();
+}
+```
+
+Imports resolve a module filename, by appending an import name to a set of folders (folder where importee is and current working directory) and checking if the resulting path exists.  
+Compiler will try to add `.ff` and `.ffmod` extensions to the import module name if the file with such name doesn't exist.  

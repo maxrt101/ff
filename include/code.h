@@ -1,14 +1,15 @@
 #ifndef _FF_CODE_H_
 #define _FF_CODE_H_ 1
 
+#include <ff/object.h>
+#include <ff/ref.h>
+#include <ff/abi.h>
 #include <cstdint>
 #include <cstddef>
-#include <vector>
-#include <ff/abi.h>
-#include <ff/ref.h>
-#include <ff/object.h>
-
 #include <cstdio>
+#include <string>
+#include <vector>
+#include <map>
 
 namespace ff {
 
@@ -75,6 +76,7 @@ class Code {
   std::vector<Ref<Object>> m_constants;
   std::vector<LineInfo> m_lines;
   // std::vector<Local> m_locals;
+  std::map<std::string, Ref<Object>> m_modules;
 
   std::string m_filename;
   size_t m_readIndex = 0;
@@ -90,6 +92,11 @@ class Code {
   Ref<Object> getConstant(unsigned index);
   unsigned addConstant(Ref<Object> constant);
   std::vector<Ref<Object>>& getConstants();
+
+  void addModule(const std::string& name, Ref<Object> module);
+  bool hasModule(const std::string& name);
+  Ref<Object> getModule(const std::string& name);
+  std::map<std::string, Ref<Object>>& getModules();
 
   uint8_t& operator [](unsigned index);
   uint8_t operator [](unsigned index) const;

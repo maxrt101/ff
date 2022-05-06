@@ -1,5 +1,7 @@
 #include <ff/config.h>
+#include <ff/log.h>
 #include <mrt/container_utils.h>
+#include <cstdlib>
 
 static std::map<std::string, std::string> g_values;
 
@@ -29,4 +31,29 @@ std::vector<std::string> ff::config::getKeys() {
     keys.push_back(pair.first);
     return keys;
   });
+}
+
+std::string ff::config::format(const std::string& value) {
+  std::string result;
+
+  size_t i = 0;
+  while (i < value.size()) {
+    if (value[i] == '{') {
+      std::string key;
+      i++;
+      while (i < value.size() && value[i] != '}') {
+        key += value[i++];
+      }
+      if (i >= value.size()) {
+        error("config.format failed: unterminated bracket");
+        exit(1);
+      }
+      i++;
+      result += get(key);
+    } else {
+      result += value[i++];
+    }
+  }
+
+  return result;
 }

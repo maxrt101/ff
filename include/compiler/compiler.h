@@ -16,7 +16,7 @@
 namespace ff {
 
 class Compiler {
- private:
+ public:
   struct Variable {
     std::string name;
     Ref<TypeAnnotation> type;
@@ -33,6 +33,11 @@ class Compiler {
   struct TypeInfo {
     Ref<TypeAnnotation> type = TypeAnnotation::any();
     Variable* var = nullptr;
+  };
+
+  struct ModuleInfo {
+    Ref<Module> module;
+    Variable var;
   };
 
   enum ScopeType {
@@ -63,6 +68,7 @@ class Compiler {
   std::vector<LoopRecord> m_loops;
   std::map<std::string, Variable> m_globalVariables;
   std::map<std::string, ASTAnnotation> m_annotations;
+  std::vector<std::string> m_modules; // Stack for nested modules
 
   bool m_hadError = false;
 
@@ -70,6 +76,7 @@ class Compiler {
   Compiler();
 
   Ref<Code> compile(const std::string& filename, ast::Node* node);
+  std::map<std::string, Variable>& getGlobals();
 
  private:
   Ref<Code>& getCode();
@@ -79,7 +86,7 @@ class Compiler {
   bool isTopScope() const;
 
   /* Returns generated value type */
-  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true, bool isModule = false);
 
   void beginScope();
   void beginFunctionScope(Ref<TypeAnnotation> returnType);
@@ -102,6 +109,7 @@ class Compiler {
   Ref<TypeAnnotation> resolveVariable(const std::string& name, Opcode local = OP_GET_LOCAL, Opcode global = OP_GET_GLOBAL);
   Ref<TypeAnnotation> getVariableType(const std::string& name);
   Ref<TypeAnnotation> defineLocal(Variable var, int line = 0, ast::Node* value = nullptr, bool copyValue = true);
+  TypeInfo resolveCurrentModule();
 
   std::vector<Function::Argument> parseArgs(ast::VarDeclList* args);
   void defineArgs(ast::VarDeclList* args);
@@ -116,8 +124,8 @@ class Compiler {
   Ref<TypeAnnotation> sequence(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> binaryExpr(ast::Node* node);
   Ref<TypeAnnotation> unaryExpr(ast::Node* node);
-  Ref<TypeAnnotation> fndecl(ast::Node* node);
-  Ref<TypeAnnotation> vardecl(ast::Node* node, bool copyValue = true);
+  Ref<TypeAnnotation> fndecl(ast::Node* node, bool isModule = false);
+  Ref<TypeAnnotation> vardecl(ast::Node* node, bool copyValue = true, bool isModule = false);
   Ref<TypeAnnotation> assignment(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> ref(ast::Node* node);
@@ -131,11 +139,14 @@ class Compiler {
   void loopstmt(ast::Node* node);
   void whilestmt(ast::Node* node);
   void forstmt(ast::Node* node);
+  void import(ast::Node* node, bool isModule);
+  void module(ast::Node* node, bool isModule);
 
   TypeInfo evalSequenceStart(ast::Node* node);
-  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node);
+  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isFunction);
 };
 
+Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename);
 Ref<Code> compile(const std::string& src, const std::string& filename = "<input>");
 
 } /* namespace ff */

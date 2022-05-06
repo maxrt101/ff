@@ -1,6 +1,9 @@
 #ifndef _FF_COMPILER_AST_H_
 #define _FF_COMPILER_AST_H_ 1
 
+#include <ff/ref.h>
+#include <ff/code.h>
+
 #include <ff/ast/node.h>
 #include <ff/ast/float.h>
 #include <ff/ast/integer.h>
@@ -33,6 +36,8 @@
 #include <ff/ast/ref.h>
 #include <ff/ast/dict.h>
 #include <ff/ast/vector.h>
+#include <ff/ast/import.h>
+#include <ff/ast/module.h>
 #include <ff/ast/breakpoint.h>
 
 namespace ff {
@@ -40,6 +45,7 @@ namespace ast {
 
 void printTree(Node* node);
 // void deleteTree(Node* node);
+void unwrapCode(ff::Ref<ff::Code> code, std::string prefix = " ");
 
 } /* namespace ast */
 } /* namespace ff */

@@ -1,7 +1,8 @@
 #include <ff/compiler/compiler.h>
 #include <ff/compiler/scanner.h>
 #include <ff/compiler/parser.h>
-#include <ff/strutils.h>
+#include <ff/utils/path.h>
+#include <ff/utils/str.h>
 #include <ff/memory.h>
 #include <ff/config.h>
 #include <ff/types.h>
@@ -178,6 +179,10 @@ std::vector<ff::Compiler::Variable>::iterator ff::Compiler::findLocal(const std:
   return std::find_if(getLocals().begin(), getLocals().end(), [&name](auto var) {
     return var.name == name;
   });
+}
+
+std::map<std::string, ff::Compiler::Variable>& ff::Compiler::getGlobals() {
+  return m_globalVariables;
 }
 
 void ff::Compiler::beginScope() {
@@ -400,6 +405,37 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, as
   return var.type;
 }
 
+ff::Compiler::TypeInfo ff::Compiler::resolveCurrentModule() {
+  if (m_modules.empty()) return {TypeAnnotation::any(), nullptr};
+  std::string rootModuleName = m_modules.front();
+  std::vector<TypeInfo> typeInfo;
+
+  auto itr = m_globalVariables.find(rootModuleName);
+  if (itr != m_globalVariables.end()) {
+    emitConstant(String::createInstance(rootModuleName).asRefTo<Object>());
+    getCode()->push<uint8_t>(OP_GET_GLOBAL);
+
+    typeInfo.push_back({itr->second.type, &itr->second});
+
+    for (int i = 1; i < m_modules.size(); i++) {
+      auto fitr = typeInfo.back().var->fields.find(m_modules[i]);
+      if (fitr != typeInfo.back().var->fields.end()) {
+        emitConstant(String::createInstance(fitr->second.name).asRefTo<Object>());
+        getCode()->pushInstruction(OP_GET_FIELD);
+
+        typeInfo.push_back({fitr->second.type, &fitr->second});
+      } else {
+        throw CompileError(m_filename, -1, "Unknown field '%s'", fitr->second.name.c_str());
+      }
+    }
+
+  } else {
+    throw CompileError(m_filename, -1, "Unknown variable '%s'", rootModuleName.c_str());
+  }
+
+  return typeInfo.back();
+}
+
 std::vector<ff::Function::Argument> ff::Compiler::parseArgs(ast::VarDeclList* args) {
   std::vector<Function::Argument> result;
   if (args) {
@@ -427,7 +463,8 @@ void ff::Compiler::defineArgs(ast::VarDeclList* args) {
   }
 }
 
-ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Node* node) {
+ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Node* node, bool& isFunction) {
+  isFunction = false;
   if (node->getType() == ast::NTYPE_IDENTIFIER) {
     std::string name = node->as<ast::Identifier>()->getValue();
     emitConstant(String::createInstance(name).asRefTo<Object>());
@@ -446,6 +483,7 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
     if (prev.var) {
       explicitSelf = prev.type->toString() == prev.var->name;
     }
+    isFunction = true;
     return {call(node, false, prev, explicitSelf), nullptr};
   } else {
     throw CompileError(m_filename, -1, "Expected filed or call");
@@ -484,13 +522,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node, bool copyV
 ff::Ref<ff::TypeAnnotation> ff::Compiler::sequence(ast::Node* node, bool copyValue) {
   auto seq = node->as<ast::Sequence>()->getSequence();
   TypeInfo typeInfo = evalSequenceStart(seq.front());
+  bool isFunction = false;
   for (int i = 1; i < seq.size(); i++) {
-    typeInfo = evalSequenceElement(typeInfo, seq[i]);
+    typeInfo = evalSequenceElement(typeInfo, seq[i], isFunction);
   }
-  if (typeInfo.type->annotationType != TypeAnnotation::TATYPE_FUNCTION) {
-    if (copyValue) {
-      getCode()->pushInstruction(OP_COPY);
-    }
+  if (!isFunction && copyValue) {
+    getCode()->pushInstruction(OP_COPY);
   }
   return typeInfo.type;
 }
@@ -584,7 +621,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
   return TypeAnnotation::any();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule) {
   ast::Function* fn = node->as<ast::Function>();
 
   for (auto& annotation : node->getAnnotations()) {
@@ -626,8 +663,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
     }
   }
 
-  emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
-  getCode()->pushInstruction(OP_NEW_GLOBAL);
+  if (!isModule) {
+    emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
+    getCode()->pushInstruction(OP_NEW_GLOBAL);
+  }
 
   Variable var(
     fn->getName().str,
@@ -653,14 +692,22 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node) {
   }
   function->setField("__annotations__", Vector::createInstance(annotations).asRefTo<Object>());
 
-  emitConstant(function.asRefTo<Object>());
-  emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
-  getCode()->pushInstruction(OP_SET_GLOBAL);
+  if (isModule) {
+    emitConstant(function.asRefTo<Object>());
+    TypeInfo typeInfo = resolveCurrentModule();
+    typeInfo.var->fields[var.name] = var;
+    emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_FIELD);
+  } else {
+    emitConstant(function.asRefTo<Object>());
+    emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_GLOBAL);
+  }
 
   return fn->getFunctionType().asRefTo<TypeAnnotation>();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue, bool isModule) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
 
   for (auto& annotation : node->getAnnotations()) {
@@ -677,34 +724,62 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValu
     {}
   };
   if (isTopScope()) {
-    if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
-      throw CompileError(m_filename, varNode->getName().line, "Redeclaration of global variable");
-    }
-    m_globalVariables[var.name] = var;
-    emitConstant(String::createInstance(var.name).asRefTo<Object>());
-    getCode()->pushInstruction(OP_NEW_GLOBAL);
-
-    auto type = evalNode(varNode->getValue(), copyValue);
-    if (*type == *TypeAnnotation::nothing()) {
-      throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
-    }
-
-    if (*type == *TypeAnnotation::any() && *varNode->getVarType() == *TypeAnnotation::any() && !varNode->getVarType()->isInferred && !type->isInferred) {
-      warning("Couldn't infer value type for '%s', assuming 'any'", var.name.c_str());
-      info("Add explicit 'any' type annotation to silence the warning");
-    }
-
-    if (type->toString() != "any") {
-      if (*varNode->getVarType() != *TypeAnnotation::any() && *varNode->getVarType() != *type) {
-        throw CompileError(m_filename, varNode->getName().line,
-          "TypeMismatch during variable definition (annotated type: %s, actual type: %s)",
-          varNode->getVarType()->toString().c_str(), type->toString().c_str());
+    if (isModule) {
+      auto type = evalNode(varNode->getValue(), copyValue);
+      TypeInfo typeInfo = resolveCurrentModule();
+      typeInfo.var->fields[var.name] = var;
+      
+      if (*type == *TypeAnnotation::nothing()) {
+        throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
       }
-      // type.isInferred = true;
-      m_globalVariables[var.name].type = type;
+
+      if (*type == *TypeAnnotation::any() && *varNode->getVarType() == *TypeAnnotation::any() && !varNode->getVarType()->isInferred && !type->isInferred) {
+        warning("Couldn't infer value type for '%s', assuming 'any'", var.name.c_str());
+        info("Add explicit 'any' type annotation to silence the warning");
+      }
+
+      if (type->toString() != "any") {
+        if (*varNode->getVarType() != *TypeAnnotation::any() && *varNode->getVarType() != *type) {
+          throw CompileError(m_filename, varNode->getName().line,
+            "TypeMismatch during variable definition (annotated type: %s, actual type: %s)",
+            varNode->getVarType()->toString().c_str(), type->toString().c_str());
+        }
+        typeInfo.var->fields[var.name].type = type;
+      }
+
+      emitConstant(String::createInstance(var.name).template asRefTo<Object>());
+      getCode()->pushInstruction(OP_SET_FIELD);
+      return typeInfo.var->fields[var.name].type;
+    } else {
+      if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
+        throw CompileError(m_filename, varNode->getName().line, "Redeclaration of global variable");
+      }
+      m_globalVariables[var.name] = var;
+      emitConstant(String::createInstance(var.name).asRefTo<Object>());
+      getCode()->pushInstruction(OP_NEW_GLOBAL);
+
+      auto type = evalNode(varNode->getValue(), copyValue);
+      if (*type == *TypeAnnotation::nothing()) {
+        throw CompileError(m_filename, varNode->getName().line, "Value of type 'nothing' is invalid");
+      }
+
+      if (*type == *TypeAnnotation::any() && *varNode->getVarType() == *TypeAnnotation::any() && !varNode->getVarType()->isInferred && !type->isInferred) {
+        warning("Couldn't infer value type for '%s', assuming 'any'", var.name.c_str());
+        info("Add explicit 'any' type annotation to silence the warning");
+      }
+
+      if (type->toString() != "any") {
+        if (*varNode->getVarType() != *TypeAnnotation::any() && *varNode->getVarType() != *type) {
+          throw CompileError(m_filename, varNode->getName().line,
+            "TypeMismatch during variable definition (annotated type: %s, actual type: %s)",
+            varNode->getVarType()->toString().c_str(), type->toString().c_str());
+        }
+        // type.isInferred = true;
+        m_globalVariables[var.name].type = type;
+      }
+      emitConstant(String::createInstance(var.name).asRefTo<Object>());
+      getCode()->pushInstruction(OP_SET_GLOBAL);
     }
-    emitConstant(String::createInstance(var.name).asRefTo<Object>());
-    getCode()->pushInstruction(OP_SET_GLOBAL);
     return m_globalVariables[var.name].type;
   } else {
     return defineLocal(var, varNode->getName().line, varNode->getValue(), copyValue);
@@ -1111,7 +1186,68 @@ void ff::Compiler::forstmt(ast::Node* node) {
   endBlock();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyValue) {
+void ff::Compiler::import(ast::Node* node, bool isModule) {
+  ast::Import* imp = node->as<ast::Import>();
+
+  std::string cwd = path::getcwd();
+  std::string filedir;
+  if (path::isRoot(m_filename)) {
+    filedir = path::getFolder(m_filename);
+  } else {
+    filedir = path::concat(cwd, path::getFolder(m_filename));
+  }
+  std::vector<std::string> importPaths = {filedir, cwd};
+
+  for (auto& import : imp->getImports()) {
+    std::string name = path::stripExtension(path::getFile(import));
+    ModuleInfo modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)));
+    getCode()->addModule(name, modInfo.module.asRefTo<Object>());
+    m_globalVariables[name] = modInfo.var;
+  }
+}
+
+void ff::Compiler::module(ast::Node* node, bool isModule) {
+  ast::Module* mod = node->as<ast::Module>();
+
+  Variable var {
+    mod->getName(),
+    TypeAnnotation::create("module"),
+    true,
+    {}
+  };
+
+  if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
+    throw CompileError(m_filename, -1, "Redeclaration of global variable");
+  }
+  m_globalVariables[var.name] = var;
+
+  if (isModule) {
+    emitConstant(Module::createInstance(var.name).asRefTo<Object>());
+    TypeInfo typeInfo = resolveCurrentModule();
+    if (!typeInfo.var) {
+      throw CompileError(m_filename, -1, "Coudn't resolve current module");
+    }
+    typeInfo.var->fields[var.name] = var;
+    emitConstant(String::createInstance(var.name).template asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_FIELD);
+  } else {
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_NEW_GLOBAL);
+
+    emitConstant(Module::createInstance(var.name).asRefTo<Object>());
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_GLOBAL);
+
+  }
+
+  m_modules.push_back(var.name);
+  for (auto bodyNode : mod->getBody()->as<ast::Block>()->getBody()) {
+    evalNode(bodyNode, true, true);
+  }
+  m_modules.pop_back();
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyValue, bool isModule) {
   if (!node) return TypeAnnotation::nothing();
 #ifdef _FF_EVAL_NODE_DEBUG
   printf("evalNode: ptr=%p type=%s\n", node, ast::nodeTypeToString(node->getType()).c_str());
@@ -1149,10 +1285,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
       return sequence(node, copyValue);
     }
     case ast::NTYPE_FUNCTION: {
-      return fndecl(node);
+      return fndecl(node, isModule);
     }
     case ast::NTYPE_VAR_DECL: {
-      return vardecl(node, copyValue);
+      return vardecl(node, copyValue, isModule);
     }
     case ast::NTYPE_CALL: {
       return call(node, true);
@@ -1219,6 +1355,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     }
     case ast::NTYPE_VECTOR: {
       return vector(node);
+    }
+    case ast::NTYPE_IMPORT: {
+      import(node, isModule);
+      return TypeAnnotation::nothing();
+    }
+    case ast::NTYPE_MODULE: {
+      module(node, isModule);
+      return TypeAnnotation::nothing();
     }
     case ast::NTYPE_PRINT: {
       evalNode(node->as<ast::Print>()->getValue(), false);

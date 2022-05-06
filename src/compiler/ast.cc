@@ -1,5 +1,7 @@
 #include <ff/ast.h>
+#include <ff/types.h>
 #include <mrt/container_utils.h>
+#include <cstdio>
 #include <string>
 
 static void printAnnotations(ff::ast::Node* node, std::string prefix = "") {
@@ -21,7 +23,6 @@ static void printAnnotations(ff::ast::Node* node, std::string prefix = "") {
 static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag = false) {
   using namespace ff::ast;
   if (!node) return;
-  printAnnotations(node, prefix);
   switch (node->getType()) {
     case NTYPE_FLOAT_LITERAL:
       printf("%f", node->as<FloatLiteral>()->getValue());
@@ -55,7 +56,29 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
         if (i + 1 < node->as<Sequence>()->getSequence().size()) putchar('.');
       }
       break;
+    case NTYPE_IMPORT: {
+      Import* imp = node->as<Import>();
+      printf("import ");
+      if (imp->getImports().size() == 1) {
+        printf("\"%s\";", imp->getImports().front().c_str());
+      } else {
+        printf("{");
+        for (int i = 0; i < imp->getImports().size(); i++) {
+          printf("\"%s\"", imp->getImports()[i].c_str());
+          if (i + 1 < imp->getImports().size()) printf(", ");
+        }
+        printf("}");
+      }
+      break;
+    }
+    case NTYPE_MODULE: {
+      Module* mod = node->as<Module>();
+      printf("module %s ", mod->getName().c_str());
+      _printTree(mod->getBody(), prefix);
+      break;
+    }
     case NTYPE_FUNCTION: {
+      printAnnotations(node, prefix);
       Function* fn = node->as<Function>();
       printf("fn %s(", fn->getName().str.c_str());
       _printTree(fn->getArgs());
@@ -75,6 +98,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       break;
     }
     case NTYPE_VAR_DECL: {
+      printAnnotations(node, prefix);
       VarDecl* var = node->as<VarDecl>();
       if (flag) printf("%s ", var->getConst() ? "const" : "var");
       printf("%s: %s", var->getName().str.c_str(), var->getVarType()->toString().c_str());
@@ -125,7 +149,7 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
       for (auto& bodyNode : node->as<Block>()->getBody()) {
         printf("%s", (prefix + "  ").c_str());
         _printTree(bodyNode, prefix + "  ", true);
-        if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE)) {
+        if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE, NTYPE_MODULE, NTYPE_IMPORT)) {
           printf(";");
         }
         printf("\n");
@@ -258,4 +282,18 @@ static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag =
 void ff::ast::printTree(Node* node) {
   _printTree(node, "", true);
   printf("\n");
+}
+
+void ff::ast::unwrapCode(ff::Ref<ff::Code> code, std::string prefix) {
+  code->disassemble(prefix + "| ");
+
+  int i = 0;
+  for (ff::Ref<ff::Object>& obj : code->getConstants()) {
+    printf("%s+ constant#%d: %s = %s\n", prefix.c_str(), i, (obj->isInstance() ? obj.as<ff::Instance>()->getType()->toString().c_str() : "type"), obj->toString().c_str());
+    if (obj->isInstance() && obj.as<ff::Instance>()->getType() == ff::FunctionType::getInstance().asRefTo<ff::Type>()) {
+      printf("%s \\\n", prefix.c_str());
+      unwrapCode(obj.as<ff::Function>()->code, prefix + "  ");
+    }
+    i++;
+  }
 }

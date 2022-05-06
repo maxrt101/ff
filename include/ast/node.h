@@ -50,6 +50,10 @@ enum NodeType {
 
   NTYPE_PRINT,
   NTYPE_REF,
+
+  NTYPE_IMPORT,
+  NTYPE_MODULE,
+
   NTYPE_BREAKPOINT,
 };
 

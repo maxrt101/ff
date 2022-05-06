@@ -1,5 +1,5 @@
-#ifndef _FF_TYPES_OBJECT_H_
-#define _FF_TYPES_OBJECT_H_ 1
+#ifndef _FF_TYPES_VECTOR_H_
+#define _FF_TYPES_VECTOR_H_ 1
 
 #include <ff/object.h>
 #include <ff/ref.h>
@@ -40,4 +40,4 @@ class Vector : public Instance {
 
 } /* namespace ff */
 
-#endif /* _FF_TYPES_OBJECT_H_ */
+#endif /* _FF_TYPES_VECTOR_H_ */

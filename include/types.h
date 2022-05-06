@@ -8,6 +8,7 @@
 #include <ff/types/string.h>
 #include <ff/types/function.h>
 #include <ff/types/native_function.h>
+#include <ff/types/module.h>
 #include <ff/types/dict.h>
 #include <ff/types/vector.h>
 

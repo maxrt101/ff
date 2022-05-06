@@ -27,6 +27,22 @@ std::vector<ff::Ref<ff::Object>>& ff::Code::getConstants() {
   return m_constants;
 }
 
+void ff::Code::addModule(const std::string& name, Ref<Object> module) {
+  m_modules[name] = module;
+}
+
+bool ff::Code::hasModule(const std::string& name) {
+  return m_modules.find(name) != m_modules.end();
+}
+
+ff::Ref<ff::Object> ff::Code::getModule(const std::string& name) {
+  return m_modules[name];
+}
+
+std::map<std::string, ff::Ref<ff::Object>>& ff::Code::getModules() {
+  return m_modules;
+}
+
 uint8_t& ff::Code::operator [](unsigned index) {
   return m_code[index];
 }
