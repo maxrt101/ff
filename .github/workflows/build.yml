@@ -1,0 +1,48 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Build Profile
+        required: false
+        default: release
+      features:
+        description: Build Features
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Prepare
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt update
+          sudo apt install python3.10 g++
+        shell: bash
+
+      - name: Build Parameterized
+        if: "${{ github.event.inputs.profile != '' }}"
+        run: |
+          cd $GITHUB_WORKSPACE
+          git submodule update --init
+          echo Staring parameterized build
+          python3.10 make.py -o --proflile ${{ github.event.inputs.profile }} --feature ${{ github.event.inputs.features }}
+
+      - name: Build Default
+        if: "${{ github.event.inputs.profile == '' }}"
+        run: |
+          cd $GITHUB_WORKSPACE
+          git submodule update --init
+          echo Staring build
+          python3.10 make.py -o
+
