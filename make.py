@@ -92,6 +92,6 @@ def cppcheck(ctx):
         '--error-exitcode=1',
         cf('-I{build_dir}/{profile}/include'),
         cf('{topdir}/src')
-    ], exit_on_fail=False, print_stdout=True, print_stderr=True)
+    ], print_stdout=True, print_stderr=True)
 
 build.cli.run('ff')
