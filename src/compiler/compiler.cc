@@ -24,6 +24,7 @@ ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> ty
 ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& name, Ref<Object> object) {
   Variable var;
   var.name = name;
+  var.isConst = true;
   var.type = TypeAnnotation::any();
   if (object->isInstance()) {
     if (object.as<Instance>()->getType()->equals(NativeFunctionType::getInstance().asRefTo<Object>())) {
@@ -336,7 +337,7 @@ void ff::Compiler::emitLoop(int loopStart) {
   getCode()->push<uint16_t>(offset);
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& name, Opcode local, Opcode global) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& name, Opcode local, Opcode global, bool checkIsConst) {
   int localsSize = 0;
   for (int i = m_scopes.size() - 1; i > 0; i--) {
     localsSize += m_scopes[i].localVariables.size();
@@ -350,6 +351,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& nam
     if (itr != m_scopes[i].localVariables.end()) {
       getCode()->push<uint8_t>(local);
       getCode()->push<uint32_t>(itr - m_scopes[i].localVariables.begin() + localsSize);
+      if (checkIsConst && itr->isConst) {
+        throw CompileError(m_filename, -1, "Cannot assign to const variable '%s'", itr->name.c_str());
+      }
       return itr->type;
     }
   }
@@ -357,6 +361,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& nam
   if (itr != m_globalVariables.end()) {
     emitConstant(String::createInstance(name).asRefTo<Object>());
     getCode()->push<uint8_t>(global);
+    if (checkIsConst && itr->second.isConst) {
+      throw CompileError(m_filename, -1, "Cannot assign to const variable '%s'", itr->second.name.c_str());
+    }
     return itr->second.type;
   } else {
     throw CompileError(m_filename, -1, "Unknown variable '%s'", name.c_str());
@@ -685,7 +692,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
   Variable var(
     fn->getName().str,
     fn->getFunctionType().asRefTo<TypeAnnotation>(),
-    false,
+    true,
     {}
   );
   m_globalVariables[var.name] = var;
@@ -971,7 +978,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node, bool copyV
     auto variableType = resolveVariable(
       ass->getAssignee()->as<ast::Identifier>()->getValue(),
       ass->getIsRefAssignment() ? OP_SET_LOCAL_REF  : OP_SET_LOCAL,
-      ass->getIsRefAssignment() ? OP_SET_GLOBAL_REF : OP_SET_GLOBAL
+      ass->getIsRefAssignment() ? OP_SET_GLOBAL_REF : OP_SET_GLOBAL,
+      true // Check if variable is const
     );
     if (*variableType != *TypeAnnotation::any() && *variableType != *valueType) {
       throw CompileError(m_filename, -1,

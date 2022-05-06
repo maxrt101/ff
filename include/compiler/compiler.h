@@ -112,7 +112,7 @@ class Compiler {
   void patchRemoteJump(int jumpOpLocation, int offset);
   void emitLoop(int loopStart);
 
-  Ref<TypeAnnotation> resolveVariable(const std::string& name, Opcode local = OP_GET_LOCAL, Opcode global = OP_GET_GLOBAL);
+  Ref<TypeAnnotation> resolveVariable(const std::string& name, Opcode local = OP_GET_LOCAL, Opcode global = OP_GET_GLOBAL, bool checkIsConst = false);
   Ref<TypeAnnotation> getVariableType(const std::string& name);
   Ref<TypeAnnotation> defineLocal(Variable var, int line = 0, ast::Node* value = nullptr, bool copyValue = true);
   TypeInfo resolveCurrentModule();
