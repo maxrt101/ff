@@ -1,3 +1,5 @@
+[![build](https://github.com/maxrt101/ff/actions/workflows/build.yml/badge.svg)](https://github.com/maxrt101/ff/actions/workflows/build.yml)
+
 # ff programming language
 
 ## About
