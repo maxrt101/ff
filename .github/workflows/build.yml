@@ -35,11 +35,11 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo Staring parametrized build
-          python3 make.py -o --proflile ${{ github.event.inputs.profile }} --feature ${{ github.event.inputs.features }}
+          python3.10 make.py -o --proflile ${{ github.event.inputs.profile }} --feature ${{ github.event.inputs.features }}
 
       - name: Build Default
         if: "${{ github.event.inputs.profile == '' }}"
         run: |
           cd $GITHUB_WORKSPACE
           echo Staring build
-          python3 make.py -o
+          python3.10 make.py -o
