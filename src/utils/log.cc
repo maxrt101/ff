@@ -1,6 +1,7 @@
 #include <ff/log.h>
 #include <mrt/console/colors.h>
 #include <algorithm>
+#include <cstdarg>
 
 #define _VLOGF_INTERNAL(level) \
   va_list args; \
