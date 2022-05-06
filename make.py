@@ -77,4 +77,21 @@ def ast(ctx):
 def utils(ctx):
     build.cpp.compile_batch(build.utils.get_files(cf('{topdir}/src/utils'), r'.+\.cc'), 'utils')
 
+@build.task()
+def clean(ctx):
+    shutil.rmtree(cf('{build_dir}/{profile}'))
+
+@build.task()
+def cppcheck(ctx):
+    build.run_cmd([
+        'cppcheck',
+        '--enable=all',
+        '--inline-suppr',
+        # '--suppress=unusedFunction',
+        '--suppress=missingIncludeSystem',
+        '--error-exitcode=1',
+        cf('-I{build_dir}/{profile}/include'),
+        cf('{topdir}/src')
+    ], exit_on_fail=False, print_stdout=True, print_stderr=True)
+
 build.cli.run('ff')
