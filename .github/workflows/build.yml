@@ -30,12 +30,12 @@ jobs:
           sudo apt install python3.10 g++
         shell: bash
 
-      - name: Build Parametrized
+      - name: Build Parameterized
         if: "${{ github.event.inputs.profile != '' }}"
         run: |
           cd $GITHUB_WORKSPACE
           git submodule update --init
-          echo Staring parametrized build
+          echo Staring parameterized build
           python3.10 make.py -o --proflile ${{ github.event.inputs.profile }} --feature ${{ github.event.inputs.features }}
 
       - name: Build Default
@@ -45,3 +45,4 @@ jobs:
           git submodule update --init
           echo Staring build
           python3.10 make.py -o
+
