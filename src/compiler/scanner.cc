@@ -3,6 +3,7 @@
 #include <mrt/console/colors.h>
 #include <unistd.h>
 #include <cstring>
+#include <cstdarg>
 #include <map>
 
 static std::map<ff::TokenType, std::string> g_tokenTypes {
