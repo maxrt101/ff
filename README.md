@@ -319,7 +319,7 @@ void ff::annotations::print(ast::Node* node) {
 }
 ```
 
-Annotated function have their annotations stored in `__annotations__` field.  
+Annotated functions have their annotations stored in `__annotations__` field.  
 ```
 print test.__annotations__;
 ```
@@ -376,5 +376,7 @@ fn main() -> {
 }
 ```
 
-Imports resolve a module filename, by appending an import name to a set of folders (folder where importee is and current working directory) and checking if the resulting path exists.  
+Compiler resolves a module filename, by appending an import name to a set of folders (folder where importer is and current working directory) and checking if the resulting path exists.  
 Compiler will try to add `.ff` and `.ffmod` extensions to the import module name if the file with such name doesn't exist.  
+
+Note: if imported file has other declarations apart from the imported module declaration, they will be ignored.  
