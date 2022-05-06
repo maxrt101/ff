@@ -14,10 +14,10 @@ class VarDeclList : public Node {
   std::vector<VarDecl*> m_list;
 
  public:
-  VarDeclList(const std::vector<VarDecl*>& list);
+  explicit VarDeclList(const std::vector<VarDecl*>& list);
   ~VarDeclList() = default;
 
-  std::vector<VarDecl*> getList() const;
+  std::vector<VarDecl*>& getList();
 };
 
 } /* namespace ast */

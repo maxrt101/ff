@@ -8,7 +8,7 @@
 
 static std::unordered_map<std::string, ff::Ref<ff::String>> g_strings;
 
-ff::Ref<ff::StringType> ff::StringType::m_instance = nullptr;
+ff::Ref<ff::StringType> ff::StringType::m_instance;
 
 ff::StringType::StringType() : Type("string") {
   setField("__add__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
@@ -80,7 +80,7 @@ ff::Ref<ff::StringType> ff::StringType::getInstance() {
   return m_instance;
 }
 
-ff::String::String(ValueType value)
+ff::String::String(const ValueType& value)
   : Instance(StringType::getInstance().asRefTo<Type>()), value(value) {}
 
 ff::String::~String() {}
@@ -95,11 +95,11 @@ bool ff::String::equals(Ref<Object> other) const {
       && other.as<String>()->value == value;
 }
 
-ff::Ref<ff::String> ff::String::createInstance(ValueType value) {
+ff::Ref<ff::String> ff::String::createInstance(const ValueType& value) {
   return memory::construct<String>(value);
 }
 
-ff::Ref<ff::String> ff::String::createInstancePool(ValueType value) {
+ff::Ref<ff::String> ff::String::createInstancePool(const ValueType& value) {
   auto itr = g_strings.find(value);
   if (itr == g_strings.end()) {
     g_strings[value] = memory::construct<String>(value);

@@ -13,7 +13,7 @@ class Identifier : public Node {
   Token m_value;
 
  public:
-  Identifier(Token token);
+  explicit Identifier(const Token& token);
   ~Identifier() = default;
 
   std::string getValue() const;

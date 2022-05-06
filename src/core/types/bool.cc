@@ -7,7 +7,7 @@
 static ff::Ref<ff::Bool> g_true = ff::Bool::createInstance(true);
 static ff::Ref<ff::Bool> g_false = ff::Bool::createInstance(false);
 
-ff::Ref<ff::BoolType> ff::BoolType::m_instance = nullptr;
+ff::Ref<ff::BoolType> ff::BoolType::m_instance;
 
 ff::BoolType::BoolType() : Type("bool") {
   setField("__not__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {

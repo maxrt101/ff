@@ -36,16 +36,16 @@ class NativeFunction : public Instance {
   Ref<TypeAnnotation> returnType;
 
  public:
-  NativeFunction(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType);
+  NativeFunction(ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
   ~NativeFunction();
 
-  std::vector<Function::Argument> getArgs();
+  std::vector<Function::Argument>& getArgs();
   Ref<TypeAnnotation> getReturnType();
 
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 
-  static Ref<NativeFunction> createInstance(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType);
+  static Ref<NativeFunction> createInstance(ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
 };
 
 } /* namespace ff */

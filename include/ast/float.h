@@ -12,7 +12,7 @@ class FloatLiteral : public Node {
   Token m_value;
 
  public:
-  FloatLiteral(Token token);
+  explicit FloatLiteral(const Token& token);
   ~FloatLiteral() = default;
 
   // void interpret() override;

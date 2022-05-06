@@ -25,7 +25,7 @@ class Compiler {
     // bool isInitialized = false;
 
     Variable() = default;
-    Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, std::map<std::string, Variable> fields);
+    Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields);
 
     static Variable fromObject(const std::string& name, Ref<Object> object);
   };
@@ -109,7 +109,7 @@ class Compiler {
   void emitCall(const std::string& callee);
   uint16_t emitJump(Opcode op);
   void patchJump(int offset);
-  void patchRemoteJump(int jumpOpLocation, int offset);
+  void patchRemoteJump(int offset, int jump);
   void emitLoop(int loopStart);
 
   Ref<TypeAnnotation> resolveVariable(const std::string& name, Opcode local = OP_GET_LOCAL, Opcode global = OP_GET_GLOBAL, bool checkIsConst = false);
@@ -122,7 +122,7 @@ class Compiler {
 
   /* DEBUG */
   void printScopes();
-  void printScope(int i, std::string prefix);
+  void printScope(int i, const std::string& prefix);
   void printGlobals();
 
   /* Nodes */

@@ -13,7 +13,7 @@ class Sequence : public Node {
   std::vector<Node*> m_sequence;
 
  public:
-  Sequence(const std::vector<Node*>& sequence);
+  explicit Sequence(const std::vector<Node*>& sequence);
   ~Sequence() = default;
 
   std::vector<Node*> getSequence() const;

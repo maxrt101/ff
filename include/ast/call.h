@@ -14,7 +14,7 @@ class Call : public Node {
   bool m_isReturnValueExpected;
 
  public:
-  Call(Node* callee, std::vector<Node*> args, bool isReturnValueExpected);
+  Call(Node* callee, const std::vector<Node*>& args, bool isReturnValueExpected);
   ~Call() = default;
 
   Node* getCallee() const;

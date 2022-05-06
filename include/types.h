@@ -38,8 +38,6 @@ inline bool isOfType(Ref<O> object, const std::string& typeName) {
   return object.template as<Instance>()->getType()->getTypeName() == typeName;
 }
 
-Ref<Object> castToType(VM* context, Ref<Object> object, const std::string& typeName);
-
 } /* namespace ff */
 
 #endif /* _FF_TYPES_H_ */

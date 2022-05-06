@@ -27,7 +27,7 @@ class Int : public Instance {
   ValueType value;
 
  public:
-  Int(ValueType value = 0);
+  explicit Int(ValueType value = 0);
   ~Int();
 
   std::string toString() const override;

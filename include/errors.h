@@ -29,7 +29,7 @@ class ParseError : public std::exception {
   std::string m_message;
 
  public:
-  ParseError(Token token, const std::string& filename, const std::string& msg);
+  ParseError(const Token& token, const std::string& filename, const std::string& msg);
 
   const char* what() const noexcept override;
 

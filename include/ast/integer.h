@@ -13,7 +13,7 @@ class IntegerLiteral : public Node {
   Token m_value;
 
  public:
-  IntegerLiteral(Token token);
+  explicit IntegerLiteral(const Token& token);
   ~IntegerLiteral() = default;
 
   int32_t getValue() const;

@@ -13,7 +13,7 @@ class Ref : public Node {
   Node* m_value;
 
  public:
-  Ref(Node* value);
+  explicit Ref(Node* value);
   ~Ref() = default;
 
   Node* getValue() const;

@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 
-static void printAnnotations(ff::ast::Node* node, std::string prefix = "") {
+static void printAnnotations(ff::ast::Node* node, const std::string& prefix = "") {
   if (node->getAnnotations().size() == 0) return;
   std::string annotations = "@";
   if (node->getAnnotations().size() == 1) {
@@ -20,7 +20,7 @@ static void printAnnotations(ff::ast::Node* node, std::string prefix = "") {
   printf("%s\n%s", annotations.c_str(), prefix.c_str());
 }
 
-static void _printTree(ff::ast::Node* node, std::string prefix = "", bool flag = false) {
+static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool flag = false) {
   using namespace ff::ast;
   if (!node) return;
   switch (node->getType()) {
@@ -284,7 +284,7 @@ void ff::ast::printTree(Node* node) {
   printf("\n");
 }
 
-void ff::ast::unwrapCode(ff::Ref<ff::Code> code, std::string prefix) {
+void ff::ast::unwrapCode(ff::Ref<ff::Code> code, const std::string& prefix) {
   code->disassemble(prefix + "| ");
 
   int i = 0;

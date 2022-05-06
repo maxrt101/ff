@@ -185,7 +185,7 @@ void ff::VM::call(Ref<Object> object, int argc) {
   }
 }
 
-void ff::VM::call(Ref<Object> object, std::vector<Ref<Object>> args) {
+void ff::VM::call(Ref<Object> object, const std::vector<Ref<Object>>& args) {
   if (isOfType(object, FunctionType::getInstance())) {
     callFunction(object.asRefTo<Function>(), args);
   } else if (isOfType(object, NativeFunctionType::getInstance())) {
@@ -245,7 +245,7 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
   }
 }
 
-void ff::VM::callMember(Ref<Object> self, const std::string& memberName, std::vector<Ref<Object>> args) {
+void ff::VM::callMember(Ref<Object> self, const std::string& memberName, const std::vector<Ref<Object>>& args) {
   if (!self.get()) {
     throw createError("cannot call member of null");
   }
@@ -282,14 +282,14 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, std::ve
   }
 }
 
-void ff::VM::callFunction(Ref<Function> fn, std::vector<Ref<Object>> args) {
+void ff::VM::callFunction(Ref<Function> fn, const std::vector<Ref<Object>>& args) {
   if (config::get("debug") != "0") {
     printf("     | CALL %p\n", fn.get());
   }
   runCode(fn->code, args);
 }
 
-void ff::VM::callNativeFunction(Ref<NativeFunction> fn, std::vector<Ref<Object>> args) {
+void ff::VM::callNativeFunction(Ref<NativeFunction> fn, const std::vector<Ref<Object>>& args) {
   if (config::get("debug") != "0") {
     printf("     | CALL_NATIVE %p\n", fn.get());
   }
@@ -378,9 +378,6 @@ bool ff::VM::executeInstruction(Opcode op) {
         break;
       case OP_SET_LOCAL_REF:
         printf("OP_SET_LOCAL_REF\n");
-        break;
-      case OP_MAKECONST:
-        printf("OP_MAKECONST\n");
         break;
       case OP_GET_FIELD:
         printf("OP_GET_FIELD\n");
@@ -512,7 +509,6 @@ bool ff::VM::executeInstruction(Opcode op) {
     }
     case OP_NEW: { // ast::NewNode
       throw createError("OP_NEW: Unimplemented");
-      break;
     }
     case OP_COPY: {
       Ref<Object> object = pop();
@@ -571,10 +567,6 @@ bool ff::VM::executeInstruction(Opcode op) {
       pop();
       break;
     }
-    case OP_MAKECONST: {
-      throw createError("OP_MAKECONST: Unimplemented");
-      break;
-    }
     case OP_GET_FIELD: {
       Ref<String> fieldName = popCheckType(StringType::getInstance()).asRefTo<String>();
       Ref<Object> object = pop();
@@ -599,7 +591,6 @@ bool ff::VM::executeInstruction(Opcode op) {
     }
     case OP_GET_STATIC: {
       throw createError("OP_GET_STATIC: Unimplemented");
-      break;
     }
     case OP_JUMP: {
       uint16_t offset = getCode()->template read<uint16_t>();

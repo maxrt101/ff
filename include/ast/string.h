@@ -13,7 +13,7 @@ class StringLiteral : public Node {
   Token m_value;
 
  public:
-  StringLiteral(Token token);
+  explicit StringLiteral(const Token& token);
   ~StringLiteral() = default;
 
   std::string getValue() const;

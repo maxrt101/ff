@@ -15,7 +15,7 @@ class Binary : public Node {
   Node* m_right;
 
  public:
-  Binary(Token op, Node* left, Node* right);
+  Binary(const Token& op, Node* left, Node* right);
   ~Binary() = default;
 
   Token getOperator() const;

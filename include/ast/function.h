@@ -17,7 +17,7 @@ class Function : public Node {
   Node* m_body;
 
  public:
-  Function(Token name, VarDeclList* args, Ref<FunctionAnnotation> type, Node* body);
+  Function(const Token& name, VarDeclList* args, Ref<FunctionAnnotation> type, Node* body);
   ~Function() = default;
 
   Token getName() const;

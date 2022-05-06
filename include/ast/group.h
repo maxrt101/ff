@@ -13,7 +13,7 @@ class Group : public Node {
   Node* m_expr;
 
  public:
-  Group(Node* node);
+  explicit Group(Node* node);
   ~Group() = default;
 
   Node* getValue() const;

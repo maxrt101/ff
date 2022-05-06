@@ -48,7 +48,7 @@ struct Token {
   int line;
 
   Token();
-  Token(TokenType type, std::string str, int line);
+  Token(TokenType type, const std::string& str, int line);
   Token(TokenType type, const char* str, size_t length, int line);
 
   bool operator==(const Token& t) const;

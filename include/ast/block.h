@@ -12,7 +12,7 @@ class Block : public Node {
   std::vector<Node*> m_body;
 
  public:
-  Block(const std::vector<Node*>& body);
+  explicit Block(const std::vector<Node*>& body);
   ~Block() = default;
 
   std::vector<Node*> getBody() const;

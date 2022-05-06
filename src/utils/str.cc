@@ -8,7 +8,7 @@ std::string ff::str::repeat(const std::string& s, int count) {
   return result;
 }
 
-std::string ff::str::join(std::vector<std::string> vec, std::string sep) {
+std::string ff::str::join(const std::vector<std::string>& vec, const std::string& sep) {
   std::string result;
   for (int i = 0; i < vec.size(); i++) {
     result += vec[i];

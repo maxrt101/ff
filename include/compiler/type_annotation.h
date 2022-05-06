@@ -19,7 +19,7 @@ struct TypeAnnotation {
   bool isInferred = false;
   bool isRef = false;
 
-  TypeAnnotation(Type type, bool isInferred = false, bool isRef = false);
+  explicit TypeAnnotation(Type type, bool isInferred = false, bool isRef = false);
   TypeAnnotation(const std::string& typeName = "any", bool isInferred = false, bool isRef = false);
   virtual ~TypeAnnotation() = default;
 
@@ -40,27 +40,27 @@ struct FunctionAnnotation : public TypeAnnotation {
   std::vector<Ref<TypeAnnotation>> arguments;
   Ref<TypeAnnotation> returnType;
 
-  FunctionAnnotation(std::vector<Ref<TypeAnnotation>> arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
+  FunctionAnnotation(const std::vector<Ref<TypeAnnotation>>& arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
   ~FunctionAnnotation() = default;
 
   bool operator==(const TypeAnnotation& rhs) const override;
   std::string toString() const override;
   Ref<TypeAnnotation> copy() override;
 
-  static Ref<FunctionAnnotation> create(std::vector<Ref<TypeAnnotation>> arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
+  static Ref<FunctionAnnotation> create(const std::vector<Ref<TypeAnnotation>>& arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
 };
 
 struct UnionAnnotation : public TypeAnnotation {
   std::vector<Ref<TypeAnnotation>> types;
 
-  UnionAnnotation(std::vector<Ref<TypeAnnotation>> types, bool isInferred = false);
+  explicit UnionAnnotation(const std::vector<Ref<TypeAnnotation>>& types, bool isInferred = false);
   ~UnionAnnotation() = default;
 
   bool operator==(const TypeAnnotation& rhs) const override;
   std::string toString() const override;
   Ref<TypeAnnotation> copy() override;
 
-  static Ref<UnionAnnotation> create(std::vector<Ref<TypeAnnotation>> types, bool isInferred = false);
+  static Ref<UnionAnnotation> create(const std::vector<Ref<TypeAnnotation>>& types, bool isInferred = false);
 };
 
 /*class GenericAnnotation : public TypeAnnotation {

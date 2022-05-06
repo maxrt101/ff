@@ -26,7 +26,7 @@ class Module : public Instance {
   std::string name;
 
  public:
-  Module(const std::string& name);
+  explicit Module(const std::string& name);
   ~Module();
 
   std::string toString() const override;

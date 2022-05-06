@@ -11,7 +11,7 @@ class Continue : public Node {
   Node* m_label;
 
  public:
-  Continue(Node* label = nullptr);
+  explicit Continue(Node* label = nullptr);
   ~Continue() = default;
 
   Node* getLabel() const;

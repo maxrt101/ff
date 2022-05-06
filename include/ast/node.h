@@ -65,7 +65,7 @@ class Node {
   std::vector<std::string> m_annotations;
 
  public:
-  Node(NodeType type);
+  explicit Node(NodeType type);
   virtual ~Node();
 
   NodeType getType() const;

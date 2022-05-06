@@ -14,7 +14,7 @@ class Unary : public Node {
   Node* m_expr;
 
  public:
-  Unary(Token op, Node* node);
+  Unary(const Token& op, Node* node);
   ~Unary() = default;
 
   Token getOperator() const;

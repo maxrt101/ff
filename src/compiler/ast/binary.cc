@@ -1,6 +1,6 @@
 #include <ff/ast/binary.h>
 
-ff::ast::Binary::Binary(Token op, Node* left, Node* right)
+ff::ast::Binary::Binary(const Token& op, Node* left, Node* right)
   : Node(NTYPE_BINARY_EXPR), m_op(op), m_left(left), m_right(right) {}
 
 ff::Token ff::ast::Binary::getOperator() const {

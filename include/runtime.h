@@ -48,11 +48,11 @@ class VM {
   void call(const std::string& functionName);
 
   void call(Ref<Object> object, int argc = 0);
-  void call(Ref<Object> object, std::vector<Ref<Object>> args);
+  void call(Ref<Object> object, const std::vector<Ref<Object>>& args);
   void callMember(Ref<Object> self, const std::string& memberName, int argc = 0);
-  void callMember(Ref<Object> self, const std::string& memberName, std::vector<Ref<Object>> args);
-  void callFunction(Ref<Function> fn, std::vector<Ref<Object>> args);
-  void callNativeFunction(Ref<NativeFunction> fn, std::vector<Ref<Object>> args);
+  void callMember(Ref<Object> self, const std::string& memberName, const std::vector<Ref<Object>>& args);
+  void callFunction(Ref<Function> fn, const std::vector<Ref<Object>>& args);
+  void callNativeFunction(Ref<NativeFunction> fn, const std::vector<Ref<Object>>& args);
 
  private:
   uint8_t current();

@@ -13,7 +13,7 @@ class Dict : public Node {
   std::map<std::string, Node*> m_fields;
 
  public:
-  Dict(std::map<std::string, Node*> fields);
+  explicit Dict(const std::map<std::string, Node*>& fields);
   ~Dict() = default;
 
   std::map<std::string, Node*> getFields() const;

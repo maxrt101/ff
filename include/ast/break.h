@@ -11,7 +11,7 @@ class Break : public Node {
   Node* m_label;
 
  public:
-  Break(Node* label = nullptr);
+  explicit Break(Node* label = nullptr);
   ~Break() = default;
 
   Node* getLabel() const;

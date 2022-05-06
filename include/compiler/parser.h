@@ -26,10 +26,6 @@ class Parser {
   ast::Node* parse();
 
  private:
-  // Error Handling
-  void parserWarning(Token token, const std::string& msg);
-  void syncronize();
-
   // Utility for Tokens
   bool isAtEnd() const;
   bool match(const std::vector<TokenType>& types);

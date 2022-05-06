@@ -2,7 +2,7 @@
 #include <ff/memory.h>
 #include <sstream>
 
-ff::Ref<ff::FunctionType> ff::FunctionType::m_instance = nullptr;
+ff::Ref<ff::FunctionType> ff::FunctionType::m_instance;
 
 ff::FunctionType::FunctionType() : Type("function") {
   //

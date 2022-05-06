@@ -28,7 +28,7 @@ class Ref {
  public:
   inline Ref() {}
 
-  inline Ref(T* ptr) : m_data(ptr), m_count(new SizeType{0}) {
+  inline explicit Ref(T* ptr) : m_data(ptr), m_count(new SizeType{0}) {
 #ifdef _FF_REF_DEBUG
     std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ") ptr (count " << m_count << ")\n";
 #endif
@@ -133,17 +133,15 @@ class Ref {
 #endif
     if (m_data && m_count) {
       (*m_count)--;
-      if (*m_count <= 0) {
+      if (*m_count == 0) {
 #ifdef _FF_REF_DEBUG
         std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ")::cleanup() delete count=" << m_count <<  "\n";
 #endif
         delete m_count;
-        if (m_data) {
 #ifdef _FF_REF_DEBUG
-          std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ")::cleanup() delete\n";
+        std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ")::cleanup() delete\n";
 #endif
-          memory::raw::free(m_data);
-        }
+        memory::raw::free(m_data);
         m_data = nullptr;
         m_count = nullptr;
       }

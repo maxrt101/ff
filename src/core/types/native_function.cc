@@ -1,9 +1,8 @@
 #include <ff/types/native_function.h>
 #include <ff/memory.h>
 #include <sstream>
-// #include <cstdlib>
 
-ff::Ref<ff::NativeFunctionType> ff::NativeFunctionType::m_instance = nullptr;
+ff::Ref<ff::NativeFunctionType> ff::NativeFunctionType::m_instance;
 
 ff::NativeFunctionType::NativeFunctionType() : Type("native_function") {
   //
@@ -23,12 +22,12 @@ ff::Ref<ff::NativeFunctionType> ff::NativeFunctionType::getInstance() {
   return m_instance;
 }
 
-ff::NativeFunction::NativeFunction(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType)
+ff::NativeFunction::NativeFunction(ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType)
   : Instance(NativeFunctionType::getInstance().asRefTo<Type>()), func(func), args(args), returnType(returnType) {}
 
 ff::NativeFunction::~NativeFunction() {}
 
-std::vector<ff::Function::Argument> ff::NativeFunction::getArgs() {
+std::vector<ff::Function::Argument>& ff::NativeFunction::getArgs() {
   return args;
 }
 
@@ -48,6 +47,6 @@ bool ff::NativeFunction::equals(Ref<Object> other) const {
       && &other.as<NativeFunction>()->func == &func;
 }
 
-ff::Ref<ff::NativeFunction> ff::NativeFunction::createInstance(ValueType func, std::vector<Function::Argument> args, Ref<TypeAnnotation> returnType) {
+ff::Ref<ff::NativeFunction> ff::NativeFunction::createInstance(ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType) {
   return memory::construct<NativeFunction>(func, args, returnType);
 }

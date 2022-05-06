@@ -12,7 +12,7 @@ class Loop : public Node {
   // name/label
 
  public:
-  Loop(Node* body);
+  explicit Loop(Node* body);
   ~Loop() = default;
 
   Node* getBody() const;

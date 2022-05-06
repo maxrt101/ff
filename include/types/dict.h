@@ -27,7 +27,7 @@ class Dict : public Instance {
   using ValueType = std::map<std::string, Ref<Object>>;
 
  public:
-  Dict(ValueType value);
+  explicit Dict(ValueType value);
   ~Dict();
 
   std::string toString() const override;

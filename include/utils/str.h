@@ -8,7 +8,7 @@ namespace ff {
 namespace str {
 
 std::string repeat(const std::string& s, int count);
-std::string join(std::vector<std::string> vec, std::string sep = "");
+std::string join(const std::vector<std::string>& vec, const std::string& sep = "");
 int toInt(const std::string& str);
 
 } /* namespace str */

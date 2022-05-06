@@ -1,6 +1,6 @@
 #include <ff/ast/function.h>
 
-ff::ast::Function::Function(Token name, VarDeclList* args, Ref<FunctionAnnotation> type, Node* body)
+ff::ast::Function::Function(const Token& name, VarDeclList* args, Ref<FunctionAnnotation> type, Node* body)
   : Node(NTYPE_FUNCTION), m_name(name), m_args(args), m_type(type), m_body(body) {}
 
 ff::Token ff::ast::Function::getName() const {

@@ -4,8 +4,6 @@
 #include <ff/runtime.h>
 #include <cstdio>
 
-ff::Ref<ff::NullType> ff::NullType::m_instance = nullptr;
-
 ff::Object::Object(ObjectType type) : m_type(type) {}
 
 ff::ObjectType ff::Object::getObjectType() const {
@@ -72,20 +70,3 @@ ff::Instance::Instance(Ref<Type> type) : Object(OTYPE_INSTANCE), m_type(type) {}
 ff::Ref<ff::Type> ff::Instance::getType() const {
   return m_type;
 }
-
-ff::NullType::NullType() : Type("null") {}
-
-ff::NullType::~NullType() {}
-
-std::string ff::NullType::toString() const {
-  return "null";
-}
-
-ff::Ref<ff::NullType> ff::NullType::getInstance() {
-  if (!m_instance.get()) {
-    m_instance = memory::allocate<NullType>();
-    new (m_instance.get()) NullType();
-  }
-  return m_instance;
-}
-

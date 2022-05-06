@@ -27,7 +27,7 @@ class Bool : public Instance {
   ValueType value;
 
  public:
-  Bool(ValueType value = false);
+  explicit Bool(ValueType value = false);
   ~Bool();
 
   std::string toString() const override;

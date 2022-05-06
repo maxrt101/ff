@@ -31,7 +31,6 @@ enum Opcode {
   OP_GET_LOCAL,
   OP_SET_LOCAL,
   OP_SET_LOCAL_REF,
-  OP_MAKECONST,
   OP_GET_FIELD,
   OP_SET_FIELD,
   OP_SET_FIELD_REF,
@@ -82,7 +81,7 @@ class Code {
   size_t m_readIndex = 0;
 
  public:
-  Code(const std::string& filename);
+  explicit Code(const std::string& filename);
   Code(const Code&) = delete;
   Code(Code&&) = default;
   ~Code() = default;

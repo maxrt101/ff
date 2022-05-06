@@ -6,7 +6,7 @@
 #include <mrt/strutils.h>
 #include <vector>
 
-ff::Ref<ff::DictType> ff::DictType::m_instance = nullptr;
+ff::Ref<ff::DictType> ff::DictType::m_instance;
 
 ff::DictType::DictType() : Type("dict") {
   setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {

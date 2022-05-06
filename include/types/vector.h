@@ -29,13 +29,13 @@ class Vector : public Instance {
   ValueType value;
 
  public:
-  Vector(ValueType value);
+  explicit Vector(const ValueType& value);
   ~Vector();
 
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 
-  static Ref<Vector> createInstance(ValueType value);
+  static Ref<Vector> createInstance(const ValueType& value);
 };
 
 } /* namespace ff */

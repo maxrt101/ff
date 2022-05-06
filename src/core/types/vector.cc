@@ -6,7 +6,7 @@
 #include <ff/types.h>
 #include <vector>
 
-ff::Ref<ff::VectorType> ff::VectorType::m_instance = nullptr;
+ff::Ref<ff::VectorType> ff::VectorType::m_instance;
 
 ff::VectorType::VectorType() : Type("vector") {
   setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
@@ -111,7 +111,7 @@ ff::Ref<ff::VectorType> ff::VectorType::getInstance() {
   return m_instance;
 }
 
-ff::Vector::Vector(ValueType value) : Instance(VectorType::getInstance().asRefTo<Type>()), value(value) {}
+ff::Vector::Vector(const ValueType& value) : Instance(VectorType::getInstance().asRefTo<Type>()), value(value) {}
 
 ff::Vector::~Vector() {}
 
@@ -130,7 +130,7 @@ bool ff::Vector::equals(Ref<Object> other) const {
       && other.as<Vector>()->value == value;
 }
 
-ff::Ref<ff::Vector> ff::Vector::createInstance(ValueType value) {
+ff::Ref<ff::Vector> ff::Vector::createInstance(const ValueType& value) {
   return memory::construct<Vector>(value);
 }
 

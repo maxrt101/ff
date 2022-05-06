@@ -96,7 +96,7 @@ void ff::ScanError::print() const {
 
 ff::Token::Token() {}
 
-ff::Token::Token(TokenType type, std::string str, int line) : type(type), str(str), line(line) {}
+ff::Token::Token(TokenType type, const std::string& str, int line) : type(type), str(str), line(line) {}
 
 ff::Token::Token(TokenType type, const char* str, size_t length, int line) : type(type), line(line) {
   this->str = std::string(str, length);
@@ -180,7 +180,6 @@ ff::Token ff::Scanner::scanToken() {
   }
 
   throw ScanError(m_filename, m_line, "Unexpected char '%c'", c);
-  return {}; // unreachable
 }
 
 void ff::Scanner::skipWhitespace() {

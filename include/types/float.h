@@ -27,7 +27,7 @@ class Float : public Instance {
   ValueType value;
 
  public:
-  Float(ValueType value = 0.0);
+  explicit Float(ValueType value = 0.0);
   ~Float();
 
   std::string toString() const override;

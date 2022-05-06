@@ -12,13 +12,12 @@ namespace ast {
 class VarDecl : public Node {
  private:
   Token m_name;
-  // Token m_type;  // TOKEN_TRUE - inferred type
   Ref<TypeAnnotation> m_type;
   Node* m_value; // nullptr - no value
   bool m_const;
 
  public:
-  VarDecl(Token name, Ref<TypeAnnotation> type = new TypeAnnotation("any"), Node* value = nullptr, bool isConst = false);
+  VarDecl(const Token& name, Ref<TypeAnnotation> type, Node* value = nullptr, bool isConst = false);
   ~VarDecl() = default;
 
   Token getName() const;

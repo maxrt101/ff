@@ -13,7 +13,7 @@ class Return : public Node {
   Node* m_expr;
 
  public:
-  Return(Node* expr);
+  explicit Return(Node* expr);
   ~Return() = default;
 
   Node* getValue() const;

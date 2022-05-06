@@ -23,7 +23,7 @@
     }, TypeAnnotation::create(ret)).asRefTo<Object>()); \
   } while (0)
 
-ff::Ref<ff::FloatType> ff::FloatType::m_instance = nullptr;
+ff::Ref<ff::FloatType> ff::FloatType::m_instance;
 
 ff::FloatType::FloatType() : Type("float") {
   _DEFINE_BINARY_OP("__add__", Float, +, "float");

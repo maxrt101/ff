@@ -28,14 +28,14 @@ class String : public Instance {
   ValueType value;
 
  public:
-  String(ValueType value = "");
+  explicit String(const ValueType& value = "");
   ~String();
 
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 
-  static Ref<String> createInstance(ValueType value = "");
-  static Ref<String> createInstancePool(ValueType value = "");
+  static Ref<String> createInstance(const ValueType& value = "");
+  static Ref<String> createInstancePool(const ValueType& value = "");
 };
 
 } /* namespace ff */

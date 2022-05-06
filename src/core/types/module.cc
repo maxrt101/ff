@@ -12,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 
-ff::Ref<ff::ModuleType> ff::ModuleType::m_instance = nullptr;
+ff::Ref<ff::ModuleType> ff::ModuleType::m_instance;
 
 ff::ModuleType::ModuleType() : Type("module") {
   setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
@@ -41,12 +41,6 @@ ff::Module::Module(const std::string& name) : Instance(ModuleType::getInstance()
 ff::Module::~Module() {}
 
 std::string ff::Module::toString() const {
-  // std::string result = "{";
-  // for (int i = 0; i < value.size(); i++) {
-  //   result += value[i]->toString();
-  //   if (i + 1 < value.size()) result += ", ";
-  // }
-  // return result + "}";
   return "<module " + name + ">";
 }
 

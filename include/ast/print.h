@@ -13,7 +13,7 @@ class Print : public Node {
   Node* m_expr;
 
  public:
-  Print(Node* node);
+  explicit Print(Node* node);
   ~Print() = default;
 
   Node* getValue() const;

@@ -45,7 +45,7 @@ namespace ast {
 
 void printTree(Node* node);
 // void deleteTree(Node* node);
-void unwrapCode(ff::Ref<ff::Code> code, std::string prefix = " ");
+void unwrapCode(ff::Ref<ff::Code> code, const std::string& prefix = " ");
 
 } /* namespace ast */
 } /* namespace ff */

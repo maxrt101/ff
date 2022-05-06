@@ -1,42 +1,16 @@
 #include <ff/compiler/parser.h>
+#include <ff/utils/macros.h>
 #include <ff/ast.h>
+
 #include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
+
+#include <algorithm>
 #include <vector>
 #include <string>
 
-/*
-program             : (top-level-decl)*
-top-level-decl      : 'fn' IDENTIFIER '(' var-decl-list ')' '->' stmt
-                    | 'var' var-decl ';'
-var-decl-list       : var-decl (',' var-decl)+
-var-decl            | IDENTIFIER ':' IDENTIFIER ('=' expr)
-comma-sep-list      : expr (',' expr)*
-stmt                : expr ';'
-                    | 'var' var-decl ';'
-                    | lvalue '=' expr ';'
-                    | block
-block               : '{' (expr ';')* '}'
-expr                : equality
-equality            : comparison (('==' | '!=') comparison)*
-comparison          : term (('>' | '>=' | '<' | '<=') term)*
-term                : factor (('*' | '/') factor)*
-factor              : '-' factor
-                    | '!' factor
-                    | cast
-cast                : expr AS IDENTIFIER
-                    | rvalue
-lvalue              : IDENTIFIER (DOT IDENTIFIER)*
-                    | IDENTIFIER                            // ?
-rvalue              : lvalue
-                    | IDENTIFIER '(' comma-sep-list ')'
-                    | 'fn' '(' var-decl-list ')' block
-                    | INTEGER
-                    | FLOAT
-                    | STRING
-*/
 
-ff::ParseError::ParseError(Token token, const std::string& filename, const std::string& msg)
+ff::ParseError::ParseError(const Token& token, const std::string& filename, const std::string& msg)
   : m_token(token), m_filename(filename), m_message(msg) {}
 
 const char* ff::ParseError::what() const noexcept {
@@ -65,49 +39,14 @@ ff::ast::Node* ff::Parser::parse() {
   return program();
 }
 
-void ff::Parser::parserWarning(Token token, const std::string& msg) {
-  if (token.type == TOKEN_EOF) {
-    printf("%s:%d %sWarning%s at the end: %s\n", m_filename.c_str(), token.line, mrt::console::YELLOW, mrt::console::RESET, msg.c_str());
-  } else {
-    printf("%s:%d %sWarning%s near '%s': %s\n", m_filename.c_str(), token.line, mrt::console::YELLOW, mrt::console::RESET, token.str.c_str(), msg.c_str());
-  }
-}
-
-void ff::Parser::syncronize() {
-  advance();
-
-  while(!isAtEnd()) {
-    if (previous().type == TOKEN_SEMICOLON) return;
-
-    switch (peek().type) {
-      case TOKEN_CLASS:   [[fallthrough]];
-      case TOKEN_FN:      [[fallthrough]];
-      case TOKEN_VAR:     [[fallthrough]];
-      case TOKEN_CONST:   [[fallthrough]];
-      case TOKEN_FOR:     [[fallthrough]];
-      case TOKEN_IF:      [[fallthrough]];
-      case TOKEN_WHILE:   [[fallthrough]];
-      case TOKEN_PRINT:   [[fallthrough]];
-      case TOKEN_RETURN:
-        return;
-      default:
-        ;
-    }
-
-    advance();
-  }
-}
-
 bool ff::Parser::isAtEnd() const {
   return peek().type == TOKEN_EOF;
 }
 
 bool ff::Parser::match(const std::vector<TokenType>& types) {
-  for (TokenType type : types) {
-    if (check(type)) {
-      advance();
-      return true;
-    }
+  if (std::any_of(BEGIN_END(types), [&](auto type) { return check(type); })) {
+    advance();
+    return true;
   }
   return false;
 }
@@ -250,9 +189,16 @@ ff::ast::Node* ff::Parser::fndecl() {
 
   std::vector<Ref<TypeAnnotation>> argTypes;
   if (args) {
-    for (auto varDecl : args->getList()) {
-      argTypes.push_back(varDecl->getVarType());
-    }
+    // for (auto varDecl : args->getList()) {
+    //   argTypes.push_back(varDecl->getVarType());
+    // }
+    std::transform(
+      BEGIN_END(args->getList()),
+      std::back_inserter(argTypes),
+      [](auto varDecl) {
+        return varDecl->getVarType();
+      }
+    );
   }
 
   auto type = FunctionAnnotation::create(argTypes, returnType);
@@ -594,9 +540,16 @@ ff::ast::Node* ff::Parser::lambda() {
 
   std::vector<Ref<TypeAnnotation>> argTypes;
   if (args) {
-    for (auto varDecl : args->getList()) {
-      argTypes.push_back(varDecl->getVarType());
-    }
+    // for (auto varDecl : args->getList()) {
+    //   argTypes.push_back(varDecl->getVarType());
+    // }
+    std::transform(
+      BEGIN_END(args->getList()),
+      std::back_inserter(argTypes),
+      [](auto varDecl) {
+        return varDecl->getVarType();
+      }
+    );
   }
 
   auto type = FunctionAnnotation::create(argTypes, returnType);

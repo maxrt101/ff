@@ -23,7 +23,7 @@
     }, TypeAnnotation::create(ret)).asRefTo<Object>()); \
   } while (0)
 
-ff::Ref<ff::IntType> ff::IntType::m_instance = nullptr;
+ff::Ref<ff::IntType> ff::IntType::m_instance;
 
 ff::IntType::IntType() : Type("int") {
   _DEFINE_BINARY_OP("__add__", Int, +, "int");

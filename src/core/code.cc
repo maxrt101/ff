@@ -75,14 +75,12 @@ int ff::Code::getLine(unsigned offset) const {
   for (int i = 0; i < m_lines.size(); i++) {
     if (m_lines[i].startOffset == offset) {
       return m_lines[i].line;
-    } else {
-      if (m_lines[i].startOffset < offset) {
-        if (i+1 == m_lines.size()) {
-          return m_lines[i].line;
-        }
-      } else if (m_lines[i].startOffset > offset) {
-        return m_lines[i-1].line;
+    } else if (m_lines[i].startOffset < offset) {
+      if (i+1 == m_lines.size()) {
+        return m_lines[i].line;
       }
+    } else {
+      return m_lines[i-1].line;
     }
   }
 
@@ -163,9 +161,6 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
       return;
     case OP_SET_LOCAL_REF:
       printf("OP_SET_LOCAL_REF %u\n",read<uint32_t>());
-      return;
-    case OP_MAKECONST:
-      printf("OP_MAKECONST\n");
       return;
     case OP_GET_FIELD:
       printf("OP_GET_FIELD\n");

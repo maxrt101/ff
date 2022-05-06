@@ -1,6 +1,6 @@
 #include <ff/ast/call.h>
 
-ff::ast::Call::Call(Node* callee, std::vector<Node*> args, bool isReturnValueExpected)
+ff::ast::Call::Call(Node* callee, const std::vector<Node*>& args, bool isReturnValueExpected)
   : Node(NTYPE_CALL), m_callee(callee), m_args(args), m_isReturnValueExpected(isReturnValueExpected) {}
 
 ff::ast::Node* ff::ast::Call::getCallee() const {

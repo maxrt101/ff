@@ -1,6 +1,7 @@
 #include <ff/compiler/compiler.h>
 #include <ff/compiler/scanner.h>
 #include <ff/compiler/parser.h>
+#include <ff/utils/macros.h>
 #include <ff/utils/path.h>
 #include <ff/utils/str.h>
 #include <ff/memory.h>
@@ -17,8 +18,7 @@
 #include <climits>
 #include <cstdarg>
 
-
-ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, std::map<std::string, Variable> fields)
+ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields)
   : name(name), type(type), isConst(isConst), fields(fields) {}
 
 ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& name, Ref<Object> object) {
@@ -29,9 +29,16 @@ ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& nam
   if (object->isInstance()) {
     if (object.as<Instance>()->getType()->equals(NativeFunctionType::getInstance().asRefTo<Object>())) {
       std::vector<Ref<TypeAnnotation>> argTypes;
-      for (auto arg : object.as<NativeFunction>()->getArgs()) {
-        argTypes.push_back(arg.type);
-      }
+      // for (auto arg : object.as<NativeFunction>()->getArgs()) {
+      //   argTypes.push_back(arg.type);
+      // }
+      std::transform(
+        BEGIN_END(object.as<NativeFunction>()->getArgs()),
+        std::back_inserter(argTypes),
+        [](const auto& arg) {
+          return arg.type;
+        }
+      );
 
       var.type = FunctionAnnotation::create(argTypes, object.as<NativeFunction>()->getReturnType()).asRefTo<TypeAnnotation>();
     } else {
@@ -59,7 +66,7 @@ void ff::Compiler::printScopes() {
   }
 }
 
-void ff::Compiler::printScope(int i, std::string prefix) {
+void ff::Compiler::printScope(int i, const std::string& prefix) {
   if (i == -1) {
     i = m_scopes.size() - 1;
   }
@@ -69,7 +76,7 @@ void ff::Compiler::printScope(int i, std::string prefix) {
 }
 
 void ff::Compiler::printGlobals() {
-  std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](std::string prefix, Variable& var) {
+  std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](const std::string& prefix, Variable& var) {
     // printf("%s%s: %s", prefix.c_str(), var.name.c_str(), var.type->toString().c_str()); // FIXME: can fail if var.type is nullptr
     printf("%s%s: ", prefix.c_str(), var.name.c_str());
     printf("%s", var.type->toString().c_str());
@@ -446,7 +453,7 @@ ff::Compiler::TypeInfo ff::Compiler::resolveCurrentModule() {
 
         typeInfo.push_back({fitr->second.type, &fitr->second});
       } else {
-        throw CompileError(m_filename, -1, "Unknown field '%s'", fitr->second.name.c_str());
+        throw CompileError(m_filename, -1, "Unknown field '%s'", m_modules[i].c_str());
       }
     }
 
@@ -460,9 +467,16 @@ ff::Compiler::TypeInfo ff::Compiler::resolveCurrentModule() {
 std::vector<ff::Function::Argument> ff::Compiler::parseArgs(ast::VarDeclList* args) {
   std::vector<Function::Argument> result;
   if (args) {
-    for (auto& varDecl : args->getList()) {
-      result.push_back({varDecl->getName().str, varDecl->getVarType()});
-    }
+    // for (auto& varDecl : args->getList()) {
+    //   result.push_back({varDecl->getName().str, varDecl->getVarType()});
+    // }
+    std::transform(
+      BEGIN_END(args->getList()),
+      std::back_inserter(result),
+      [](auto& varDecl) -> Function::Argument {
+        return {varDecl->getName().str, varDecl->getVarType()};
+      }
+    );
   }
   return result;
 }
@@ -708,9 +722,16 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
   );
 
   std::vector<Ref<Object>> annotations;
-  for (auto& annotation : fn->getAnnotations()) {
-    annotations.push_back(String::createInstance(annotation).asRefTo<Object>());
-  }
+  // for (auto& annotation : fn->getAnnotations()) {
+  //   annotations.push_back(String::createInstance(annotation).asRefTo<Object>());
+  // }
+  std::transform(
+    BEGIN_END(fn->getAnnotations()),
+    std::back_inserter(annotations),
+    [](const auto& annotation) {
+      return String::createInstance(annotation).template asRefTo<Object>();
+    }
+  );
   function->setField("__annotations__", Vector::createInstance(annotations).asRefTo<Object>());
 
   if (isModule) {
@@ -852,9 +873,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   auto args = call->getArgs();
 
   for (int i = args.size() - 1; i >= 0; i--) {
-    auto argType = evalNode(args[i]); // copy ?
+    auto argType = evalNode(args[i]);
     if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-      Ref<TypeAnnotation> paramType = TypeAnnotation::any();
+      Ref<TypeAnnotation> paramType;
       if (topLevelCallee) {
         paramType = type.asRefTo<FunctionAnnotation>()->arguments[i];
       } else {
@@ -1022,7 +1043,7 @@ void ff::Compiler::returnCall(ast::Node* node) {
   auto type = evalNode(node->as<ast::Return>()->getValue());
 
   int i = m_scopes.size() - 1;
-  while (!m_scopes[i].isFunctionScope && i >= 0) {
+  while (!m_scopes[i].isFunctionScope && i > 0) {
     i--;
   }
   if (i == 0 && !m_scopes[i].isFunctionScope) {
@@ -1039,11 +1060,11 @@ void ff::Compiler::returnCall(ast::Node* node) {
     } else {
       if (!m_scopes[i].returnType->isInferred) {
         for (auto& t : m_scopes[i].returnStatements) {
-          if (*t != *type) {
+          if (*t != *type) { // cppcheck-suppress useStlAlgorithm
             throw CompileError(m_filename, -1,
               "TypeMismatch: return type conflicts with previously returned value (previous return type: %s, actual type: %s)",
-              t->toString().c_str(), type->toString().c_str())
-              .addNote("Add return type annotation to fix the error (any or union of possible return types)");
+              t->toString().c_str(), type->toString().c_str()
+            ).addNote("Add return type annotation to fix the error (any or union of possible return types)");
           }
         }
       }
@@ -1116,8 +1137,6 @@ void ff::Compiler::loopstmt(ast::Node* node) {
   evalNode(loop_->getBody());
 
   emitLoop(loopStart);
-
-  uint16_t loopEnd = getCode()->size();
 
   for (int continue_jump : getLoop().continue_jumps) {
     /* NOTE: Patch an `OP_LOOP`
@@ -1385,7 +1404,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     case ast::NTYPE_FOREACH:
     case ast::NTYPE_EXPR_LIST_EXPR: {
       throw CompileError(m_filename, -1, "Unimplemented");
-      break;
     }
     case ast::NTYPE_CAST_EXPR: {
       return cast(node, false);

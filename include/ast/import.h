@@ -13,7 +13,7 @@ class Import : public Node {
   std::vector<std::string> m_imports;
 
  public:
-  Import(std::vector<std::string> imports);
+  explicit Import(const std::vector<std::string>& imports);
   ~Import() = default;
 
   std::vector<std::string> getImports() const;

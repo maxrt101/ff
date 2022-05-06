@@ -21,7 +21,7 @@ class Object {
   std::map<std::string, Ref<Object>> m_fields;
 
  public:
-  Object(ObjectType type);
+  explicit Object(ObjectType type);
   virtual ~Object() = default;
 
   ObjectType getObjectType() const;
@@ -45,7 +45,7 @@ class Type : public Object {
   std::string m_typeName;
 
  public:
-  Type(const std::string& typeName);
+  explicit Type(const std::string& typeName);
   virtual ~Type() = default;
 
   std::string getTypeName() const;
@@ -58,24 +58,10 @@ class Instance : public Object {
   Ref<Type> m_type;
 
  public:
-  Instance(Ref<Type> type);
+  explicit Instance(Ref<Type> type);
   virtual ~Instance() = default;
 
   Ref<Type> getType() const;
-};
-
-class NullType : public Type {
- private:
-  static Ref<NullType> m_instance;
-
-  NullType();
-
- public:
-  ~NullType();
-
-  std::string toString() const override;
-
-  static Ref<NullType> getInstance();
 };
 
 } /* namespace ff */

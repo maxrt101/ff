@@ -12,7 +12,7 @@ class Vector : public Node {
   std::vector<Node*> m_elements;
 
  public:
-  Vector(std::vector<Node*> elements);
+  explicit Vector(const std::vector<Node*>& elements);
   ~Vector() = default;
 
   std::vector<Node*> getElements() const;
