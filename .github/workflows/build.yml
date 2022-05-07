@@ -35,7 +35,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt update
-          sudo apt install python3.10 g++
+          sudo apt install python3.10 g++ cppcheck
         shell: bash
 
       - name: Build Parameterized
@@ -53,4 +53,9 @@ jobs:
           git submodule update --init
           echo Staring build
           python3.10 make.py -o
-
+      
+      - name: Run cppcheck
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo Running cppcheck
+          python3.10 make.py cppcheck
