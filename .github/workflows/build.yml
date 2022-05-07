@@ -61,6 +61,6 @@ jobs:
           echo Downloading cppcheck
           wget https://www.dropbox.com/s/xp6r69io3vvkr9w/cppcheck?dl=0 -O cppcheck
           echo Running cppcheck
-          PATH="$GITHUB_WORKSPACE:$PATH"
+          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
           cppcheck --version
           python3.10 make.py cppcheck
