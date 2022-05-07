@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Prepare
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
@@ -53,7 +53,7 @@ jobs:
           git submodule update --init
           echo Staring build
           python3.10 make.py -o
-      
+
       - name: Run cppcheck
         run: |
           cd $GITHUB_WORKSPACE
