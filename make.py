@@ -87,8 +87,9 @@ def cppcheck(ctx):
         'cppcheck',
         '--enable=all',
         '--inline-suppr',
-        # '--suppress=unusedFunction',
+        '--suppress=unusedFunction',
         '--suppress=missingIncludeSystem',
+        '--suppress=unmatchedSuppression',
         '--error-exitcode=1',
         cf('-I{build_dir}/{profile}/include'),
         cf('{topdir}/src')

@@ -58,4 +58,5 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo Running cppcheck
+          cppcheck --version
           python3.10 make.py cppcheck
