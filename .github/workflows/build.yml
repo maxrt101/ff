@@ -55,8 +55,12 @@ jobs:
           python3.10 make.py -o
 
       - name: Run cppcheck
+        continue-on-error: true
         run: |
           cd $GITHUB_WORKSPACE
+          echo Downloading cppcheck
+          wget https://www.dropbox.com/s/xp6r69io3vvkr9w/cppcheck?dl=0 -O cppcheck
           echo Running cppcheck
+          PATH="$GITHUB_WORKSPACE:$PATH"
           cppcheck --version
           python3.10 make.py cppcheck
