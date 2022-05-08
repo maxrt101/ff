@@ -58,9 +58,9 @@ jobs:
         continue-on-error: true
         run: |
           cd $GITHUB_WORKSPACE
-          echo Downloading cppcheck
-          wget https://www.dropbox.com/s/xp6r69io3vvkr9w/cppcheck?dl=0 -q -O cppcheck
-          echo Running cppcheck
-          echo $GITHUB_WORKSPACE >> $GITHUB_PATH
+          echo Installing cppcheck
+          wget https://www.dropbox.com/s/ba9ya4vsq8cn02s/cppcheck.deb?dl=0 -q -O cppcheck.deb
+          sudo dpkg -i cppcheck.deb
           cppcheck --version
+          echo Running cppcheck
           python3.10 make.py cppcheck
