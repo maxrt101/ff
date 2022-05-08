@@ -54,7 +54,8 @@ jobs:
           echo Staring build
           python3.10 make.py -o
 
-      - name: Run cppcheck
+      - name: Install cppcheck
+        id: cppcheck_install
         continue-on-error: true
         run: |
           cd $GITHUB_WORKSPACE
@@ -62,5 +63,9 @@ jobs:
           wget https://www.dropbox.com/s/ba9ya4vsq8cn02s/cppcheck.deb?dl=0 -q -O cppcheck.deb
           sudo dpkg -i cppcheck.deb
           cppcheck --version
+
+      - name: Run cppcheck
+        if: steps.cppcheck_install.outcome == 'success'
+        run: |
           echo Running cppcheck
           python3.10 make.py cppcheck
