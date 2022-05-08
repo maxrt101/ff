@@ -4,37 +4,47 @@
 #include <ff/types.h>
 #include <vector>
 
+using namespace ff::types;
+
 static ff::Ref<ff::Bool> g_true = ff::Bool::createInstance(true);
 static ff::Ref<ff::Bool> g_false = ff::Bool::createInstance(false);
 
 ff::Ref<ff::BoolType> ff::BoolType::m_instance;
 
 ff::BoolType::BoolType() : Type("bool") {
-  setField("__not__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return (args[0].as<Bool>()->value ? g_false : g_true).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("bool")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__not__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(args[0].as<Bool>()->value ? g_false : g_true);
+    }, {
+      {"self", type("bool")}
+    }, type("bool")))
+  );
 
-  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance(args[0].as<Bool>()->value ? "true" : "false").asRefTo<Object>();
-  }, {{
-    "self", TypeAnnotation::create("bool")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__as_string__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string(args[0].as<Bool>()->value ? "true" : "false"));
+    }, {
+      {"self", type("bool")}
+    }, type("string")))
+  );
 
-  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(args[0].as<Bool>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("bool")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(args[0].as<Bool>()->value));
+    }, {
+      {"self", type("bool")}
+    }, type("bool")))
+  );
 
-  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Bool>()->value = args[1].as<Bool>()->value;
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("bool")},
-    {"other", TypeAnnotation::create("bool")}
-  }, TypeAnnotation::nothing()).asRefTo<Object>());
+  setField("__assign__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Bool>()->value = args[1].as<Bool>()->value;
+      return Ref<Object>();
+    }, {
+      {"self", type("bool")},
+      {"other", type("bool")}
+    }, type("bool")))
+  );
 }
 
 ff::BoolType::~BoolType() {}

@@ -1,7 +1,9 @@
 #ifndef _FF_TYPES_H_
 #define _FF_TYPES_H_ 1
 
+#include <ff/ref.h>
 #include <ff/errors.h>
+#include <ff/compiler/type_annotation.h>
 #include <ff/types/int.h>
 #include <ff/types/bool.h>
 #include <ff/types/float.h>
@@ -38,6 +40,52 @@ inline bool isOfType(Ref<O> object, const std::string& typeName) {
   return object.template as<Instance>()->getType()->getTypeName() == typeName;
 }
 
+namespace types {
+
+template <typename T>
+inline Ref<Object> obj(Ref<T> o) {
+  return o.template asRefTo<Object>();
+}
+
+Ref<String> string(const std::string& value);
+Ref<Float> floating(Float::ValueType value);
+Ref<Int> integer(Int::ValueType value);
+Ref<Bool> boolean(bool value);
+Ref<Function> fn(Function::ValueType code, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
+Ref<NativeFunction> fn(NativeFunction::ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
+Ref<Module> module(const std::string& name);
+Ref<Vector> vector(const Vector::ValueType& value);
+Ref<Dict> dict(Dict::ValueType value);
+
+template <typename T>
+inline Ref<T> ref(Ref<T>& annotation) {
+  annotation->isRef = true;
+  return annotation;
+}
+
+template <typename T>
+inline Ref<TypeAnnotation> type(Ref<T> annotation) {
+  return annotation.template asRefTo<TypeAnnotation>();
+}
+
+Ref<TypeAnnotation> type(const std::string& typeName, bool isInferred = false);
+Ref<FunctionAnnotation> ftype(const std::vector<Ref<TypeAnnotation>>& arguments, Ref<TypeAnnotation> returnType, bool isInferred = false);
+Ref<UnionAnnotation> utype(const std::vector<Ref<TypeAnnotation>>& types, bool isInferred = false);
+
+Ref<TypeAnnotation> any();
+Ref<TypeAnnotation> nothing();
+Ref<TypeAnnotation> type();
+
+namespace literals {
+
+Ref<Int> operator"" _i(unsigned long long value);
+Ref<Float> operator"" _f(long double value);
+Ref<String> operator"" _s(const char *s, std::size_t len);
+
+Ref<TypeAnnotation> operator"" _ta(const char *s, std::size_t len);
+
+} /* namespace literals */
+} /* namespace types */
 } /* namespace ff */
 
 #endif /* _FF_TYPES_H_ */

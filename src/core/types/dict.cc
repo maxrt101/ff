@@ -6,64 +6,82 @@
 #include <mrt/strutils.h>
 #include <vector>
 
+using namespace ff::types;
+
 ff::Ref<ff::DictType> ff::DictType::m_instance;
 
 ff::DictType::DictType() : Type("dict") {
-  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance(args[0].as<Dict>()->toString()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__as_string__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string(args[0].as<Dict>()->toString()));
+    }, {
+      {"self", type("dict")}
+    }, type("string")))
+  );
 
-  setField("get", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return args[0].as<Dict>()->getField(args[1].as<String>()->value);
-  }, {
-    {"self", TypeAnnotation::create("dict")},
-    {"key", TypeAnnotation::create("string")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
+  setField("get",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return args[0].as<Dict>()->getField(args[1].as<String>()->value);
+    }, {
+      {"self", type("dict")},
+      {"key", type("string")}
+    }, any()))
+  );
 
-  setField("set", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Dict>()->setField(args[1].as<String>()->value, args[2]);
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")},
-    {"key", TypeAnnotation::create("string")},
-    {"value", TypeAnnotation::create("any")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
+  setField("set",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Dict>()->setField(args[1].as<String>()->value, args[2]);
+      return Ref<Object>();
+    }, {
+      {"self", type("dict")},
+      {"key", type("string")},
+      {"value", any()}
+    }, any()))
+  );
 
-  setField("has", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto fields = args[0].as<Dict>()->getFields();
-    return Bool::createInstance(fields.find(args[1].as<String>()->value) != fields.end()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")},
-    {"key", TypeAnnotation::create("string")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("has",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto fields = args[0].as<Dict>()->getFields();
+      return obj(boolean((fields.find(args[1].as<String>()->value) != fields.end())));
+    }, {
+      {"self", type("dict")},
+      {"key", type("string")}
+    }, type("bool")))
+  );
 
-  setField("size", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(args[0].as<Dict>()->getFields().size()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("size",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(args[0].as<Dict>()->getFields().size()));
+    }, {
+      {"self", type("dict")}
+    }, type("int")))
+  );
 
-  setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(!args[0].as<Dict>()->getFields().empty()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(!args[0].as<Dict>()->getFields().empty()));
+    }, {
+      {"self", type("dict")}
+    }, type("bool")))
+  );
 
-  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Dict::createInstance(args[0].as<Dict>()->getFields()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")}
-  }, TypeAnnotation::create("dict")).asRefTo<Object>());
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(dict(args[0].as<Dict>()->getFields()));
+    }, {
+      {"self", type("dict")}
+    }, type("dict")))
+  );
 
-  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Dict>()->getFields() = args[1].as<Dict>()->getFields();
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("dict")},
-    {"other", TypeAnnotation::create("dict")}
-  }, TypeAnnotation::create("dict")).asRefTo<Object>());
+  setField("__assign__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Dict>()->getFields() = args[1].as<Dict>()->getFields();
+      return Ref<Object>();
+    }, {
+      {"self", type("dict")},
+      {"other", type("dict")}
+    }, type("dict")))
+  );
 }
 
 ff::DictType::~DictType() {}

@@ -1262,6 +1262,13 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
       m_globalVariables[module.name] = module.var;
       m_imports.push_back(module.name);
     }
+
+    for (auto& annotation : modInfo.annotations) {
+      if (m_annotations.find(annotation.first) != m_annotations.end()) {
+        continue;
+      }
+      m_annotations[annotation.first] = annotation.second;
+    }
   }
 }
 

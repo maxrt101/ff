@@ -4,23 +4,27 @@
 #include <ff/types.h>
 #include <vector>
 
+using namespace ff::types;
+
 #define _DEFINE_BINARY_OP(name, T, op, ret) \
   do { \
-    setField(name, NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) { \
-      int lhs = args[0].as<Int>()->value; \
-      int rhs = 0; \
-      if (isOfType(args[1], IntType::getInstance())) { \
-        rhs = args[1].as<Int>()->value; \
-      } else if (isOfType(args[1], FloatType::getInstance())) { \
-        rhs = args[1].as<Float>()->value; \
-      } else { \
-        rhs = Object::cast(context, args[1], "int").as<Int>()->value; \
-      } \
-      return T::createInstance(lhs op rhs).asRefTo<Object>(); \
-    }, { \
-      {"self", TypeAnnotation::create("int")}, \
-      {"other", TypeAnnotation::create("any")} \
-    }, TypeAnnotation::create(ret)).asRefTo<Object>()); \
+    setField(name, \
+      obj(fn([](VM* context, std::vector<Ref<Object>> args) { \
+        int lhs = args[0].as<Int>()->value; \
+        int rhs = 0; \
+        if (isOfType(args[1], IntType::getInstance())) { \
+          rhs = args[1].as<Int>()->value; \
+        } else if (isOfType(args[1], FloatType::getInstance())) { \
+          rhs = args[1].as<Float>()->value; \
+        } else { \
+          rhs = Object::cast(context, args[1], "int").as<Int>()->value; \
+        } \
+        return T::createInstance(lhs op rhs).asRefTo<Object>(); \
+      }, { \
+        {"self", type("int")}, \
+        {"other", any()} \
+      }, type(ret))) \
+    ); \
   } while (0)
 
 ff::Ref<ff::IntType> ff::IntType::m_instance;
@@ -38,65 +42,82 @@ ff::IntType::IntType() : Type("int") {
   _DEFINE_BINARY_OP("__le__",  Bool, <=, "bool");
   _DEFINE_BINARY_OP("__ge__",  Bool, >=, "bool");
 
-  setField("__neg__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(-args[0].as<Int>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__neg__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(-args[0].as<Int>()->value));
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 
-  setField("__inc__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto res = Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-    args[0].as<Int>()->value++;
-    return res;
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("__inc__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto res = integer(args[0].as<Int>()->value);
+      args[0].as<Int>()->value++;
+      return obj(res);
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 
-  setField("__dec__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto res = Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-    args[0].as<Int>()->value--;
-    return res;
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("__dec__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto res = integer(args[0].as<Int>()->value);
+      args[0].as<Int>()->value--;
+      return obj(res);
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 
-  setField("__as_int__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("__as_int__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(args[0].as<Int>()->value));
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 
-  setField("__as_float__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Float::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("float")).asRefTo<Object>());
+  setField("__as_float__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(floating(args[0].as<Int>()->value));
+    }, {
+      {"self", type("int")}
+    }, type("float")))
+  );
 
-  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance(std::to_string(args[0].as<Int>()->value)).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__as_string__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string(std::to_string(args[0].as<Int>()->value)));
+    }, {
+      {"self", type("int")}
+    }, type("string")))
+  );
 
-  setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(args[0].as<Int>()->value != 0).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(args[0].as<Int>()->value != 0));
+    }, {
+      {"self", type("int")}
+    }, type("string")))
+  );
 
-  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(args[0].as<Int>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(args[0].as<Int>()->value));
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 
-  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Int>()->value = args[1].as<Int>()->value;
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("int")},
-    {"other", TypeAnnotation::create("int")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("__assign__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Int>()->value = args[1].as<Int>()->value;
+      return Ref<Object>();
+    }, {
+      {"self", type("int")}
+    }, type("int")))
+  );
 }
 
 ff::IntType::~IntType() {}
@@ -113,9 +134,7 @@ ff::Ref<ff::IntType> ff::IntType::getInstance() {
   return m_instance;
 }
 
-ff::Int::Int(ValueType value) : Instance(IntType::getInstance().asRefTo<Type>()), value(value) {
-  // setField("testValue", Float::createInstance(10.0).asRefTo<Object>());
-}
+ff::Int::Int(ValueType value) : Instance(IntType::getInstance().asRefTo<Type>()), value(value) {}
 
 ff::Int::~Int() {}
 

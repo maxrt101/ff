@@ -12,14 +12,18 @@
 #include <iostream>
 #include <fstream>
 
+using namespace ff::types;
+
 ff::Ref<ff::ModuleType> ff::ModuleType::m_instance;
 
 ff::ModuleType::ModuleType() : Type("module") {
-  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance("<module" + args[0].asRefTo<Module>()->name + ">").template asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("module")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__as_string__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string("<module " + args[0].asRefTo<Module>()->name + ">"));
+    }, {
+      {"self", type("module")}
+    }, type("string")))
+  );
 }
 
 ff::ModuleType::~ModuleType() {}

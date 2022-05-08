@@ -6,95 +6,117 @@
 #include <ff/types.h>
 #include <vector>
 
+using namespace ff::types;
+
 ff::Ref<ff::VectorType> ff::VectorType::m_instance;
 
 ff::VectorType::VectorType() : Type("vector") {
-  setField("__as_string__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance(args[0].as<Vector>()->toString()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__as_string__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string(args[0].as<Vector>()->toString()));
+    }, {
+      {"self", type("vector")}
+    }, type("string")))
+  );
 
-  setField("get", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto self = args[0].as<Vector>();
-    int index = args[1].as<Int>()->value;
-    if (index > self->value.size()) {
-      return Ref<Object>();
-    }
-    return self->value[index];
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"index", TypeAnnotation::create("int")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
-
-  setField("set", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto self = args[0].as<Vector>();
-    int index = args[1].as<Int>()->value;
-    if (index < self->value.size()) {
-      self->value[index] = args[2];
-    }
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"index", TypeAnnotation::create("int")},
-    {"value", TypeAnnotation::create("any")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
-
-  setField("append", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Vector>()->value.push_back(args[1]);
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"element", TypeAnnotation::create("any")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
-
-  setField("remove", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto& vec = args[0].as<Vector>()->value;
-    vec.erase(vec.begin() + args[1].as<Int>()->value);
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"index", TypeAnnotation::create("int")}
-  }, TypeAnnotation::any()).asRefTo<Object>());
-
-  setField("index", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    auto& vec = args[0].as<Vector>()->value;
-    for (int i = 0; i < vec.size(); i++) {
-      if (vec[i]->equals(args[1])) {
-        return Int::createInstance(i).asRefTo<Object>();
+  setField("get",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto self = args[0].as<Vector>();
+      int index = args[1].as<Int>()->value;
+      if (index > self->value.size()) {
+        return Ref<Object>();
       }
-    }
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"value", TypeAnnotation::create("any")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+      return self->value[index];
+    }, {
+      {"self", type("vector")},
+      {"index", type("int")}
+    }, any()))
+  );
 
-  setField("size", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(args[0].as<Vector>()->value.size()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("set",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto self = args[0].as<Vector>();
+      int index = args[1].as<Int>()->value;
+      if (index < self->value.size()) {
+        self->value[index] = args[2];
+      }
+      return Ref<Object>();
+    }, {
+      {"self", type("vector")},
+      {"index", type("int")},
+      {"value", any()}
+    }, any()))
+  );
 
-  setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(!args[0].as<Vector>()->value.empty()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("append",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Vector>()->value.push_back(args[1]);
+      return Ref<Object>();
+    }, {
+      {"self", type("vector")},
+      {"value", any()}
+    }, any()))
+  );
 
-  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Vector::createInstance(args[0].as<Vector>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")}
-  }, TypeAnnotation::create("vector")).asRefTo<Object>());
+  setField("remove",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& vec = args[0].as<Vector>()->value;
+      vec.erase(vec.begin() + args[1].as<Int>()->value);
+      return Ref<Object>();
+    }, {
+      {"self", type("vector")},
+      {"index", type("int")}
+    }, any()))
+  );
 
-  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<Vector>()->value = args[1].as<Vector>()->value;
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("vector")},
-    {"other", TypeAnnotation::create("vector")}
-  }, TypeAnnotation::create("vector")).asRefTo<Object>());
+  setField("index",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& vec = args[0].as<Vector>()->value;
+      for (int i = 0; i < vec.size(); i++) {
+        if (vec[i]->equals(args[1])) {
+          return Int::createInstance(i).asRefTo<Object>();
+        }
+      }
+      return Ref<Object>();
+    }, {
+      {"self", type("vector")},
+      {"vakuee", any()}
+    }, type("int")))
+  );
+
+  setField("size",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(args[0].as<Vector>()->value.size()));
+    }, {
+      {"self", type("vector")}
+    }, type("int")))
+  );
+
+  setField("__bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(!args[0].as<Vector>()->value.empty()));
+    }, {
+      {"self", type("vector")}
+    }, type("bool")))
+  );
+
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(vector(args[0].as<Vector>()->value));
+    }, {
+      {"self", type("vector")}
+    }, type("vector")))
+  );
+
+  setField("__assign__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<Vector>()->value = args[1].as<Vector>()->value;
+      return Ref<Object>();
+    }, {
+      {"self", type("vector")},
+      {"other", type("vector")}
+    }, type("vector")))
+  );
 }
 
 ff::VectorType::~VectorType() {}

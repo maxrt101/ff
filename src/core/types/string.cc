@@ -6,64 +6,77 @@
 #include <vector>
 #include <cstdio>
 
+using namespace ff::types;
+
 static std::unordered_map<std::string, ff::Ref<ff::String>> g_strings;
 
 ff::Ref<ff::StringType> ff::StringType::m_instance;
 
 ff::StringType::StringType() : Type("string") {
-  setField("__add__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    std::string rhs;
-    if (isOfType(args[1], StringType::getInstance())) {
-      rhs = args[1].as<String>()->value;
-    } else if (isOfType(args[1], IntType::getInstance())) {
-      rhs = std::to_string(args[1].as<Int>()->value);
-    } else if (isOfType(args[1], FloatType::getInstance())) {
-      rhs = std::to_string(args[1].as<Float>()->value);
-    } else if (isOfType(args[1], BoolType::getInstance())) {
-      rhs = args[1].as<Bool>()->value ? "true" : "false";
-    } else if (args[1].get() == nullptr) {
-      rhs = "null";
-    } else {
-      rhs = Object::cast(context, args[1], "int").as<Int>()->value;
-    }
-    return String::createInstance(args[0].as<String>()->value + rhs).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")},
-    {"rhs", TypeAnnotation::any()}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__add__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      std::string rhs;
+      if (isOfType(args[1], StringType::getInstance())) {
+        rhs = args[1].as<String>()->value;
+      } else if (isOfType(args[1], IntType::getInstance())) {
+        rhs = std::to_string(args[1].as<Int>()->value);
+      } else if (isOfType(args[1], FloatType::getInstance())) {
+        rhs = std::to_string(args[1].as<Float>()->value);
+      } else if (isOfType(args[1], BoolType::getInstance())) {
+        rhs = args[1].as<Bool>()->value ? "true" : "false";
+      } else if (args[1].get() == nullptr) {
+        rhs = "null";
+      } else {
+        rhs = Object::cast(context, args[1], "int").as<Int>()->value;
+      }
+      return String::createInstance(args[0].as<String>()->value + rhs).asRefTo<Object>();
+    }, {
+      {"self", type("string")},
+      {"rhs", any()}
+    }, type("string")))
+  );
 
-  setField("__eq__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(false).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")},
-    {"rhs", TypeAnnotation::any()}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__eq__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(false));
+    }, {
+      {"self", type("string")}
+    }, type("bool")))
+  );
 
-  setField("__bool__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Bool::createInstance(args[0].as<String>()->value.size() != 0).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")}
-  }, TypeAnnotation::create("bool")).asRefTo<Object>());
+  setField("__bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(args[0].as<String>()->value.size() != 0));
+    }, {
+      {"self", type("string")}
+    }, type("bool")))
+  );
 
-  setField("size", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return Int::createInstance(args[0].as<String>()->value.size()).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")}
-  }, TypeAnnotation::create("int")).asRefTo<Object>());
+  setField("size",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(integer(args[0].as<String>()->value.size()));
+    }, {
+      {"self", type("string")}
+    }, type("int")))
+  );
 
-  setField("__copy__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    return String::createInstance(args[0].as<String>()->value).asRefTo<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(string(args[0].as<String>()->value));
+    }, {
+      {"self", type("string")}
+    }, type("string")))
+  );
 
-  setField("__assign__", NativeFunction::createInstance([](VM* context, std::vector<Ref<Object>> args) {
-    args[0].as<String>()->value = args[1].as<String>()->value;
-    return Ref<Object>();
-  }, {
-    {"self", TypeAnnotation::create("string")},
-    {"other", TypeAnnotation::create("string")}
-  }, TypeAnnotation::create("string")).asRefTo<Object>());
+  setField("__assign__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      args[0].as<String>()->value = args[1].as<String>()->value;
+      return Ref<Object>();
+    }, {
+      {"self", type("string")},
+      {"other", type("string")}
+    }, type("string")))
+  );
 }
 
 ff::StringType::~StringType() {}

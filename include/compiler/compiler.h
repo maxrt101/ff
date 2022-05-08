@@ -40,6 +40,7 @@ class Compiler {
     Ref<Module> module;
     Variable var;
     std::vector<ModuleInfo> imports;
+    std::map<std::string, ASTAnnotation> annotations;
   };
 
   enum ScopeType {
@@ -153,6 +154,7 @@ class Compiler {
 };
 
 Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename, const std::string& parentModule);
+Compiler::ModuleInfo loadNativeModule(const std::string& name, const std::string& filename);
 Ref<Code> compile(const std::string& src, const std::string& filename = "<input>");
 
 } /* namespace ff */
