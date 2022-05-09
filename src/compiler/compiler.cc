@@ -672,7 +672,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
 
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
-  auto bodyType = evalNode(fn->getBody());
+  auto bodyType = evalNode(fn->getBody(), true, isModule);
   Scope scope = endScope();
 
   if (*fn->getFunctionType()->returnType == *TypeAnnotation::any() && !fn->getFunctionType()->returnType->isInferred) {
@@ -766,6 +766,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValu
     varNode->getConst(),
     {}
   };
+
   if (isTopScope()) {
     if (isModule) {
       auto type = evalNode(varNode->getValue(), copyValue);
@@ -1337,14 +1338,17 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
   switch (node->getType()) {
     case ast::NTYPE_FLOAT_LITERAL: {
       emitConstant(Float::createInstance(node->as<ast::FloatLiteral>()->getValue()).asRefTo<Object>());
+      getCode()->pushInstruction(OP_COPY);
       return TypeAnnotation::create("float");
     }
     case ast::NTYPE_INTEGER_LITERAL: {
       emitConstant(Int::createInstance(node->as<ast::IntegerLiteral>()->getValue()).asRefTo<Object>());
+      getCode()->pushInstruction(OP_COPY);
       return TypeAnnotation::create("int");
     }
     case ast::NTYPE_STRING_LITERAL: {
       emitConstant(String::createInstance(node->as<ast::StringLiteral>()->getValue()).asRefTo<Object>());
+      getCode()->pushInstruction(OP_COPY);
       return TypeAnnotation::create("string");
     }
     case ast::NTYPE_NULL: {
