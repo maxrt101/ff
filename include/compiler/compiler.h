@@ -8,6 +8,7 @@
 #include <ff/code.h>
 #include <ff/ref.h>
 #include <ff/ast.h>
+#include <mrt/dynamic_library.h>
 #include <exception>
 #include <string>
 #include <vector>
@@ -40,6 +41,7 @@ class Compiler {
     Ref<Module> module;
     Variable var;
     std::vector<ModuleInfo> imports;
+    std::map<std::string, Ref<mrt::DynamicLibrary>> sharedLibs;
     std::map<std::string, ASTAnnotation> annotations;
   };
 
@@ -69,6 +71,7 @@ class Compiler {
   std::vector<LoopRecord> m_loops;                    // Stack of loops
   std::map<std::string, Variable> m_globalVariables;
   std::map<std::string, ASTAnnotation> m_annotations;
+  std::map<std::string, Ref<mrt::DynamicLibrary>> m_sharedLibs;
   std::vector<std::string> m_modules;                 // Stack for module declarations
   std::vector<std::string> m_imports;                 // List of imported modules, to prevent reimports and circular dependencies
   std::string m_thisModuleName;                       // Current module
@@ -84,6 +87,8 @@ class Compiler {
 
   std::map<std::string, Variable>& getGlobals();
   std::vector<std::string>& getImports();
+
+  std::map<std::string, Ref<mrt::DynamicLibrary>> getSharedLibs();
 
  private:
   Ref<Code>& getCode();

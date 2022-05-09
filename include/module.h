@@ -1,12 +1,16 @@
 #ifndef _FF_MODULE_H_
 #define _FF_MODULE_H_ 1
 
+#include <ff/compiler/type_annotation.h>
 #include <ff/compiler/ast_annotation.h>
+#include <ff/types/native_function.h>
 #include <ff/object.h>
 #include <ff/ref.h>
 
 #define FF_MODINFO modInfo
-#define FF_MODINFO_STR #FF_MODINFO
+#define FF_MODINFO_STR "modInfo"
+
+using TFunction = ff::Object*(*)(ff::VM*, std::vector<ff::Ref<ff::Object>>);
 
 struct ff_symbol_t {
   const char* name;

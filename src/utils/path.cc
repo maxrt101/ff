@@ -74,10 +74,6 @@ std::string ff::path::stripExtension(std::string file) {
 }
 
 std::string ff::path::getImportFile(const std::string& file) {
-  if (mrt::str::endsWith(file, ".ff") || mrt::str::endsWith(file, ".ffmod")) {
-    return file;
-  }
-
   if (exists(file)) {
     return file;
   }

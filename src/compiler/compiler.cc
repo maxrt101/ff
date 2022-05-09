@@ -9,8 +9,9 @@
 #include <ff/types.h>
 #include <ff/log.h>
 
-#include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
+#include <mrt/console/colors.h>
+#include <mrt/strutils.h>
 
 #include <functional>
 #include <algorithm>
@@ -29,9 +30,6 @@ ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& nam
   if (object->isInstance()) {
     if (object.as<Instance>()->getType()->equals(NativeFunctionType::getInstance().asRefTo<Object>())) {
       std::vector<Ref<TypeAnnotation>> argTypes;
-      // for (auto arg : object.as<NativeFunction>()->getArgs()) {
-      //   argTypes.push_back(arg.type);
-      // }
       std::transform(
         BEGIN_END(object.as<NativeFunction>()->getArgs()),
         std::back_inserter(argTypes),
@@ -205,6 +203,10 @@ std::map<std::string, ff::Compiler::Variable>& ff::Compiler::getGlobals() {
 
 std::vector<std::string>& ff::Compiler::getImports() {
   return m_imports;
+}
+
+std::map<std::string, ff::Ref<mrt::DynamicLibrary>> ff::Compiler::getSharedLibs() {
+  return std::move(m_sharedLibs);
 }
 
 void ff::Compiler::beginScope() {
@@ -467,9 +469,6 @@ ff::Compiler::TypeInfo ff::Compiler::resolveCurrentModule() {
 std::vector<ff::Function::Argument> ff::Compiler::parseArgs(ast::VarDeclList* args) {
   std::vector<Function::Argument> result;
   if (args) {
-    // for (auto& varDecl : args->getList()) {
-    //   result.push_back({varDecl->getName().str, varDecl->getVarType()});
-    // }
     std::transform(
       BEGIN_END(args->getList()),
       std::back_inserter(result),
@@ -516,7 +515,11 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
   } else if (node->getType() == ast::NTYPE_CALL) {
     bool explicitSelf = false;
     if (prev.var) {
-      explicitSelf = prev.type->toString() == prev.var->name;
+      if (*prev.type == *TypeAnnotation::create("module")) {
+        explicitSelf = true;
+      } else {
+        explicitSelf = prev.type->toString() == prev.var->name;
+      }
     }
     isFunction = true;
     return {call(node, false, prev, explicitSelf), nullptr};
@@ -722,9 +725,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
   );
 
   std::vector<Ref<Object>> annotations;
-  // for (auto& annotation : fn->getAnnotations()) {
-  //   annotations.push_back(String::createInstance(annotation).asRefTo<Object>());
-  // }
   std::transform(
     BEGIN_END(fn->getAnnotations()),
     std::back_inserter(annotations),
@@ -1248,7 +1248,13 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
     if (name == m_parentModuleName) {
       throw CompileError(m_filename, -1, "Circular import detected (module '%s' from module '%s')", name.c_str(), m_thisModuleName.empty() ? "<no name>" : m_thisModuleName.c_str());
     }
-    ModuleInfo modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)), m_thisModuleName);
+
+    ModuleInfo modInfo;
+    if (mrt::str::endsWith(import, ".ffmod") || mrt::str::endsWith(import, ".so")) {
+      modInfo = loadNativeModule(name, config::format(path::getImportFileFromPath(import, importPaths)));
+    } else {
+      modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)), m_thisModuleName);
+    }
 
     getCode()->addModule(name, modInfo.module.asRefTo<Object>());
     m_globalVariables[name] = modInfo.var;
@@ -1261,6 +1267,10 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
       getCode()->addModule(module.name, module.module.asRefTo<Object>());
       m_globalVariables[module.name] = module.var;
       m_imports.push_back(module.name);
+    }
+
+    for (auto& dl : modInfo.sharedLibs) {
+      m_sharedLibs[dl.first] = std::move(dl.second);
     }
 
     for (auto& annotation : modInfo.annotations) {

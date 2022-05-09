@@ -20,27 +20,35 @@ static int run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   try {
 #endif
-    ff::Scanner scanner(filename, src);
-    auto tokens = scanner.tokenize();
+    // NOTE: Make sure that shared libs are destroyed after code
+    std::map<std::string, ff::Ref<mrt::DynamicLibrary>> sharedLibs;
+    {
+      ff::Ref<ff::Code> code;
+      {
+        ff::Scanner scanner(filename, src);
+        auto tokens = scanner.tokenize();
 #ifdef _FF_TOKENS_DEBUG
-    if (ff::config::get("debug") != "0") {
-      for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
-      putchar('\n');
-    }
+        if (ff::config::get("debug") != "0") {
+          for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
+          putchar('\n');
+        }
 #endif
-    ff::Parser parser(filename, tokens);
-    auto tree = parser.parse();
-    if (ff::config::get("debug") != "0") {
-      ff::ast::printTree(tree);
+        ff::Parser parser(filename, tokens);
+        auto tree = parser.parse();
+        if (ff::config::get("debug") != "0") {
+          ff::ast::printTree(tree);
+        }
+        ff::Compiler compiler;
+        code = compiler.compile(filename, tree);
+        if (ff::config::get("debug") != "0") {
+          printf("=== Code ===\n\\\n");
+          ff::ast::unwrapCode(code);
+        }
+        sharedLibs = compiler.getSharedLibs();
+      }
+      ff::VM vm;
+      vm.runMain(code);
     }
-    ff::Compiler compiler;
-    ff::Ref<ff::Code> code = compiler.compile(filename, tree);
-    if (ff::config::get("debug") != "0") {
-      printf("=== Code ===\n\\\n");
-      ff::ast::unwrapCode(code);
-    }
-    ff::VM vm;
-    vm.runMain(code);
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   } catch (const ff::ScanError& e) {
     e.print();
