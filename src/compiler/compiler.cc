@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <sstream>
 #include <climits>
+#include <cstdlib>
 #include <cstdarg>
 
 ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields)

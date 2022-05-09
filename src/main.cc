@@ -20,7 +20,7 @@ static int run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   try {
 #endif
-    // NOTE: Make sure that shared libs are destroyed after code
+    // NOTE: Make sure that shared libs are destroyed after the code
     std::map<std::string, ff::Ref<mrt::DynamicLibrary>> sharedLibs;
     {
       ff::Ref<ff::Code> code;
