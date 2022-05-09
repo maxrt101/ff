@@ -34,7 +34,7 @@ def mrt(ctx):
         build.utils.die('Please download mrt')
     build.run_cmd(['make', '-C', cf('{topdir}/mrt'), 'PREFIX=' + cf('{build_dir}/{profile}')])
 
-@build.task(['libff'])
+@build.task(['libff', 'stdlib'])
 def ff(ctx):
     build.cpp.compile(cf('{topdir}/src/main.cc'))
     build.cpp.link_exe(
@@ -76,6 +76,14 @@ def ast(ctx):
 @build.subtask('libff')
 def utils(ctx):
     build.cpp.compile_batch(build.utils.get_files(cf('{topdir}/src/utils'), r'.+\.cc'), 'utils')
+
+@build.task(['libff'])
+def stdlib(ctx):
+    if not os.path.exists(cf('{build_dir}/{profile}/lib/ff')):
+        os.mkdir(cf('{build_dir}/{profile}/lib/ff'))
+    build.cpp.compile_batch(build.utils.get_files(cf('{topdir}/src/lib'), r'.+\.cc'), 'stdlib')
+    for file in build.utils.get_files(cf('{build_dir}/{profile}/obj/stdlib'), r'.+\.o'):
+        build.cpp.create_shared_lib([file], 'ff/' + build.utils.noextension(build.utils.nofolder(file)) + '.ffmod')
 
 @build.task()
 def clean(ctx):

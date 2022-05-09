@@ -1238,6 +1238,11 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
     filedir = path::concat(cwd, path::getFolder(m_filename));
   }
   std::vector<std::string> importPaths = {filedir, cwd};
+  const char* envImportPath = std::getenv(FF_IMPORT_PATH_ENV_VAR);
+  if (envImportPath) {
+    auto envImports = mrt::str::split(envImportPath, ":");
+    importPaths.insert(importPaths.end(), envImports.begin(), envImports.end());
+  }
 
   for (auto& import : imp->getImports()) {
     std::string name = path::stripExtension(path::getFile(import));

@@ -14,6 +14,8 @@
 #include <vector>
 #include <map>
 
+#define FF_IMPORT_PATH_ENV_VAR "FF_IMPORT_PATH"
+
 namespace ff {
 
 class Compiler {

@@ -1,10 +1,11 @@
 
 from typing import List, Callable
-from .console import ERROR
-from .utils import die
+from .console import ERROR, NOTE
+from .utils import die, vprint
 from . import console
 
 _tasks = {}
+_ran_tasks = []
 
 def run_task(task: str, parent_task: str = ''):
     if task not in _tasks:
@@ -37,11 +38,15 @@ class Task:
         self.subtasks = {}
 
     def run(self, parent: str = '', depdendency_only: bool = False):
+        if self.name in _ran_tasks:
+            vprint(f'{NOTE}: Task {self.name} already done')
+            return
         with console.context.new_task(("Dependency" if parent else "Task") + f' {self.name}' + (' dependency-only' if depdendency_only else '')):
             for dependency in self.depends:
                 run_task(dependency, self.name)
             if not depdendency_only:
                 self.fn(self)
+                _ran_tasks.append(self.name)
 
     def run_subtasks(self):
         for _, task in self.subtasks.items():
