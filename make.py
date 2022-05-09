@@ -81,7 +81,7 @@ def utils(ctx):
 def stdlib(ctx):
     if not os.path.exists(cf('{build_dir}/{profile}/lib/ff')):
         os.mkdir(cf('{build_dir}/{profile}/lib/ff'))
-    build.cpp.compile_batch(build.utils.get_files(cf('{topdir}/src/lib'), r'.+\.cc'), 'stdlib')
+    build.cpp.compile_batch(build.utils.get_files(cf('{topdir}/src/lib'), r'.+\.cc'), 'stdlib', ['-fPIC'])
     for file in build.utils.get_files(cf('{build_dir}/{profile}/obj/stdlib'), r'.+\.o'):
         build.cpp.create_shared_lib([file], 'ff/' + build.utils.noextension(build.utils.nofolder(file)) + '.ffmod')
 
