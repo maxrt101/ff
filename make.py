@@ -40,7 +40,7 @@ def ff(ctx):
     build.cpp.link_exe(
        files=[cf('{build_dir}/{profile}/obj/main.o')],
        output='ff',
-       libs=['ff']
+       libs=['ff', 'dl']
     )
 
 @build.task(['install_headers', 'dependencies'])

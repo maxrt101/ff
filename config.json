@@ -8,6 +8,6 @@
     "cxxflags": ["-std=c++17", "-Wno-undefined-inline"],
     "includes": ["{build_dir}/include"],
     "libdirs": ["{build_dir}/lib"],
-    "libs": ["ff"]
+    "libs": ["ff", "dl"]
   }
 }

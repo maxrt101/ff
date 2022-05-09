@@ -89,12 +89,13 @@ def create_static_lib(files: List[str], output: str):
     cache.update_compilation_output(dirs['lib'] + '/' + output, stdout, stderr)
 
 
-def create_shared_lib(files: List[str], output: str):
+def create_shared_lib(files: List[str], output: str, ldflags: str | List[str] = []):
     stdout, stderr = utils.run_cmd([
         config.get('cpp', 'compiler'),
         '-L' + dirs['lib'],
         *list(map(lambda l: f'-l{l}', config.get('cpp', 'libs'))),
         '-shared',
+        *ldflags,
         '-o', dirs['lib'] + '/' + output,
         *files,
     ], print_stderr=config.get('print_compiler_output'))
@@ -102,7 +103,7 @@ def create_shared_lib(files: List[str], output: str):
     cache.update_compilation_output(dirs['lib'] + '/' + output, stdout, stderr)
 
 
-def compile_batch(files: List[str], prefix_folder: str = '', cxxflags: str = ''):
+def compile_batch(files: List[str], prefix_folder: str = '', cxxflags: str | List[str] = ''):
     for file in files:
         compile(file, prefix_folder, cxxflags)
 
