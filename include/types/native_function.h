@@ -30,7 +30,6 @@ class NativeFunctionType : public Type {
 class NativeFunction : public Instance {
  public:
   using ValueType = std::function<Ref<Object>(VM*, std::vector<Ref<Object>>)>; // result (context, args)
-  // using ValueType = Ref<Object>(*)(VM*, std::vector<Ref<Object>>); // result (context, args)
 
   ValueType func;
   std::vector<Function::Argument> args;

@@ -13,7 +13,7 @@ ff::Compiler::ModuleInfo ff::loadNativeModule(const std::string& name, const std
   ff_modinfo_t* modInfo = lib->getSymbolAs<ff_modinfo_t*>(FF_MODINFO_STR);
 
   if (!modInfo) {
-    throw CompileError(filename, -1, "Cannot find module info symbol ('%s') in module", FF_MODINFO_STR, name.c_str());
+    throw CompileError(filename, -1, "Cannot find module info symbol ('%s') in module %s", FF_MODINFO_STR, name.c_str());
   }
 
   for (int i = 0; modInfo->symbols[i].name; i++) {

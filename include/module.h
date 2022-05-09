@@ -10,8 +10,6 @@
 #define FF_MODINFO modInfo
 #define FF_MODINFO_STR "modInfo"
 
-using TFunction = ff::Object*(*)(ff::VM*, std::vector<ff::Ref<ff::Object>>);
-
 struct ff_symbol_t {
   const char* name;
   ff::Ref<ff::Object> symbol;

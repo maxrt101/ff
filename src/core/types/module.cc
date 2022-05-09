@@ -69,19 +69,25 @@ ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::stri
 
   ff::Scanner scanner(filename, src);
   auto tokens = scanner.tokenize();
+
   ff::Parser parser(filename, tokens);
   auto tree = parser.parse();
+
   if (config::get("debug") != "0") {
     ast::printTree(tree);
   }
+
   ff::Compiler compiler;
   compiler.setThisModule(name);
   compiler.setParentModule(parentModule);
+
   ff::Ref<ff::Code> code = compiler.compile(filename, tree);
+
   if (config::get("debug") != "0") {
     printf("=== Code ===\n\\\n");
     ast::unwrapCode(code);
   }
+
   ff::VM vm;
   vm.run(code);
 
@@ -97,6 +103,8 @@ ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::stri
   }
 
   Compiler::ModuleInfo result = {name, module, compiler.getGlobals()[name]};
+
+  result.sharedLibs = compiler.getSharedLibs();
 
   for (auto& import : compiler.getImports()) {
     if (!isOfType(globals[import], ModuleType::getInstance())) {
