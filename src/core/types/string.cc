@@ -17,19 +17,19 @@ ff::StringType::StringType() : Type("string") {
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       std::string rhs;
       if (isOfType(args[1], StringType::getInstance())) {
-        rhs = args[1].as<String>()->value;
+        rhs = strval(args[1]);
       } else if (isOfType(args[1], IntType::getInstance())) {
-        rhs = std::to_string(args[1].as<Int>()->value);
+        rhs = std::to_string(intval(args[1]));
       } else if (isOfType(args[1], FloatType::getInstance())) {
-        rhs = std::to_string(args[1].as<Float>()->value);
+        rhs = std::to_string(floatval(args[1]));
       } else if (isOfType(args[1], BoolType::getInstance())) {
-        rhs = args[1].as<Bool>()->value ? "true" : "false";
+        rhs = boolval(args[1]) ? "true" : "false";
       } else if (args[1].get() == nullptr) {
         rhs = "null";
       } else {
-        rhs = Object::cast(context, args[1], "int").as<Int>()->value;
+        rhs = strval(Object::cast(context, args[1], "string"));
       }
-      return String::createInstance(args[0].as<String>()->value + rhs).asRefTo<Object>();
+      return obj(String::createInstance(strval(args[0]) + rhs));
     }, {
       {"self", type("string")},
       {"rhs", any()}
@@ -46,7 +46,7 @@ ff::StringType::StringType() : Type("string") {
 
   setField("__bool__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(args[0].as<String>()->value.size() != 0));
+      return obj(boolean(strval(args[0]).size() != 0));
     }, {
       {"self", type("string")}
     }, type("bool")))
@@ -54,7 +54,7 @@ ff::StringType::StringType() : Type("string") {
 
   setField("size",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(integer(args[0].as<String>()->value.size()));
+      return obj(integer(strval(args[0]).size()));
     }, {
       {"self", type("string")}
     }, type("int")))
@@ -62,7 +62,7 @@ ff::StringType::StringType() : Type("string") {
 
   setField("__copy__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(string(args[0].as<String>()->value));
+      return obj(string(strval(args[0])));
     }, {
       {"self", type("string")}
     }, type("string")))
@@ -70,7 +70,7 @@ ff::StringType::StringType() : Type("string") {
 
   setField("__assign__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      args[0].as<String>()->value = args[1].as<String>()->value;
+      strval(args[0]) = strval(args[1]);
       return Ref<Object>();
     }, {
       {"self", type("string")},

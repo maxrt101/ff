@@ -14,7 +14,7 @@ ff::Ref<ff::BoolType> ff::BoolType::m_instance;
 ff::BoolType::BoolType() : Type("bool") {
   setField("__not__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(args[0].as<Bool>()->value ? g_false : g_true);
+      return obj(boolval(args[0]) ? g_false : g_true);
     }, {
       {"self", type("bool")}
     }, type("bool")))
@@ -22,7 +22,7 @@ ff::BoolType::BoolType() : Type("bool") {
 
   setField("__as_string__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(string(args[0].as<Bool>()->value ? "true" : "false"));
+      return obj(string(boolval(args[0]) ? "true" : "false"));
     }, {
       {"self", type("bool")}
     }, type("string")))
@@ -30,7 +30,7 @@ ff::BoolType::BoolType() : Type("bool") {
 
   setField("__copy__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(args[0].as<Bool>()->value));
+      return obj(boolean(boolval(args[0])));
     }, {
       {"self", type("bool")}
     }, type("bool")))
@@ -38,7 +38,7 @@ ff::BoolType::BoolType() : Type("bool") {
 
   setField("__assign__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      args[0].as<Bool>()->value = args[1].as<Bool>()->value;
+      boolval(args[0]) = boolval(args[1]);
       return Ref<Object>();
     }, {
       {"self", type("bool")},

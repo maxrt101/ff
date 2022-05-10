@@ -48,14 +48,32 @@ inline Ref<Object> obj(Ref<T> o) {
 }
 
 Ref<String> string(const std::string& value);
+Ref<String> string(Ref<Object> object);
 Ref<Float> floating(Float::ValueType value);
+Ref<Float> floating(Ref<Object> object);
 Ref<Int> integer(Int::ValueType value);
+Ref<Int> integer(Ref<Object> object);
 Ref<Bool> boolean(bool value);
+Ref<Bool> boolean(Ref<Object> object);
 Ref<Function> fn(Function::ValueType code, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
+Ref<Function> fn(Ref<Object> object);
 Ref<NativeFunction> fn(NativeFunction::ValueType func, const std::vector<Function::Argument>& args, Ref<TypeAnnotation> returnType);
+Ref<NativeFunction> nativefn(Ref<Object> object);
 Ref<Module> module(const std::string& name);
+Ref<Module> module(Ref<Object> object);
 Ref<Vector> vector(const Vector::ValueType& value);
+Ref<Vector> vector(Ref<Object> object);
 Ref<Dict> dict(Dict::ValueType value);
+Ref<Dict> dict(Ref<Object> object);
+
+std::string& strval(Ref<String> value);
+std::string& strval(Ref<Object> object);
+Float::ValueType& floatval(Ref<Float> value);
+Float::ValueType& floatval(Ref<Object> object);
+Int::ValueType& intval(Ref<Int> value);
+Int::ValueType& intval(Ref<Object> object);
+bool& boolval(Ref<Bool> value);
+bool& boolval(Ref<Object> object);
 
 template <typename T>
 inline Ref<T> ref(Ref<T>& annotation) {

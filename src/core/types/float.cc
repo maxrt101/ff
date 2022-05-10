@@ -10,16 +10,16 @@ using namespace ff::types;
   do { \
     setField(name, \
       obj(fn([](VM* context, std::vector<Ref<Object>> args) { \
-        float lhs = args[0].as<Float>()->value; \
+        float lhs = floatval(args[0]); \
         float rhs = 0; \
         if (isOfType(args[1], FloatType::getInstance())) { \
           rhs = args[1].as<Float>()->value; \
         } else if (isOfType(args[1], IntType::getInstance())) { \
           rhs = args[1].as<Int>()->value; \
         } else { \
-          rhs = Object::cast(context, args[1], "float").as<Float>()->value; \
+          rhs = floatval(Object::cast(context, args[1], "float")); \
         } \
-        return T::createInstance(lhs op rhs).asRefTo<Object>(); \
+        return obj(T::createInstance(lhs op rhs)); \
       }, { \
         {"self", type("float")}, \
         {"other", any()} \
@@ -43,7 +43,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__neg__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(floating(-args[0].as<Float>()->value));
+      return obj(floating(-floatval(args[0])));
     }, {
       {"self", type("float")}
     }, type("float")))
@@ -51,8 +51,8 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__inc__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      auto res = floating(args[0].as<Float>()->value);
-      args[0].as<Float>()->value++;
+      auto res = floating(floatval(args[0]));
+      floatval(args[0])++;
       return obj(res);
     }, {
       {"self", type("float")}
@@ -61,8 +61,8 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__dec__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      auto res = floating(args[0].as<Float>()->value);
-      args[0].as<Float>()->value--;
+      auto res = floating(floatval(args[0]));
+      floatval(args[0])--;
       return obj(res);
     }, {
       {"self", type("float")}
@@ -71,7 +71,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__as_int__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(integer(args[0].as<Float>()->value));
+      return obj(integer(floatval(args[0])));
     }, {
       {"self", type("float")}
     }, type("float")))
@@ -79,7 +79,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__as_float__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(floating(args[0].as<Float>()->value));
+      return obj(floating(floatval(args[0])));
     }, {
       {"self", type("float")}
     }, type("float")))
@@ -87,7 +87,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__as_string__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(string(std::to_string(args[0].as<Float>()->value)));
+      return obj(string(std::to_string(floatval(args[0]))));
     }, {
       {"self", type("float")}
     }, type("string")))
@@ -95,7 +95,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__bool__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(args[0].as<Float>()->value != 0));
+      return obj(boolean(floatval(args[0]) != 0));
     }, {
       {"self", type("float")}
     }, type("string")))
@@ -103,7 +103,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__copy__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(floating(args[0].as<Float>()->value));
+      return obj(floating(floatval(args[0])));
     }, {
       {"self", type("float")}
     }, type("float")))
@@ -111,7 +111,7 @@ ff::FloatType::FloatType() : Type("float") {
 
   setField("__assign__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      args[0].as<Float>()->value = args[1].as<Float>()->value;
+      floatval(args[0]) = floatval(args[1]);
       return Ref<Object>();
     }, {
       {"self", type("float")}
