@@ -8,6 +8,8 @@ static std::map<std::string, std::string> g_values;
 void ff::config::initialize() {
   set("entry", "main");
   set("debug", "0");
+  set("verbose", "0");
+  set("import_path", "");
 }
 
 bool ff::config::exists(const std::string& key) {

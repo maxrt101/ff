@@ -325,6 +325,7 @@ ff::Ref<ff::Object> ff::VM::returnCall() {
 }
 
 bool ff::VM::executeInstruction(Opcode op) {
+#ifdef _FF_DEBUG_TRACE
   if (config::get("debug") != "0") {
     printf("%04zx | ", getCode()->getReadIndex());
     switch (op) {
@@ -471,6 +472,7 @@ bool ff::VM::executeInstruction(Opcode op) {
         break;
     }
   }
+#endif
 
   switch (op) {
     case OP_POP: {
@@ -641,7 +643,9 @@ bool ff::VM::executeInstruction(Opcode op) {
       break;
     }
     case OP_CALL: {
-      call(pop(), popCheckType(IntType::getInstance()).asRefTo<Int>()->value);
+      Ref<Object> fn = pop();
+      int argc = popCheckType(IntType::getInstance()).asRefTo<Int>()->value;
+      call(fn, argc);
       break;
     }
     case OP_CALL_MEMBER: {
@@ -802,10 +806,12 @@ bool ff::VM::executeInstruction(Opcode op) {
       throw createError("Unknown Instruction 0x%x", op);
   }
 
+#ifdef _FF_DEBUG_TRACE
   if (config::get("debug") != "0") {
     printf("     ");
     printStack();
   }
+#endif
 
   return true;
 }

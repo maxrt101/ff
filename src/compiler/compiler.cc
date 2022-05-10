@@ -1233,19 +1233,22 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
   ast::Import* imp = node->as<ast::Import>();
 
   std::string cwd = path::getcwd();
-  std::string filedir;
-  if (path::isRoot(m_filename)) {
-    filedir = path::getFolder(m_filename);
-  } else {
-    filedir = path::concat(cwd, path::getFolder(m_filename));
-  }
+  std::string filedir = path::isRoot(m_filename) ? path::getFolder(m_filename) : path::concat(cwd, path::getFolder(m_filename));
+
+  // Generate import paths
   std::vector<std::string> importPaths = {filedir, cwd};
+
   const char* envImportPath = std::getenv(FF_IMPORT_PATH_ENV_VAR);
   if (envImportPath) {
-    auto envImports = mrt::str::split(envImportPath, ":");
-    importPaths.insert(importPaths.end(), envImports.begin(), envImports.end());
+    auto envImportPaths = mrt::str::split(envImportPath, ":");
+    importPaths.insert(importPaths.end(), envImportPaths.begin(), envImportPaths.end());
   }
 
+  auto configImportPaths = mrt::str::split(config::get("import_path"), ":");
+  importPaths.insert(importPaths.end(), configImportPaths.begin(), configImportPaths.end());
+
+
+  // Import modules
   for (auto& import : imp->getImports()) {
     std::string name = path::stripExtension(path::getFile(import));
     if (std::find(m_imports.begin(), m_imports.end(), name) != m_imports.end()) {
@@ -1257,10 +1260,11 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
     }
 
     ModuleInfo modInfo;
-    if (mrt::str::endsWith(import, ".ffmod") || mrt::str::endsWith(import, ".so")) {
-      modInfo = loadNativeModule(name, config::format(path::getImportFileFromPath(import, importPaths)));
+    std::string fullPath = config::format(path::getImportFileFromPath(import, importPaths));
+    if (mrt::str::endsWith(fullPath, ".ffmod") || mrt::str::endsWith(fullPath, ".so")) {
+      modInfo = loadNativeModule(name, fullPath);
     } else {
-      modInfo = loadModule(name, config::format(path::getImportFileFromPath(import, importPaths)), m_thisModuleName);
+      modInfo = loadModule(name, fullPath, m_thisModuleName);
     }
 
     getCode()->addModule(name, modInfo.module.asRefTo<Object>());

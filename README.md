@@ -25,7 +25,7 @@ For more verbose output use `-v`
 
 To make a debug build, use `-p debug` option, you can also provide a (comma separated) list of features with `--feature FEATURES`.  
 Supported features: `LOG_STDOUT_ONLY`.  
-Supported debug features: `MEM`, `REF`, `EVAL`, `TOKENS`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
+Supported debug features: `MEM`, `REF`, `EVAL`, `DISASM`, `TOKENS`, `TREE`, `TRACE`, `SCOPES`, `GLOBALS`, `NOCATCH`.  
 
 Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
 
@@ -56,7 +56,7 @@ Used for setting a value of a variable that is a reference for another variable.
 ```
 var x = 10;
 var r = ref x;
-r := 20; // same as r.__assign__(20) (effectively calls x.__assign__(20))
+r := 20; // same as r.__assign__(20) (effectively calls x.__assign__(20), since r is a reference to x)
 ```
 
 ### 2. Types
@@ -85,7 +85,7 @@ var x = return100();
 ```
 Even though we didn't add any annotations, the compiler will infer type of `return100` as `() -> int` and type of `x` as `int`.  
 
-But consider next example:
+But consider this example:
 ```
 fn returnUnion(i: int) -> {
   if (i == 0) {
@@ -122,11 +122,19 @@ var i = 100;
 var s: str = "abc";
 ```
 
+Constants. Constants are like declared variables, but with `const` instead of `var`. Assignment to a const is an error.  
+
+```
+const VERSION = "1.0";
+VERSION = "1.1"; // Produces an error
+```
+
 ### 5. Functions
 Functions are declared using `fn` keyword followed by function name and parameter list.  
-Every parameter can have optional type annotation as well as the function itself.  
+Every parameter can have optional type annotation.  
 For any type that cannot be inferred, `any` will be assumed.  
-After parameter list `->` must be placed.  
+After parameter list optional return type annotation can be placed.  
+After that right arrow (`->`) must be placed.  
 Function body can be either a block or an expression.  
 
 ```
@@ -194,7 +202,7 @@ while (i < 10) {
 
 ### 8. References
 All values are allocated on the heap and passed around as references (pointers).  
-By default values are copied, when the value is assigned to some variable.  
+By default values are copied, when the value is assigned to some variable or passed as a parameter.  
 The values are copied using `__copy__` method.  
 You can prevent the value from being copied by using `ref` keyword.  
 
@@ -243,7 +251,7 @@ References and functions.
 If you want to pass variable reference to a function, use `ref` on an argument.  
 
 ```
-fn modify(x: int) -> {
+fn modify(x: ref int) -> {
   ++x;
 }
 
@@ -379,7 +387,91 @@ fn main() -> {
 }
 ```
 
-Compiler resolves a module filename, by appending an import name to a set of folders (folder where source file is located and current working directory) and checking if the resulting path exists.  
+Compiler resolves a module filename, by appending import module name to a set of folders (folder where source file is located, current working directory, `FF_IMPORT_PATH` env variable and set of folders added by `-i` command line option) and checking if the resulting path exists.  
 Compiler will try to add `.ff` and `.ffmod` extensions to the import module name if the file with such name doesn't exist.  
 
 Note: if imported file has other declarations apart from the imported module declaration, they will be ignored (except for imports).  
+
+### 11. Native Modules
+Native modules are written in C++ and compiled into shared libraries.  
+
+#### Structure
+
+For a shared object to be considered as a ff module, it has to have `ff_modinfo_t modInfo` symbol (with `extern "C"` linkage).  
+
+`ff_modinfo_t` is a struct with fields `name`, `version`, `author`, `symbols` and `annotations`.  
+
+`symbols` and `annotations` are arrays of `ff_symbol_t` and `ff_annotation_t` respectively. Those arrays must be terminated with `{nullptr}` as the last element.  
+
+`ff_symbol_t` is a struct with `name` and `symbol` fields. `name` is the symbol's name and `symbol` is `Ref<Object>`.  
+
+With `symbol` being a `Ref<Object>` you can export anything, not just functions.  
+
+For a native function C++ signature looks like `Ref<Object> function(VM* context, std::vector<Ref<Object>> args)`.  
+
+#### Native API:
+
+FF's Object Model is based on `Object` base class, which has 2 children - `Type` and `Instance`.  
+Each type, such as `Int` or `String`, extends `Instance` class and has a 'typeclass', which extends `Type`.  
+So `Int` has `IntType`, `String` - `StringType`.  
+Typeclasses that extend `Type` are singletons (see `src/types/` for examples).  
+
+All objects are used within a `Ref<T>`, which is a shared pointer.  
+With everyhing stored and passed as a shared pointer, objects are deleted when there are no more references to them.  
+So, with no explicit GC, memory is still collected, and no leaks should happen.  
+
+Major part of Native API is `ff::types` namespace. which provides a set of functions that help deal with ff's objects and types and reduces the ammount of code needed.  
+
+For example, to create a string, you need to call `String::createInstance("ABC")`.  
+With `ff::types` you can just call `string("ABC")`.  
+If you need to pass newly created string as a `Ref<Object>`, you must use `.asRefTo<Object>()`, so earlier string creation code becomes `String::createInstance("ABC").asRefTo<Object>()`.
+With `ff::types` it's just `obj(string("ABC"))`.  
+Another example is `TypeAnnotation`s creation. With `ff::types`, `TypeAnnotation::create()` becomes `type()`, `FunctionAnnotation::create()` - `ftype()` and `UnionAnnotation::create()` - `utype()`.  
+
+Also there are `ff::types::literals`, which include literals for basic types, such as `ff::String` - `_s`, `ff::Int` - `_i`, `ff::Float` - `_f` and `_ta` for `ff::TypeAnnotation`.  
+
+Native Module Example:  
+```C++
+#include <ff/ff.h>
+#include <vector>
+#include <cstdio>
+
+using namespace ff::types;
+
+ff::Ref<ff::Object> println(ff::VM* context, std::vector<ff::Ref<ff::Object>> args) {
+  printf("%s\n", args[0]->toString().c_str());
+  return ff::Ref<ff::Object>();
+}
+
+ff_symbol_t symbols[] {
+  {"println", obj(fn(println, {{"arg", any()}}, nothing()))},
+  {nullptr},
+};
+
+ff_annotation_t annotations[] {
+  {nullptr}
+};
+
+extern "C" ff_modinfo_t modInfo = {
+  "io",
+  "0.1",
+  "maxrt",
+  symbols,
+  annotations
+};
+```
+
+Compile with:  
+```
+g++ -std=c++17 -Itarget/debug/include -fPIC -c io.cc -o io.o
+g++ -std=c++17 -Ltarget/debug/lib -shared -lff io.o -o io.ffmod
+```  
+
+Usage within the language:  
+```
+import "io";
+
+fn main() -> {
+  io.println("test");
+}
+```
