@@ -146,8 +146,6 @@ ff::Compiler::Compiler() {
   m_globalVariables["string"] = Variable::fromObject("string", StringType::getInstance().asRefTo<Object>());
   m_globalVariables["dict"] = Variable::fromObject("dict", DictType::getInstance().asRefTo<Object>());
   m_globalVariables["vector"] = Variable::fromObject("vector", VectorType::getInstance().asRefTo<Object>());
-
-  m_annotations["print"] = annotations::print;
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -663,13 +661,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule) {
   ast::Function* fn = node->as<ast::Function>();
 
-  for (auto& annotation : node->getAnnotations()) {
-    auto aitr = m_annotations.find(annotation);
-    if (aitr != m_annotations.end()) {
-      aitr->second(node);
-    }
-  }
-
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
   auto bodyType = evalNode(fn->getBody(), true, isModule);
@@ -725,16 +716,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     fn->getFunctionType().as<FunctionAnnotation>()->returnType
   );
 
-  std::vector<Ref<Object>> annotations;
-  std::transform(
-    BEGIN_END(fn->getAnnotations()),
-    std::back_inserter(annotations),
-    [](const auto& annotation) {
-      return String::createInstance(annotation).template asRefTo<Object>();
-    }
-  );
-  function->setField("__annotations__", Vector::createInstance(annotations).asRefTo<Object>());
-
   if (isModule) {
     emitConstant(function.asRefTo<Object>());
     TypeInfo typeInfo = resolveCurrentModule();
@@ -752,13 +733,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue, bool isModule) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
-
-  for (auto& annotation : node->getAnnotations()) {
-    auto aitr = m_annotations.find(annotation);
-    if (aitr != m_annotations.end()) {
-      aitr->second(node);
-    }
-  }
 
   Variable var {
     varNode->getName().str,
@@ -1282,13 +1256,6 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
 
     for (auto& dl : modInfo.sharedLibs) {
       m_sharedLibs[dl.first] = std::move(dl.second);
-    }
-
-    for (auto& annotation : modInfo.annotations) {
-      if (m_annotations.find(annotation.first) != m_annotations.end()) {
-        continue;
-      }
-      m_annotations[annotation.first] = annotation.second;
     }
   }
 }
