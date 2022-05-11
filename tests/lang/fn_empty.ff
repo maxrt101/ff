@@ -1,0 +1,6 @@
+
+fn returnNothing() -> {}
+
+fn main() -> {
+  returnNothing();
+}

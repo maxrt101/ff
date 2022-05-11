@@ -1,0 +1,5 @@
+
+fn main() -> {
+  const LOCAL = "abc";
+  assert(LOCAL == "abc");
+}

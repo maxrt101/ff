@@ -1,0 +1,5 @@
+
+fn main() -> {
+  var x: int = 100;
+  x = "abc";
+}

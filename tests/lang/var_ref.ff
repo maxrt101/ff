@@ -1,0 +1,9 @@
+
+fn main() -> {
+  var i = 10;
+  var r = ref i;
+
+  r := 15;
+
+  assert(i == 15);
+}

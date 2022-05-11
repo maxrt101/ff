@@ -1,0 +1,8 @@
+
+fn main() -> {
+  var s = 10 as string;
+  var f = 10 as float;
+
+  assert(s == "10");
+  assert(f == 10.0);
+}

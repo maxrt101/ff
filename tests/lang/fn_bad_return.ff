@@ -1,0 +1,6 @@
+
+fn returnString(): string -> 100;
+
+fn main() -> {
+  var res = returnString();
+}

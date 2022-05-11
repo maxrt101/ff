@@ -1,0 +1,6 @@
+
+
+fn main() -> {
+  const LOCAL = "abc";
+  LOCAL = "123";
+}

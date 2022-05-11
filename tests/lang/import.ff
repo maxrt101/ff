@@ -1,0 +1,8 @@
+
+import "module_test";
+
+fn main() -> {
+  assert(module_test.version == "1.0");
+  assert(module_test.getVersion() == "1.0");
+}
+

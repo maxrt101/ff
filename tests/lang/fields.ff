@@ -1,0 +1,6 @@
+
+fn main() -> {
+  var x = 120;
+  x.someField = 1;
+  assert(x.someField == 1);
+}

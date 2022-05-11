@@ -1,0 +1,13 @@
+
+module module_test {
+  var version = "1.0";
+
+  fn getVersion() -> {
+    return module_test.version;
+  }
+}
+
+fn main() -> {
+  assert(module_test.version == "1.0");
+  assert(module_test.getVersion() == "1.0");
+}

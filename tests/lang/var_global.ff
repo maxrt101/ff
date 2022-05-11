@@ -1,0 +1,8 @@
+
+var global = "abc";
+
+fn main() -> {
+  assert(global == "abc");
+  global = "123";
+  assert(global == "123");
+}

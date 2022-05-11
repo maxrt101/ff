@@ -1,0 +1,12 @@
+
+fn returnUnion(i: int) -> {
+  if (i == 0) {
+    return 100;
+  } else {
+    return "abc";
+  }
+}
+
+fn main() -> {
+  var res = returnUnion(0);
+}

@@ -1,0 +1,7 @@
+
+fn main() -> {
+  var local = "abc";
+  assert(local == "abc");
+  local = "123";
+  assert(local == "123");
+}

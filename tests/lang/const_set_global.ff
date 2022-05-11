@@ -1,0 +1,6 @@
+
+const GLOBAL = "abc";
+
+fn main() -> {
+  GLOBAL = "123";
+}

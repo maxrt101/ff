@@ -1,0 +1,10 @@
+
+fn modify(x: ref int) -> {
+  x := 100;
+}
+
+fn main() -> {
+  var a = 1;
+  modify(ref a);
+  assert(a == 100);
+}

@@ -106,4 +106,13 @@ def cppcheck(ctx):
         cf('{topdir}/src')
     ], print_stdout=True, print_stderr=True)
 
+@build.task()
+def test(ctx):
+    build.run_cmd(
+        ['./tests/run.sh', cf('{profile}')],
+        exit_on_fail=False,
+        print_stderr=True,
+        print_stdout=True
+    )
+
 build.cli.run('ff')

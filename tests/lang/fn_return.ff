@@ -1,0 +1,8 @@
+
+fn return100() -> {
+  return 100;
+}
+
+fn main() -> {
+  assert(return100() == 100);
+}
