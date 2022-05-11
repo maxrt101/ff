@@ -38,13 +38,18 @@ jobs:
           sudo apt install python3.10 g++
         shell: bash
 
+      - name: Prepare Parameterized
+        if: "${{ github.event.inputs.profile != '' }}"
+        run: |
+          python3 -c "import json; c = json.loads(open('config.json').read()); c['profile'] = '${{ github.event.inputs.profile }}'; open('config.json', 'w').write(json.dumps(c, indent=4))"
+
       - name: Build Parameterized
         if: "${{ github.event.inputs.profile != '' }}"
         run: |
           cd $GITHUB_WORKSPACE
           git submodule update --init
           echo Staring parameterized build
-          python3.10 make.py -o --profile ${{ github.event.inputs.profile }} --feature "${{ github.event.inputs.features }}"
+          python3.10 make.py -o --feature "${{ github.event.inputs.features }}"
 
       - name: Build Default
         if: "${{ github.event.inputs.profile == '' }}"
@@ -53,6 +58,11 @@ jobs:
           git submodule update --init
           echo Staring build
           python3.10 make.py -o
+
+      - name: Run Tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          python3.10 make.py test
 
       - name: Install cppcheck
         id: cppcheck_install
