@@ -7,7 +7,6 @@
 
 ff::Compiler::ModuleInfo ff::loadNativeModule(const std::string& name, const std::string& filename) {
   Ref<Module> module = Module::createInstance(name);
-  std::map<std::string, ASTAnnotation> annotations;
 
   auto lib = Ref(new mrt::DynamicLibrary(filename));
 
@@ -24,17 +23,13 @@ ff::Compiler::ModuleInfo ff::loadNativeModule(const std::string& name, const std
     module->setField(modInfo->symbols[i].name, modInfo->symbols[i].symbol);
   }
 
-  for (int i = 0; modInfo->annotations[i].name; i++) {
-    annotations[modInfo->annotations[i].name] = modInfo->annotations[i].annotation;
-  }
-
   Compiler::ModuleInfo result = {
     name,
     module,
     Compiler::Variable::fromObject(name, module.asRefTo<Object>()),
     {},
-    {{name, lib}},
-    annotations};
+    {{name, lib}}
+  };
 
   return result;
 }

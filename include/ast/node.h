@@ -62,16 +62,12 @@ std::string nodeTypeToString(NodeType type);
 class Node {
  private:
   NodeType m_type;
-  std::vector<std::string> m_annotations;
 
  public:
   explicit Node(NodeType type);
   virtual ~Node();
 
   NodeType getType() const;
-  void addAnnotation(const std::string& annotation);
-  void addAnnotations(const std::vector<std::string>& annotations);
-  std::vector<std::string>& getAnnotations();
   virtual std::string toString() const;
 
   template <typename T>

@@ -114,7 +114,8 @@ ff::FloatType::FloatType() : Type("float") {
       floatval(args[0]) = floatval(args[1]);
       return Ref<Object>();
     }, {
-      {"self", type("float")}
+      {"self", type("float")},
+      {"other", type("float")}
     }, type("float")))
   );
 }

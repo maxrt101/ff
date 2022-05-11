@@ -14,14 +14,9 @@ ff_symbol_t symbols[] {
   {nullptr},
 };
 
-ff_annotation_t annotations[] {
-  {nullptr}
-};
-
 extern "C" ff_modinfo_t modInfo = {
   "io",
   "0.1",
   "maxrt",
-  symbols,
-  annotations
+  symbols
 };

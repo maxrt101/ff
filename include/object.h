@@ -38,6 +38,7 @@ class Object {
   virtual bool equals(Ref<Object> other) const;
 
   static Ref<Object> cast(VM* context, Ref<Object> object, const std::string& typeName);
+  static bool toBool(VM* context, Ref<Object> object);
 };
 
 class Type : public Object {

@@ -1,4 +1,5 @@
 #include <ff/object.h>
+#include <ff/types.h>
 #include <ff/errors.h>
 #include <ff/memory.h>
 #include <ff/runtime.h>
@@ -53,6 +54,20 @@ ff::Ref<ff::Object> ff::Object::cast(VM* context, Ref<Object> object, const std:
   const std::string castFunctionName = "__as_" + typeName + "__";
   context->callMember(object, castFunctionName);
   return context->pop();
+}
+
+bool ff::Object::toBool(VM* context, Ref<Object> object) {
+  if (object.get()) {
+    if (object->isType() && object.as<Type>()->getTypeName() != "null") {
+      return true;
+    } else if (isOfType(object, BoolType::getInstance())) {
+      return types::boolval(object);
+    } else {
+      context->callMember(object, "__bool__", 0);
+      return types::boolval(context->popCheckType(BoolType::getInstance()));
+    }
+  }
+  return false;
 }
 
 ff::Type::Type(const std::string& typeName) : Object(OTYPE_TYPE), m_typeName(typeName) {}

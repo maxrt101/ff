@@ -38,9 +38,10 @@ ff::StringType::StringType() : Type("string") {
 
   setField("__eq__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(false));
+      return obj(boolean(strval(args[0]) == strval(args[1])));
     }, {
-      {"self", type("string")}
+      {"self", type("string")},
+      {"other", type("string")}
     }, type("bool")))
   );
 

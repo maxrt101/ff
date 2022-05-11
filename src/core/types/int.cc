@@ -115,7 +115,8 @@ ff::IntType::IntType() : Type("int") {
       intval(args[0]) = intval(args[1]);
       return Ref<Object>();
     }, {
-      {"self", type("int")}
+      {"self", type("int")},
+      {"other", type("int")}
     }, type("int")))
   );
 }

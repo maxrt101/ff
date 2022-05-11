@@ -313,34 +313,7 @@ Output:
 100
 ```
 
-### 9. Annotations
-You can annotate functions or variable declarations for convinience, or to inspect/alter their AST nodes.  
-```
-@print
-fn test(x: ref int, y: int) -> {
-  x := y;
-}
-```
-
-`print` annotation will print the AST node that it annotates.  
-In C++ code the implementation of `print` looks something like this:  
-```C++
-void ff::annotations::print(ast::Node* node) {
-  printTree(node);
-}
-```
-
-Annotated functions have their annotations stored in `__annotations__` field.  
-```
-print test.__annotations__;
-```
-
-Output:
-```
-{print}
-```
-
-### 10. Modules
+### 9. Modules
 Modules are practically namespaces, which you can load from other files.  
 
 Example:  
@@ -392,16 +365,16 @@ Compiler will try to add `.ff` and `.ffmod` extensions to the import module name
 
 Note: if imported file has other declarations apart from the imported module declaration, they will be ignored (except for imports).  
 
-### 11. Native Modules
+### 10. Native Modules
 Native modules are written in C++ and compiled into shared libraries.  
 
 #### Structure
 
 For a shared object to be considered as a ff module, it has to have `ff_modinfo_t modInfo` symbol (with `extern "C"` linkage).  
 
-`ff_modinfo_t` is a struct with fields `name`, `version`, `author`, `symbols` and `annotations`.  
+`ff_modinfo_t` is a struct with fields `name`, `version`, `author` and `symbols`.  
 
-`symbols` and `annotations` are arrays of `ff_symbol_t` and `ff_annotation_t` respectively. Those arrays must be terminated with `{nullptr}` as the last element.  
+`symbols` is an arrays of `ff_symbol_t`. This array must be terminated with `{nullptr}` as the last element.  
 
 `ff_symbol_t` is a struct with `name` and `symbol` fields. `name` is the symbol's name and `symbol` is `Ref<Object>`.  
 
@@ -448,23 +421,18 @@ ff_symbol_t symbols[] {
   {nullptr},
 };
 
-ff_annotation_t annotations[] {
-  {nullptr}
-};
-
 extern "C" ff_modinfo_t modInfo = {
   "io",
   "0.1",
   "maxrt",
-  symbols,
-  annotations
+  symbols
 };
 ```
 
 Compile with:  
 ```
-g++ -std=c++17 -Itarget/debug/include -fPIC -c io.cc -o io.o
-g++ -std=c++17 -Ltarget/debug/lib -shared -lff io.o -o io.ffmod
+g++ -std=c++17 -Itarget/release/include -fPIC -c io.cc -o io.o
+g++ -std=c++17 -Ltarget/release/lib -shared -lff io.o -o io.ffmod
 ```  
 
 Usage within the language:  

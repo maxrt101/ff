@@ -53,6 +53,7 @@ static int run(const std::string& filename, std::string src) {
       }
       ff::VM vm;
       vm.runMain(code);
+      return vm.getReturnCode();
     }
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   } catch (const ff::ScanError& e) {

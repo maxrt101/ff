@@ -4,6 +4,7 @@
 #include <ff/utils/macros.h>
 #include <ff/utils/path.h>
 #include <ff/utils/str.h>
+#include <ff/builtins.h>
 #include <ff/memory.h>
 #include <ff/config.h>
 #include <ff/types.h>
@@ -19,6 +20,8 @@
 #include <climits>
 #include <cstdlib>
 #include <cstdarg>
+
+using namespace ff::types;
 
 ff::Compiler::Variable::Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields)
   : name(name), type(type), isConst(isConst), fields(fields) {}
@@ -146,8 +149,8 @@ ff::Compiler::Compiler() {
   m_globalVariables["string"] = Variable::fromObject("string", StringType::getInstance().asRefTo<Object>());
   m_globalVariables["dict"] = Variable::fromObject("dict", DictType::getInstance().asRefTo<Object>());
   m_globalVariables["vector"] = Variable::fromObject("vector", VectorType::getInstance().asRefTo<Object>());
-
-  m_annotations["print"] = annotations::print;
+  m_globalVariables["exit"] = Variable::fromObject("assert", obj(fn_exit));
+  m_globalVariables["assert"] = Variable::fromObject("assert", obj(fn_assert));
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -663,13 +666,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule) {
   ast::Function* fn = node->as<ast::Function>();
 
-  for (auto& annotation : node->getAnnotations()) {
-    auto aitr = m_annotations.find(annotation);
-    if (aitr != m_annotations.end()) {
-      aitr->second(node);
-    }
-  }
-
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
   auto bodyType = evalNode(fn->getBody(), true, isModule);
@@ -725,16 +721,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     fn->getFunctionType().as<FunctionAnnotation>()->returnType
   );
 
-  std::vector<Ref<Object>> annotations;
-  std::transform(
-    BEGIN_END(fn->getAnnotations()),
-    std::back_inserter(annotations),
-    [](const auto& annotation) {
-      return String::createInstance(annotation).template asRefTo<Object>();
-    }
-  );
-  function->setField("__annotations__", Vector::createInstance(annotations).asRefTo<Object>());
-
   if (isModule) {
     emitConstant(function.asRefTo<Object>());
     TypeInfo typeInfo = resolveCurrentModule();
@@ -752,13 +738,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue, bool isModule) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
-
-  for (auto& annotation : node->getAnnotations()) {
-    auto aitr = m_annotations.find(annotation);
-    if (aitr != m_annotations.end()) {
-      aitr->second(node);
-    }
-  }
 
   Variable var {
     varNode->getName().str,
@@ -1282,13 +1261,6 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
 
     for (auto& dl : modInfo.sharedLibs) {
       m_sharedLibs[dl.first] = std::move(dl.second);
-    }
-
-    for (auto& annotation : modInfo.annotations) {
-      if (m_annotations.find(annotation.first) != m_annotations.end()) {
-        continue;
-      }
-      m_annotations[annotation.first] = annotation.second;
     }
   }
 }

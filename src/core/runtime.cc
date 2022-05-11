@@ -1,7 +1,10 @@
 #include <ff/runtime.h>
 #include <ff/config.h>
 #include <ff/types.h>
+#include <ff/builtins.h>
 #include <mrt/console/colors.h>
+
+using namespace ff::types;
 
 ff::RuntimeError::RuntimeError(const std::string& filename, int line, const std::string& msg) : m_filename(filename), m_line(line), m_message(msg) {}
 
@@ -64,6 +67,8 @@ ff::VM::VM() {
   m_globals["string"] = StringType::getInstance().asRefTo<Object>();
   m_globals["dict"]   = DictType::getInstance().asRefTo<Object>();
   m_globals["vector"] = VectorType::getInstance().asRefTo<Object>();
+  m_globals["exit"]   = obj(fn_exit);
+  m_globals["assert"] = obj(fn_assert);
 }
 
 ff::VM::~VM() {}
@@ -83,17 +88,25 @@ void ff::VM::runMain(Ref<Code> code) {
 void ff::VM::run() {
   m_running = true;
   getCode()->resetRead();
-  while (m_running && getCode()->canRead()) {
+  while (m_running && !m_requestStop && getCode()->canRead()) {
     m_running = executeInstruction((Opcode)getCode()->read<uint8_t>());
   }
 }
 
 void ff::VM::stop() {
-  m_running = false;
+  m_requestStop = true;
 }
 
 ff::VM::CallFrame& ff::VM::currentFrame() {
   return m_callStack.peek();
+}
+
+int ff::VM::getReturnCode() {
+  return m_returnCode;
+}
+
+void ff::VM::setReturnCode(int returnCode) {
+  m_returnCode = returnCode;
 }
 
 ff::Stack<ff::VM::StackType>& ff::VM::getStack() {

@@ -4,22 +4,6 @@
 #include <cstdio>
 #include <string>
 
-static void printAnnotations(ff::ast::Node* node, const std::string& prefix = "") {
-  if (node->getAnnotations().size() == 0) return;
-  std::string annotations = "@";
-  if (node->getAnnotations().size() == 1) {
-    annotations += node->getAnnotations().front();
-  } else {
-    annotations += "{";
-    for (int i = 0; i < node->getAnnotations().size(); i++) {
-      annotations += node->getAnnotations()[i];
-      if (i + i < node->getAnnotations().size()) annotations += ", ";
-    }
-    annotations += "}";
-  }
-  printf("%s\n%s", annotations.c_str(), prefix.c_str());
-}
-
 static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool flag = false) {
   using namespace ff::ast;
   if (!node) return;
@@ -78,7 +62,6 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       break;
     }
     case NTYPE_FUNCTION: {
-      printAnnotations(node, prefix);
       Function* fn = node->as<Function>();
       printf("fn %s(", fn->getName().str.c_str());
       _printTree(fn->getArgs());
@@ -98,7 +81,6 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       break;
     }
     case NTYPE_VAR_DECL: {
-      printAnnotations(node, prefix);
       VarDecl* var = node->as<VarDecl>();
       if (flag) printf("%s ", var->getConst() ? "const" : "var");
       printf("%s: %s", var->getName().str.c_str(), var->getVarType()->toString().c_str());

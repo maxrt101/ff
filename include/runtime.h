@@ -25,6 +25,8 @@ class VM {
   Stack<CallFrame> m_callStack;
   std::map<std::string, Ref<Object>> m_globals;
   bool m_running = false;
+  bool m_requestStop = false;
+  int m_returnCode = 0;
 
  public:
   VM();
@@ -33,6 +35,9 @@ class VM {
   void run(Ref<Code> code);
   void runMain(Ref<Code> code);
   void stop();
+
+  int getReturnCode();
+  void setReturnCode(int returnCode);
 
   Stack<StackType>& getStack();
   std::map<std::string, Ref<Object>>& getGlobals();
@@ -54,10 +59,6 @@ class VM {
   void callFunction(Ref<Function> fn, const std::vector<Ref<Object>>& args);
   void callNativeFunction(Ref<NativeFunction> fn, const std::vector<Ref<Object>>& args);
 
- private:
-  uint8_t current();
-  uint8_t peek(int i = 0);
-
   template <typename T>
   inline Ref<Object> popCheckType(Ref<T> type) {
     Ref<Object> value = pop();
@@ -71,6 +72,10 @@ class VM {
       throw createError("TypeMismatch: expected '%s', but got '%s'", type->getTypeName().c_str(), object.template as<Instance>()->getType()->getTypeName().c_str());
     }
   }
+
+ private:
+  uint8_t current();
+  uint8_t peek(int i = 0);
 
   CallFrame& currentFrame();
   Ref<Code>& getCode();
