@@ -70,12 +70,16 @@ def subtask(parent_task: str):
 
 
 def calculate_progress_increment_sub(task_name: str, subtask_name: str, total: int = 100) -> int:
+    checked_tasks = []
+
     def _get_count(task_name: str) -> int:
         if task_name not in _tasks:
             die(f'{ERROR}: Cannot find task "{task_name}"')
         count = 1 + len(_tasks[task_name].subtasks)
         for t in _tasks[task_name].depends:
-            count += _get_count(t)
+            if t not in checked_tasks:
+                count += _get_count(t)
+                checked_tasks.append(t)
         return count
 
     if subtask_name not in _tasks[task_name].subtasks:
@@ -89,12 +93,16 @@ def calculate_progress_increment_sub(task_name: str, subtask_name: str, total: i
 
 
 def calculate_progress_increment(task_name: str, total: int = 100) -> int:
+    checked_tasks = []
+
     def _get_count(task_name: str) -> int:
         if task_name not in _tasks:
             die(f'{ERROR}: Cannot find task "{task_name}"')
         count = 1 + len(_tasks[task_name].subtasks)
         for t in _tasks[task_name].depends:
-            count += _get_count(t)
+            if t not in checked_tasks:
+                count += _get_count(t)
+                checked_tasks.append(t)
         return count
     
     count = _get_count(task_name)
