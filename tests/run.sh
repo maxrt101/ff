@@ -99,6 +99,7 @@ expect_ret 0 tests/lang/loop_for.ff
 expect_ret 0 tests/lang/loop_loop.ff
 expect_ret 0 tests/lang/loop_while.ff
 expect_ret 0 tests/lang/module_test.ff
+expect_ret 0 tests/lang/recursion.ff
 expect_ret 0 tests/lang/var_global.ff
 expect_ret 0 tests/lang/var_local.ff
 expect_ret 1 tests/lang/var_reassign_different_type.ff

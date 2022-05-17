@@ -1,0 +1,14 @@
+
+fn fib(n: int): int -> {
+  if (n < 2) {
+    return n
+  }
+
+  return fib(n - 2) + fib(n - 1);
+}
+
+fn main() -> {
+  assert(fib(5) == 5);
+  assert(fib(10) == 55);
+  assert(fib(15) == 610);
+}
