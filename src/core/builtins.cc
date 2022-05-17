@@ -26,4 +26,19 @@ ff::Ref<ff::NativeFunction> ff::fn_assert = fn(
   nothing()
 );
 
+ff::Ref<ff::NativeFunction> ff::fn_type = fn(
+  [](ff::VM* context, std::vector<ff::Ref<ff::Object>> args) {
+    if (!args[0].get()) {
+      return obj(string("null"));
+    }
+    if (args[0]->isInstance()) {
+      return obj(string(args[0].as<ff::Instance>()->getType()->getTypeName()));
+    } else {
+      return obj(string("type"));
+    }
+  },
+  {{"value", any()}},
+  type("string")
+);
+
 

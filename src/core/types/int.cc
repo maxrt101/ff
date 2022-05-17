@@ -78,6 +78,14 @@ ff::IntType::IntType() : Type("int") {
     }, type("int")))
   );
 
+  setField("__as_bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(intval(args[0]) != 0));
+    }, {
+      {"self", type("int")}
+    }, type("bool")))
+  );
+
   setField("__as_float__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       return obj(floating(intval(args[0])));

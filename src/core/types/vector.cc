@@ -19,14 +19,52 @@ ff::VectorType::VectorType() : Type("vector") {
     }, type("string")))
   );
 
+  setField("__eq__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& self = args[0].as<Vector>()->value;
+      auto& other = args[1].as<Vector>()->value;
+      if (self.size() != other.size()) {
+        return obj(boolean(false));
+      }
+      for (int i = 0; i < self.size(); i++) {
+        if (self[i]->equals(other[i])) {
+          return obj(boolean(false));
+        }
+      }
+      return obj(boolean(true));
+    }, {
+      {"self", type("vector")},
+      {"other", type("vector")}
+    }, type("bool")))
+  );
+
+  setField("__eq__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& self = args[0].as<Vector>()->value;
+      auto& other = args[1].as<Vector>()->value;
+      if (self.size() != other.size()) {
+        return obj(boolean(true));
+      }
+      for (int i = 0; i < self.size(); i++) {
+        if (self[i]->equals(other[i])) {
+          return obj(boolean(true));
+        }
+      }
+      return obj(boolean(false));
+    }, {
+      {"self", type("vector")},
+      {"other", type("vector")}
+    }, type("bool")))
+  );
+
   setField("get",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto self = args[0].as<Vector>();
       int index = args[1].as<Int>()->value;
-      if (index > self->value.size()) {
+      if ((index >= 0 && index >= self->value.size()) || (index < 0 && -index >= self->value.size())) {
         return Ref<Object>();
       }
-      return self->value[index];
+      return self->value[index < 0 ? self->value.size() + index : index];
     }, {
       {"self", type("vector")},
       {"index", type("int")}
@@ -37,8 +75,8 @@ ff::VectorType::VectorType() : Type("vector") {
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto self = args[0].as<Vector>();
       int index = args[1].as<Int>()->value;
-      if (index < self->value.size()) {
-        self->value[index] = args[2];
+      if ((index >= 0 && index < self->value.size()) || (index < 0 && -index < self->value.size())) {
+        self->value[index < 0 ? self->value.size() + index : index] = args[2];
       }
       return Ref<Object>();
     }, {
@@ -58,10 +96,23 @@ ff::VectorType::VectorType() : Type("vector") {
     }, any()))
   );
 
+  setField("pop",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      Ref<Object> result = args[0].as<Vector>()->value.back();
+      args[0].as<Vector>()->value.pop_back();
+      return result;
+    }, {
+      {"self", type("vector")}
+    }, any()))
+  );
+
   setField("remove",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto& vec = args[0].as<Vector>()->value;
-      vec.erase(vec.begin() + args[1].as<Int>()->value);
+      auto index = intval(args[1]);
+      if (index < vec.size()) {
+        vec.erase(vec.begin() + index);
+      }
       return Ref<Object>();
     }, {
       {"self", type("vector")},
@@ -69,7 +120,7 @@ ff::VectorType::VectorType() : Type("vector") {
     }, any()))
   );
 
-  setField("index",
+  setField("find",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto& vec = args[0].as<Vector>()->value;
       for (int i = 0; i < vec.size(); i++) {
@@ -80,7 +131,7 @@ ff::VectorType::VectorType() : Type("vector") {
       return Ref<Object>();
     }, {
       {"self", type("vector")},
-      {"vakuee", any()}
+      {"value", any()}
     }, type("int")))
   );
 
@@ -90,6 +141,34 @@ ff::VectorType::VectorType() : Type("vector") {
     }, {
       {"self", type("vector")}
     }, type("int")))
+  );
+
+  setField("__add__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      std::vector<Ref<Object>> res;
+      res.insert(res.end(), args[0].as<Vector>()->value.begin(), args[0].as<Vector>()->value.end());
+      res.insert(res.end(), args[1].as<Vector>()->value.begin(), args[1].as<Vector>()->value.end());
+      return obj(vector(res));
+    }, {
+      {"self", type("vector")},
+      {"other", type("vector")}
+    }, type("vector")))
+  );
+
+  setField("unique",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      std::vector<Ref<Object>> res;
+      auto& vec = args[0].as<Vector>()->value;
+      for (auto itr = vec.begin(); itr != vec.end(); ++itr) {
+        auto ritr = std::find_if(res.begin(), res.end(), [&itr](auto& element) { return element->equals(*itr); });
+        if (ritr == res.end()) {
+          res.push_back(*itr);
+        }
+      }
+      return obj(vector(res));
+    }, {
+      {"self", type("vector")}
+    }, type("vector")))
   );
 
   setField("__bool__",

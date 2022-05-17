@@ -10,6 +10,7 @@ namespace ff {
 
 extern Ref<NativeFunction> fn_exit;
 extern Ref<NativeFunction> fn_assert;
+extern Ref<NativeFunction> fn_type;
 
 } /* namespace ff */
 

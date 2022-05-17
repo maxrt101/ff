@@ -77,6 +77,14 @@ ff::FloatType::FloatType() : Type("float") {
     }, type("float")))
   );
 
+  setField("__as_bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(floatval(args[0]) != 0.0));
+    }, {
+      {"self", type("float")}
+    }, type("bool")))
+  );
+
   setField("__as_float__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       return obj(floating(floatval(args[0])));

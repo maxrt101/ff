@@ -2,6 +2,9 @@
 #include <ff/memory.h>
 #include <ff/runtime.h>
 #include <ff/types.h>
+
+#include <mrt/strutils.h>
+
 #include <unordered_map>
 #include <vector>
 #include <cstdio>
@@ -38,19 +41,86 @@ ff::StringType::StringType() : Type("string") {
 
   setField("__eq__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(strval(args[0]) == strval(args[1])));
+      return obj(boolean( strval(args[0]) == strval(args[1]) ));
     }, {
       {"self", type("string")},
       {"other", type("string")}
     }, type("bool")))
   );
 
-  setField("__bool__",
+  setField("__neq__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolean(strval(args[0]).size() != 0));
+      return obj(boolean( strval(args[0]) != strval(args[1]) ));
     }, {
-      {"self", type("string")}
+      {"self", type("string")},
+      {"other", type("string")}
     }, type("bool")))
+  );
+
+  setField("slice",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto start = intval(args[1]);
+      auto end = intval(args[2]);
+      return obj(string( strval(args[0]).substr(start, end - start) ));
+    }, {
+      {"self", type("string")},
+      {"start", type("int")},
+      {"end", type("int")}
+    }, type("bool")))
+  );
+
+  setField("starts",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean( mrt::str::startsWith(strval(args[0]), strval(args[1])) ));
+    }, {
+      {"self", type("string")},
+      {"str", type("string")}
+    }, type("bool")))
+  );
+
+  setField("ends",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean( mrt::str::endsWith(strval(args[0]), strval(args[1])) ));
+    }, {
+      {"self", type("string")},
+      {"str", type("string")}
+    }, type("bool")))
+  );
+
+  setField("has",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean( strval(args[0]).find(strval(args[1])) != std::string::npos ));
+    }, {
+      {"self", type("string")},
+      {"sub", type("string")}
+    }, type("bool")))
+  );
+
+  setField("find",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto index = strval(args[0]).find(strval(args[1]));
+      if (index == std::string::npos) {
+        return Ref<Object>();
+      }
+      return obj(integer(index));
+    }, {
+      {"self", type("string")},
+      {"sub", type("string")}
+    }, type("int")))
+  );
+
+  setField("rfind",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& sub = strval(args[1]);
+      auto index = strval(args[0]).rfind(sub);
+      if (index == std::string::npos) {
+        return Ref<Object>();
+      }
+      return obj(integer(index));
+    }, {
+      {"self", type("string")},
+      {"sub", type("string")}
+    }, type("int")))
   );
 
   setField("size",
@@ -59,6 +129,14 @@ ff::StringType::StringType() : Type("string") {
     }, {
       {"self", type("string")}
     }, type("int")))
+  );
+
+  setField("__bool__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(strval(args[0]).size() != 0));
+    }, {
+      {"self", type("string")}
+    }, type("bool")))
   );
 
   setField("__copy__",

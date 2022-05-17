@@ -1,9 +1,11 @@
 #include <ff/types/dict.h>
 #include <ff/types/string.h>
-#include <ff/memory.h>
+#include <ff/utils/macros.h>
 #include <ff/runtime.h>
+#include <ff/memory.h>
 #include <ff/types.h>
 #include <mrt/strutils.h>
+#include <algorithm>
 #include <vector>
 
 using namespace ff::types;
@@ -42,11 +44,41 @@ ff::DictType::DictType() : Type("dict") {
   setField("has",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto fields = args[0].as<Dict>()->getFields();
-      return obj(boolean((fields.find(args[1].as<String>()->value) != fields.end())));
+      return obj(boolean(fields.find(strval(args[1])) != fields.end()));
     }, {
       {"self", type("dict")},
       {"key", type("string")}
     }, type("bool")))
+  );
+
+  setField("remove",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& fields = args[0].as<Dict>()->getFields();
+      auto itr = fields.find(strval(args[1]));
+      if (itr != fields.end()) {
+        fields.erase(itr);
+      }
+      return Ref<Object>();
+    }, {
+      {"self", type("dict")},
+      {"key", type("string")}
+    }, nothing()))
+  );
+
+  setField("keys",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      std::vector<Ref<Object>> keys;
+      std::transform(
+        BEGIN_END(args[0].as<Dict>()->getFields()),
+        std::back_inserter(keys),
+        [](const auto& pair) {
+          return obj(string(pair.first));
+        }
+      );
+      return obj(vector(keys));
+    }, {
+      {"self", type("dict")}
+    }, type("vector")))
   );
 
   setField("size",

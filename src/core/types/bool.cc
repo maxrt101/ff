@@ -6,17 +6,32 @@
 
 using namespace ff::types;
 
-static ff::Ref<ff::Bool> g_true = ff::Bool::createInstance(true);
-static ff::Ref<ff::Bool> g_false = ff::Bool::createInstance(false);
-
 ff::Ref<ff::BoolType> ff::BoolType::m_instance;
 
 ff::BoolType::BoolType() : Type("bool") {
   setField("__not__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
-      return obj(boolval(args[0]) ? g_false : g_true);
+      return obj(boolean(!boolval(args[0])));
     }, {
       {"self", type("bool")}
+    }, type("bool")))
+  );
+
+  setField("__eq__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(boolval(args[0]) == boolval(args[1])));
+    }, {
+      {"self", type("bool")},
+      {"other", type("bool")}
+    }, type("bool")))
+  );
+
+  setField("__neq__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return obj(boolean(boolval(args[0]) != boolval(args[1])));
+    }, {
+      {"self", type("bool")},
+      {"other", type("bool")}
     }, type("bool")))
   );
 
@@ -77,12 +92,4 @@ bool ff::Bool::equals(ff::Ref<ff::Object> other) const {
 
 ff::Ref<ff::Bool> ff::Bool::createInstance(ValueType value) {
   return memory::construct<Bool>(value);
-}
-
-ff::Ref<ff::Bool> ff::Bool::getTrue() {
-  return g_true;
-}
-
-ff::Ref<ff::Bool> ff::Bool::getFalse() {
-  return g_false;
 }

@@ -34,9 +34,6 @@ class Bool : public Instance {
   bool equals(Ref<Object> other) const override;
 
   static Ref<Bool> createInstance(ValueType value = false);
-
-  static Ref<Bool> getTrue();
-  static Ref<Bool> getFalse();
 };
 
 } /* namespace ff */
