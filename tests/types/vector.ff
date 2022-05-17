@@ -1,0 +1,33 @@
+
+fn main() -> {
+  var v = {10, 20, 30, 40, 50, 30, 60, 20};
+
+  assert(v.size() == 8);
+  assert(v.get(0) == 10);
+  assert(v.get(-1) == 20);
+  assert(v.get(-2) == 60);
+  assert(v.find(30) == 2);
+  assert(v.unique() == {10, 20, 30, 40, 50, 60});
+
+  v.remove(2);
+  assert(v.size() == 7);
+  assert(v.get(2) == 40);
+
+  assert({1, 2} + {3, 4} == {1, 2, 3, 4});
+
+  v.set(0, 125);
+  assert(v.get(0) == 125);
+
+  v.append(75);
+  assert(v.get(-1) == 75);
+  v.pop();
+  assert(v.get(-1) != 75);
+
+  if (!v) {
+    assert(false);
+  }
+
+  var r = ref v;
+  r := {1, 2, 3, 4};
+  assert(v == {1, 2, 3, 4});
+}

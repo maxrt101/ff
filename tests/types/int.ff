@@ -1,0 +1,45 @@
+
+fn main() -> {
+  // Logic Operators
+  assert(1 == 1);
+  assert(0 != 1);
+  assert(!(0 > 1));
+  assert(!(0 >= 1));
+  assert(1 >= 1);
+  assert(0 < 1);
+  assert(0 <= 1);
+  assert(1 <= 1);
+  
+  // Arithmetic Operators
+  assert(1 + 1 == 2);
+  assert(6 - 4 == 2);
+  assert(3 * 4 == 12);
+  assert(21 / 7 == 3);
+  assert(23 % 5 == 3);
+  
+  // Bool Coercion
+  assert(!(0 as bool));
+  assert(10 as bool);
+  
+  // Increment/Decrement
+  var i = 250;
+  ++i;
+  assert(i == 251);
+  --i;
+  assert(i == 250);
+  
+  // Reference
+  var r = ref i;
+  r := 150;
+  assert(i == 150);
+  
+  // Implicit copying
+  var a = 10;
+  var b = a;
+  ++b;
+  assert(a == 10);
+  
+  // Negation
+  assert(-a == -10);
+}
+

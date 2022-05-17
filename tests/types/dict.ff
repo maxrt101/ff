@@ -1,0 +1,31 @@
+
+fn main() -> {
+  var d = {
+    "a" -> 65,
+    "b" -> 66,
+    "c" -> 67
+  };
+
+  assert(d.size() == 3);
+  assert(d.keys() == {"a", "b", "c"});
+
+  assert(d.has("a") == true);
+  assert(d.has("d") == false);
+
+  assert(d.get("c") == 67);
+  d.set("c", 100);
+  assert(d.get("c") == 100);
+
+  d.remove("a");
+
+  assert(d.size() == 2);
+  assert(d.keys() == {"b", "c"});
+
+  if (!d) {
+    assert(false);
+  }
+
+  var r = ref d;
+  r := {"something" -> "another thing"};
+  assert(d.get("something") == "another thing");
+}

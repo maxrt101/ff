@@ -1,0 +1,27 @@
+
+fn main() -> {
+  assert("a" == "a");
+  assert("a" != "b");
+  assert("abc" + "def" == "abcdef");
+  
+  var s = "Some random words.";
+
+  assert(s.size() == 18);
+  assert(s.slice(0, 4) == "Some");
+  assert(s.starts("Some"));
+  assert(s.ends("ords."));
+
+  assert(s.has("random"));
+  assert(!s.has("redeem"));
+
+  assert(s.find("o") == 1);
+  assert(s.rfind("o") == 13);
+
+  if (!s) {
+    assert(false);
+  }
+
+  var r = ref s;
+  s := "abc";
+  assert(s == "abc");
+}

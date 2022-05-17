@@ -78,6 +78,8 @@ function expect_out() {
 }
 
 # Test Cases
+expect_ret 1 tests/lang/assert_false.ff
+expect_ret 0 tests/lang/assert_true.ff
 expect_ret 0 tests/lang/cast.ff
 expect_ret 0 tests/lang/const_global.ff
 expect_ret 0 tests/lang/const_local.ff
@@ -101,6 +103,13 @@ expect_ret 0 tests/lang/var_global.ff
 expect_ret 0 tests/lang/var_local.ff
 expect_ret 1 tests/lang/var_reassign_different_type.ff
 expect_ret 0 tests/lang/var_ref.ff
+
+expect_ret 0 tests/types/bool.ff
+expect_ret 0 tests/types/float.ff
+expect_ret 0 tests/types/int.ff
+expect_ret 0 tests/types/string.ff
+expect_ret 0 tests/types/vector.ff
+expect_ret 0 tests/types/dict.ff
 
 # Print Summary & return 1 if some tests failed
 summary

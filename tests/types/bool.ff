@@ -1,0 +1,20 @@
+
+fn main() -> {
+  var t = true;
+  var f = false;
+
+  // Logic Operators
+  assert(t == true);
+  assert(t != false);
+  assert(f == false);
+  assert(f != true);
+  
+  // Negation
+  assert(!t == false);
+  assert(!f == true);
+
+  // Reference
+  var r = ref t;
+  r := false;
+  assert(t == false);
+}
