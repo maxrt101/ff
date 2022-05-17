@@ -29,6 +29,10 @@ Supported debug features: `MEM`, `REF`, `EVAL`, `DISASM`, `TOKENS`, `TREE`, `TRA
 
 Build system keeps track of changed source files, and on subsequent builds will only recompile files that have changed. To force recompilation of everything, use `-f` flag.  
 
+### Tests:
+To run tests execute `./make.py test` (or directly with `./tests/run.sh`)  
+Usage of `run.sh`: `./tests/run.sh [PROFILE]`, if no profile is provided `release` will be assumed.  
+
 ## Language
 
 ### 1. Values and operators
@@ -41,7 +45,7 @@ String literals are enclosed in `"` and support escape sequences, such as `\n`, 
 Supported operators are: `+`, `-` (both unary and binary), `/`, `*`, `%`, `++`, `--`, `==`, `!=`, `>`, `<`, `>=`, `<=`, `!`, `&&`, `||`, `=`, `:=`, and `as`.  
 
 Operators work by calling an operator method on an object (except for `&&`, `||`, `=`, `:=` and `as`).  
-Currently supported are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__inc__`, `__dec__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
+Currently overloadable are `__add__`, `__sub__`, `__div__`, `__mul__`, `__mod__`, `__inc__`, `__dec__`, `__eq__`, `__neq__`, `__lt__`, `__gt__`, `__le__`, `__ge__`, `__not__` and `__neg__`.  
 
 Also there are some special methods like `__bool__`, `__copy__` and `__assign__`.  
 
