@@ -151,6 +151,7 @@ ff::Compiler::Compiler() {
   m_globalVariables["vector"] = Variable::fromObject("vector", VectorType::getInstance().asRefTo<Object>());
   m_globalVariables["exit"] = Variable::fromObject("assert", obj(fn_exit));
   m_globalVariables["assert"] = Variable::fromObject("assert", obj(fn_assert));
+  m_globalVariables["type"] = Variable::fromObject("type", obj(fn_type));
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -594,6 +595,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::binaryExpr(ast::Node* node) {
     }
     case TOKEN_SLASH: {
       getCode()->pushInstruction(OP_DIV);
+      return leftType;
+    }
+    case TOKEN_PERCENT: {
+      getCode()->pushInstruction(OP_MOD);
       return leftType;
     }
     case TOKEN_EQUAL_EQUAL: {
@@ -1058,6 +1063,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::dict(ast::Node* node) {
   ast::Dict* dict = node->as<ast::Dict>();
 
   emitConstant(Dict::createInstance({}).asRefTo<Object>());
+  getCode()->pushInstruction(OP_COPY);
 
   for (auto& p : dict->getFields()) {
     getCode()->pushInstruction(OP_DUP); // object
@@ -1078,6 +1084,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vector(ast::Node* node) {
   ast::Vector* vec = node->as<ast::Vector>();
 
   emitConstant(Vector::createInstance({}).asRefTo<Object>());
+  getCode()->pushInstruction(OP_COPY);
 
   auto type = TypeAnnotation::create("vector");
 
@@ -1094,6 +1101,12 @@ void ff::Compiler::block(ast::Node* node) {
   beginBlock();
   for (auto bodyNode : node->as<ast::Block>()->getBody()) {
     evalNode(bodyNode);
+    if (mrt::isIn(bodyNode->getType(),
+        ast::NTYPE_BINARY_EXPR, ast::NTYPE_UNARY_EXPR,
+        ast::NTYPE_FLOAT_LITERAL, ast::NTYPE_INTEGER_LITERAL, ast::NTYPE_STRING_LITERAL,
+        ast::NTYPE_NULL, ast::NTYPE_TRUE, ast::NTYPE_FALSE, ast::NTYPE_REF)) {
+      getCode()->pushInstruction(OP_POP);
+    }
   }
   endBlock();
 }

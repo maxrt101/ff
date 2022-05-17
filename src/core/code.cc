@@ -213,6 +213,9 @@ void ff::Code::disassembleInstruction(const std::string& prefix) {
     case OP_DIV:
       printf("OP_DIV\n");
       return;
+    case OP_MOD:
+      printf("OP_MOD\n");
+      return;
     case OP_EQ:
       printf("OP_EQ\n");
       return;

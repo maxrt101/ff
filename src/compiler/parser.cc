@@ -395,7 +395,7 @@ ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
     }
 #endif
     default:
-      return expression(true);
+      return expression(false);
   }
 }
 
@@ -595,6 +595,8 @@ ff::ast::Node* ff::Parser::comparison(bool isReturnValueExpected) {
   return expr;
 }
 
+// TODO: Add & and | in term or factor 
+
 ff::ast::Node* ff::Parser::term(bool isReturnValueExpected) {
   ast::Node* expr = factor(isReturnValueExpected);
 
@@ -610,7 +612,7 @@ ff::ast::Node* ff::Parser::term(bool isReturnValueExpected) {
 ff::ast::Node* ff::Parser::factor(bool isReturnValueExpected) {
   ast::Node* expr = unary(isReturnValueExpected);
 
-  while (match({TOKEN_SLASH, TOKEN_STAR})) {
+  while (match({TOKEN_SLASH, TOKEN_STAR, TOKEN_PERCENT})) {
     Token op = previous();
     ast::Node* right = unary(isReturnValueExpected);
     expr = new ast::Binary(op, expr, right);

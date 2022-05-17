@@ -69,6 +69,7 @@ ff::VM::VM() {
   m_globals["vector"] = VectorType::getInstance().asRefTo<Object>();
   m_globals["exit"]   = obj(fn_exit);
   m_globals["assert"] = obj(fn_assert);
+  m_globals["type"] = obj(fn_type);
 }
 
 ff::VM::~VM() {}
@@ -444,6 +445,9 @@ bool ff::VM::executeInstruction(Opcode op) {
       case OP_DIV:
         printf("OP_DIV\n");
         break;
+      case OP_MOD:
+        printf("OP_MOD\n");
+        break;
       case OP_EQ:
         printf("OP_EQ\n");
         break;
@@ -515,11 +519,11 @@ bool ff::VM::executeInstruction(Opcode op) {
       break;
     }
     case OP_TRUE: {
-      push(Bool::getTrue().asRefTo<Object>());
+      push(Bool::createInstance(true).asRefTo<Object>());
       break;
     }
     case OP_FALSE: {
-      push(Bool::getFalse().asRefTo<Object>());
+      push(Bool::createInstance(false).asRefTo<Object>());
       break;
     }
     case OP_NEW: { // ast::NewNode
@@ -707,6 +711,12 @@ bool ff::VM::executeInstruction(Opcode op) {
       callMember(lhs, "__div__", {lhs, rhs});
       break;
     }
+    case OP_MOD: {
+      Ref<Object> rhs = pop();
+      Ref<Object> lhs = pop();
+      callMember(lhs, "__mod__", {lhs, rhs});
+      break;
+    }
     case OP_EQ: {
       Ref<Object> rhs = pop();
       Ref<Object> lhs = pop();
@@ -789,6 +799,10 @@ bool ff::VM::executeInstruction(Opcode op) {
     }
     case OP_NOT: {
       Ref<Object> operand = pop();
+      if (!isOfType(operand, BoolType::getInstance())) {
+        callMember(operand, "__bool__", 0);
+        operand = popCheckType(BoolType::getInstance());
+      }
       callMember(operand, "__not__", {operand});
       break;
     }
