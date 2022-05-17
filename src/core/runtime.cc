@@ -311,6 +311,9 @@ void ff::VM::callNativeFunction(Ref<NativeFunction> fn, const std::vector<Ref<Ob
 }
 
 void ff::VM::runCode(Ref<Code> code, std::vector<Ref<Object>> args) {
+  if (m_callStack.size() > 0) {
+    m_callStack.peek().context.codeOffset = getCode()->getReadIndex();
+  }
   m_callStack.push({Stack<Ref<Object>>(), 0, code});
   for (auto& module : code->getModules()) {
     m_globals[module.first] = module.second;
@@ -333,6 +336,7 @@ ff::Ref<ff::Object> ff::VM::returnCall() {
   Ref<Object> result = getStack().canPop() ? pop() : Ref<Object>();
   m_callStack.pop();
   if (m_callStack.size() > 1) {
+    getCode()->setReadIndex(m_callStack.peek().context.codeOffset);
     m_running = true;
   }
   return result;
@@ -341,7 +345,7 @@ ff::Ref<ff::Object> ff::VM::returnCall() {
 bool ff::VM::executeInstruction(Opcode op) {
 #ifdef _FF_DEBUG_TRACE
   if (config::get("debug") != "0") {
-    printf("%04zx | ", getCode()->getReadIndex());
+    printf("%04zx | ", getCode()->getReadIndex()-1);
     switch (op) {
       case OP_POP:
         printf("OP_POP\n");

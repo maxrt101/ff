@@ -671,6 +671,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule) {
   ast::Function* fn = node->as<ast::Function>();
 
+  Variable var(
+    fn->getName().str,
+    fn->getFunctionType().asRefTo<TypeAnnotation>(),
+    true,
+    {}
+  );
+  m_globalVariables[var.name] = var;
+
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
   auto bodyType = evalNode(fn->getBody(), true, isModule);
@@ -708,13 +716,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     getCode()->pushInstruction(OP_NEW_GLOBAL);
   }
 
-  Variable var(
-    fn->getName().str,
-    fn->getFunctionType().asRefTo<TypeAnnotation>(),
-    true,
-    {}
-  );
-  m_globalVariables[var.name] = var;
+  m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
 
   if (scope.code->size() == 0 || (*scope.code)[scope.code->size()-1] != OP_RETURN) {
     scope.code->pushInstruction(OP_RETURN);
