@@ -7,8 +7,17 @@ fn fib(n: int): int -> {
   return fib(n - 2) + fib(n - 1);
 }
 
+fn factorial(n: int): int -> {
+  if (n < 2) return 1;
+  return n * factorial(n - 1);
+}
+
 fn main() -> {
   assert(fib(5) == 5);
   assert(fib(10) == 55);
   assert(fib(15) == 610);
+
+  assert(factorial(4) == 24);
+  assert(factorial(5) == 120);
+  assert(factorial(6) == 720);
 }
