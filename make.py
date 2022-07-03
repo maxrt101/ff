@@ -109,8 +109,8 @@ def cppcheck(ctx):
 @build.task()
 def test(ctx):
     build.run_cmd(
-        ['./tests/run.sh', cf('{profile}')],
-        exit_on_fail=False,
+        ['./tests/run.py', cf('{profile}')],
+        exit_on_fail=True,
         print_stderr=True,
         print_stdout=True
     )
