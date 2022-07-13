@@ -210,10 +210,6 @@ std::vector<std::string>& ff::Compiler::getImports() {
   return m_imports;
 }
 
-std::map<std::string, ff::Ref<mrt::DynamicLibrary>> ff::Compiler::getSharedLibs() {
-  return std::move(m_sharedLibs);
-}
-
 void ff::Compiler::beginScope() {
   m_scopes.push_back({SCOPE_BLOCK, memory::construct<Code>(m_filename)});
 #ifdef _FF_DEBUG_SCOPES
@@ -820,21 +816,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModu
   }
 
   getCode()->pushInstruction(OP_POP);
-
   m_globalVariables[var.name] = var;
-
-  /*
-  ast::Vector* vec = node->as<ast::Vector>();
-
-  emitConstant(Vector::createInstance({}).asRefTo<Object>());
-  getCode()->pushInstruction(OP_COPY);
-
-  for (auto& e : vec->getElements()) {
-    getCode()->pushInstruction(OP_DUP);
-    ast::Node* call_ = new ast::Call(new ast::Identifier({TOKEN_IDENTIFIER, "append", -1}), {e}, false);
-    call(call_, false, {type, nullptr});
-  }
-  */
 
   return type;
 }
@@ -1377,10 +1359,6 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
       getCode()->addModule(module.name, module.module.asRefTo<Object>());
       m_globalVariables[module.name] = module.var;
       m_imports.push_back(module.name);
-    }
-
-    for (auto& dl : modInfo.sharedLibs) {
-      m_sharedLibs[dl.first] = std::move(dl.second);
     }
   }
 }

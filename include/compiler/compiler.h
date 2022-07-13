@@ -42,7 +42,6 @@ class Compiler {
     Ref<Module> module;
     Variable var;
     std::vector<ModuleInfo> imports;
-    std::map<std::string, Ref<mrt::DynamicLibrary>> sharedLibs;
   };
 
   enum ScopeType {
@@ -70,7 +69,6 @@ class Compiler {
   std::vector<Scope> m_scopes;                        // Stack of scopes
   std::vector<LoopRecord> m_loops;                    // Stack of loops
   std::map<std::string, Variable> m_globalVariables;
-  std::map<std::string, Ref<mrt::DynamicLibrary>> m_sharedLibs;
   std::vector<std::string> m_modules;                 // Stack for module declarations
   std::vector<std::string> m_imports;                 // List of imported modules, to prevent reimports and circular dependencies
   std::string m_thisModuleName;                       // Current module
@@ -86,8 +84,6 @@ class Compiler {
 
   std::map<std::string, Variable>& getGlobals();
   std::vector<std::string>& getImports();
-
-  std::map<std::string, Ref<mrt::DynamicLibrary>> getSharedLibs();
 
  private:
   Ref<Code>& getCode();

@@ -21,40 +21,35 @@ static int run(const std::string& filename, std::string src) {
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   try {
 #endif
-    // NOTE: Make sure that shared libs are destroyed after the code
-    std::map<std::string, ff::Ref<mrt::DynamicLibrary>> sharedLibs;
+    ff::Ref<ff::Code> code;
     {
-      ff::Ref<ff::Code> code;
-      {
-        ff::Scanner scanner(filename, src);
-        auto tokens = scanner.tokenize();
+      ff::Scanner scanner(filename, src);
+      auto tokens = scanner.tokenize();
 #ifdef _FF_DEBUG_TOKENS
-        if (ff::config::get("debug") != "0") {
-          for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
-          putchar('\n');
-        }
-#endif
-        ff::Parser parser(filename, tokens);
-        auto tree = parser.parse();
-#ifdef _FF_DEBUG_PRINT_TREE
-        if (ff::config::get("debug") != "0") {
-          ff::ast::printTree(tree);
-        }
-#endif
-        ff::Compiler compiler;
-        code = compiler.compile(filename, tree);
-#ifdef _FF_DEBUG_DISASM
-        if (ff::config::get("debug") != "0") {
-          printf("=== Code ===\n\\\n");
-          ff::ast::unwrapCode(code);
-        }
-#endif
-        sharedLibs = compiler.getSharedLibs();
+      if (ff::config::get("debug") != "0") {
+        for (auto& token : tokens) printf("%s(%s) ", ff::tokenTypeToString(token.type).c_str(), token.str.c_str());
+        putchar('\n');
       }
-      ff::VM vm;
-      vm.runMain(code);
-      return vm.getReturnCode();
+#endif
+      ff::Parser parser(filename, tokens);
+      auto tree = parser.parse();
+#ifdef _FF_DEBUG_PRINT_TREE
+      if (ff::config::get("debug") != "0") {
+        ff::ast::printTree(tree);
+      }
+#endif
+      ff::Compiler compiler;
+      code = compiler.compile(filename, tree);
+#ifdef _FF_DEBUG_DISASM
+      if (ff::config::get("debug") != "0") {
+        printf("=== Code ===\n\\\n");
+        ff::ast::unwrapCode(code);
+      }
+#endif
     }
+    ff::VM vm;
+    vm.runMain(code);
+    return vm.getReturnCode();
 #ifndef _FF_DEBUG_DONT_CATCH_EXCEPTIONS
   } catch (const ff::ScanError& e) {
     e.print();

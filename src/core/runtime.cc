@@ -54,8 +54,8 @@ const char* ff::RuntimeError::what() const noexcept {
 void ff::RuntimeError::print() const {
   printf("%s%s%s%s%sRuntimeError%s: %s\n",
     m_filename.c_str(), (m_filename.empty() ? "" : ":"), 
-    (m_line >= 0 ? "" : std::to_string(m_line).c_str()),
-    (m_line >= 0 ? "" : ": "),
+    (m_line <= 0 ? "" : std::to_string(m_line).c_str()),
+    (m_line <= 0 ? "" : ": "),
     mrt::console::RED, mrt::console::RESET,
     m_message.c_str());
 }
@@ -241,26 +241,23 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
       throw createError("Member '%s' cannot be found", memberName.c_str());
     }
   }
+  std::vector<Ref<Object>> args = pop(argc);
+  if (implicitSelf) {
+    args.insert(args.begin(), self);
+  }
   if (isOfType(fnObject, FunctionType::getInstance())) {
     Ref<Function> fn = fnObject.asRefTo<Function>();
     if (fn->args.size() - (implicitSelf ? 1 : 0) != argc) {
       throw createError("Expected %d arguments, but got %d", fn->args.size()-1, argc);
     }
-    std::vector<Ref<Object>> args = pop(argc);
-    if (implicitSelf) {
-      args.push_back(self);
-    }
+    std::reverse(args.begin(), args.end());
     callFunction(fn, args);
   } else if (isOfType(fnObject, NativeFunctionType::getInstance())) {
     Ref<NativeFunction> fn = fnObject.asRefTo<NativeFunction>();
     if (fn->args.size() - (implicitSelf ? 1 : 0) != argc) {
       throw createError("Expected %d arguments, but got %d", fn->args.size()-1, argc);
     }
-    std::vector<Ref<Object>> args = pop(argc);
-    if (implicitSelf) {
-      args.insert(args.begin(), self); // TODO: Check order
-    }
-    callNativeFunction(fn, args);
+    callNativeFunction(fn, args); // TODO: Check order
   } else {
     throw createError("Attempt to call an object of type '%s'", fnObject.as<Instance>()->getType()->getTypeName().c_str());
   }

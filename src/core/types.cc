@@ -72,6 +72,23 @@ ff::Ref<ff::Dict> ff::types::dict(Ref<Object> object) {
   return object.asRefTo<Dict>();
 }
 
+ff::Ref<ff::Class> ff::types::classobj(const std::string& className, std::unordered_map<std::string, Class::Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods) {
+  return Class::createInstance(className, fieldInfo, methods);
+}
+
+ff::Ref<ff::Class> ff::types::classobj(Ref<Object> object) {
+  return object.asRefTo<Class>();
+}
+
+ff::Ref<ff::ClassInstance> ff::types::instance(Ref<Class> class_) {
+  return ClassInstance::createInstance(class_);
+}
+
+ff::Ref<ff::ClassInstance> ff::types::instance(Ref<Object> object) {
+  return object.asRefTo<ClassInstance>();
+}
+
+
 std::string& ff::types::strval(Ref<String> value) {
   return value->value;
 }

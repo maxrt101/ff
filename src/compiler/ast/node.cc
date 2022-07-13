@@ -23,6 +23,8 @@ static std::map<ff::ast::NodeType, std::string> g_nodeTypes {
   {ff::ast::NTYPE_RETURN, "Return"},
   {ff::ast::NTYPE_PRINT, "Print"},
   {ff::ast::NTYPE_REF, "Ref"},
+  {ff::ast::NTYPE_IMPORT, "Import"},
+  {ff::ast::NTYPE_MODULE, "Module"},
 };
 
 std::string ff::ast::nodeTypeToString(NodeType type) {

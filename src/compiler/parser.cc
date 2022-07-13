@@ -244,7 +244,7 @@ void ff::Parser::classbody(std::vector<ast::Class::Field>& fields, std::vector<a
       fields.push_back(processField(false, false));
     } else if (match({TOKEN_FN})) {
       methods.push_back(processMethod(false));
-    // static & const check
+    // TODO: static & const check
     } else {
       throw ParseError(peek(), m_filename, "Expected field or method declaration");
     }
@@ -475,7 +475,7 @@ std::vector<ff::ast::Node*> ff::Parser::statementList() {
   while (1) {
     if (peek().type == TOKEN_RIGHT_BRACE) break;
     nodes.push_back(statement());
-    /* Skip semicolon after blocks, if's, for's, and while's */
+    /* Skip semicolon after blocks, if's, and loops */
     if (mrt::isIn(nodes.back()->getType(), ast::NTYPE_BLOCK, ast::NTYPE_IF, ast::NTYPE_FOR, ast::NTYPE_FOREACH, ast::NTYPE_WHILE, ast::NTYPE_LOOP)) continue;
     if (!match({TOKEN_SEMICOLON})) break;
   }

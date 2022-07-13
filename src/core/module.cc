@@ -3,12 +3,15 @@
 #include <ff/types/string.h>
 #include <ff/compiler/compiler.h>
 #include <ff/compiler/type_annotation.h>
+#include <ff/utils/dynamic_library_manager.h>
 #include <mrt/dynamic_library.h>
 
 ff::Compiler::ModuleInfo ff::loadNativeModule(const std::string& name, const std::string& filename) {
   Ref<Module> module = Module::createInstance(name);
 
-  auto lib = Ref(new mrt::DynamicLibrary(filename));
+  bool libAlreadyLoaded = DynamicLibraryManager::libraryExists(name);
+
+  auto lib = libAlreadyLoaded ? DynamicLibraryManager::getLibrary(name) : Ref(new mrt::DynamicLibrary(filename));
 
   ff_modinfo_t* modInfo = lib->getSymbolAs<ff_modinfo_t*>(FF_MODINFO_STR);
 
@@ -28,8 +31,11 @@ ff::Compiler::ModuleInfo ff::loadNativeModule(const std::string& name, const std
     module,
     Compiler::Variable::fromObject(name, module.asRefTo<Object>()),
     {},
-    {{name, lib}}
   };
+
+  if (!libAlreadyLoaded) {
+    DynamicLibraryManager::setLibrary(name, lib);
+  }
 
   return result;
 }
