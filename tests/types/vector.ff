@@ -29,5 +29,12 @@ fn main() -> {
 
   var r = ref v;
   r := {1, 2, 3, 4};
+
   assert(v == {1, 2, 3, 4});
+  assert(!(v == {1, 2, 3}));
+  assert(v != {1, 2, 3});
+  assert(!(v != {1, 2, 3, 4}));
+
+  assert(v.contains(1));
+  assert(!v.contains(5));
 }

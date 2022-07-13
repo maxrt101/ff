@@ -19,12 +19,12 @@ ff::VectorType::VectorType() : Type("vector") {
     }, type("string")))
   );
 
-  setField("__eq__",
+  setField("__neq__",
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       auto& self = args[0].as<Vector>()->value;
       auto& other = args[1].as<Vector>()->value;
       if (self.size() != other.size()) {
-        return obj(boolean(false));
+        return obj(boolean(true));
       }
       for (int i = 0; i < self.size(); i++) {
         if (self[i]->equals(other[i])) {
@@ -43,14 +43,14 @@ ff::VectorType::VectorType() : Type("vector") {
       auto& self = args[0].as<Vector>()->value;
       auto& other = args[1].as<Vector>()->value;
       if (self.size() != other.size()) {
-        return obj(boolean(true));
+        return obj(boolean(false));
       }
       for (int i = 0; i < self.size(); i++) {
-        if (self[i]->equals(other[i])) {
-          return obj(boolean(true));
+        if (!self[i]->equals(other[i])) {
+          return obj(boolean(false));
         }
       }
-      return obj(boolean(false));
+      return obj(boolean(true));
     }, {
       {"self", type("vector")},
       {"other", type("vector")}
@@ -125,7 +125,7 @@ ff::VectorType::VectorType() : Type("vector") {
       auto& vec = args[0].as<Vector>()->value;
       for (int i = 0; i < vec.size(); i++) {
         if (vec[i]->equals(args[1])) {
-          return Int::createInstance(i).asRefTo<Object>();
+          return obj(integer(i));
         }
       }
       return Ref<Object>();
@@ -133,6 +133,21 @@ ff::VectorType::VectorType() : Type("vector") {
       {"self", type("vector")},
       {"value", any()}
     }, type("int")))
+  );
+
+  setField("contains",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      auto& vec = args[0].as<Vector>()->value;
+      for (int i = 0; i < vec.size(); i++) {
+        if (vec[i]->equals(args[1])) {
+          return obj(boolean(true));
+        }
+      }
+      return obj(boolean(false));
+    }, {
+      {"self", type("vector")},
+      {"value", any()}
+    }, type("bool")))
   );
 
   setField("size",
