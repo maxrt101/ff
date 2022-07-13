@@ -76,7 +76,7 @@ ff::Token ff::Parser::previous() const {
 
 ff::ast::Node* ff::Parser::program(bool checkEnd) {
   std::vector<ast::Node*> nodes;
-  while (mrt::isIn(peek().type, TOKEN_FN, TOKEN_VAR, TOKEN_CONST, TOKEN_MODULE, TOKEN_IMPORT)) {
+  while (mrt::isIn(peek().type, TOKEN_FN, TOKEN_CLASS, TOKEN_VAR, TOKEN_CONST, TOKEN_MODULE, TOKEN_IMPORT)) {
     if (peek().type == TOKEN_MODULE) {
       consume(TOKEN_MODULE);
       nodes.push_back(module());
@@ -86,6 +86,9 @@ ff::ast::Node* ff::Parser::program(bool checkEnd) {
     } else if (peek().type == TOKEN_FN) {
       consume(TOKEN_FN);
       nodes.push_back(fndecl());
+    } else if (peek().type == TOKEN_CLASS) {
+      consume(TOKEN_CLASS);
+      nodes.push_back(classdecl());
     } else if (peek().type == TOKEN_VAR) {
       consume(TOKEN_VAR);
       nodes.push_back(vardecl());
@@ -191,6 +194,61 @@ ff::ast::Node* ff::Parser::fndecl() {
   auto type = FunctionAnnotation::create(argTypes, returnType);
 
   return new ast::Function(name, args, type, body);
+}
+
+ff::ast::Node* ff::Parser::classdecl() {
+  if (!match({TOKEN_IDENTIFIER})) {
+    throw ParseError(peek(), m_filename, "Expected identifier");
+  }
+  Token name = previous();
+
+  if (!match({TOKEN_LEFT_BRACE})) {
+    throw ParseError(peek(), m_filename, "Expected '{' after class name");
+  }
+
+  std::vector<ast::Class::Field> fields;
+  std::vector<ast::Class::Method> methods;
+  classbody(fields, methods);
+
+  if (!match({TOKEN_RIGHT_BRACE})) {
+    throw ParseError(peek(), m_filename, "Expected '}' after class body");
+  }
+
+  return new ast::Class(name, fields, methods);
+}
+
+void ff::Parser::classbody(std::vector<ast::Class::Field>& fields, std::vector<ast::Class::Method>& methods) {
+  auto processField = [&](bool isConst, bool isStatic) -> ast::Class::Field {
+    Token name = previous();
+    if (!match({TOKEN_COLON})) {
+      throw ParseError(peek(), m_filename, "Expected ':' after field name");
+    }
+    Ref<TypeAnnotation> type = typeAnnotation();
+    ast::Node* value = nullptr;
+    if (match({TOKEN_EQUAL})) {
+      value = expression(true);
+    }
+    if (!match({TOKEN_SEMICOLON})) {
+      throw ParseError(peek(), m_filename, "Expected ';' after field declaration");
+    }
+
+    return ast::Class::Field(name, type, value, isConst, isStatic);
+  };
+
+  auto processMethod = [&](bool isStatic) -> ast::Class::Method {    
+    return ast::Class::Method((ast::Function*)fndecl(), isStatic);
+  };
+
+  while (peek().type != TOKEN_RIGHT_BRACE) {
+    if (match({TOKEN_IDENTIFIER})) {
+      fields.push_back(processField(false, false));
+    } else if (match({TOKEN_FN})) {
+      methods.push_back(processMethod(false));
+    // static & const check
+    } else {
+      throw ParseError(peek(), m_filename, "Expected field or method declaration");
+    }
+  }
 }
 
 ff::ast::Node* ff::Parser::vardecl(bool isConst) {
@@ -384,7 +442,8 @@ ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
       consume(TOKEN_BREAK);
       return new ast::Break();
     case TOKEN_CLASS:
-      throw ParseError(peek(), m_filename, "Unimplemented");
+      consume(TOKEN_CLASS);
+      return classdecl();
     case TOKEN_PRINT:
       consume(TOKEN_PRINT);
       return new ast::Print(expression(true));
@@ -641,6 +700,16 @@ ff::ast::Node* ff::Parser::cast(bool isReturnValueExpected) {
   return expr;
 }
 
+ff::ast::Node* ff::Parser::newexpr(bool isReturnValueExpected) {
+  ast::Node* expr = lvalue(true, false);
+
+  consume(TOKEN_LEFT_PAREN, "Expected '(' after class name");
+  // auto params = expressionList(true);
+  consume(TOKEN_RIGHT_PAREN, "Expected ')' after constructor args");
+
+  return new ast::New(expr);
+}
+
 ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
   if (match({TOKEN_NUMBER})) {
     if (previous().str.find('.') != std::string::npos) {
@@ -681,6 +750,10 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
     return lambda();
   }
 
+  if (match({TOKEN_NEW})) {
+    return newexpr(isReturnValueExpected);
+  }
+
   if (match({TOKEN_LEFT_BRACE})) {
     return initializer(isReturnValueExpected);
   }
@@ -690,14 +763,14 @@ ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
   return lval;
 }
 
-ff::ast::Node* ff::Parser::lvalue(bool isReturnValueExpected) {
+ff::ast::Node* ff::Parser::lvalue(bool isReturnValueExpected, bool allowCall) {
   std::vector<ast::Node*> nodes;
   do {
     if (peek().type != TOKEN_IDENTIFIER) {
       break;
     }
     auto id = advance();
-    if (match({TOKEN_LEFT_PAREN})) {
+    if (allowCall && match({TOKEN_LEFT_PAREN})) {
       // NOTE: Return value is expected only if there is next chain element
       ast::Call* callNode = (ast::Call*)call(new ast::Identifier(id), false);
       if (peek().type == TOKEN_DOT) {

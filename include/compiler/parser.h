@@ -40,6 +40,8 @@ class Parser {
   ast::Node* module();
   ast::Node* import();
   ast::Node* fndecl();
+  ast::Node* classdecl();
+  void classbody(std::vector<ast::Class::Field>& fields, std::vector<ast::Class::Method>& methods);
   ast::Node* vardecl(bool isConst = false);
   ast::Node* statement(bool isInOtherStatement = false);
   ast::Node* ifstmt();
@@ -61,8 +63,9 @@ class Parser {
   ast::Node* factor(bool isReturnValueExpected);
   ast::Node* unary(bool isReturnValueExpected);
   ast::Node* cast(bool isReturnValueExpected);
+  ast::Node* newexpr(bool isReturnValueExpected);
   ast::Node* rvalue(bool isReturnValueExpected);
-  ast::Node* lvalue(bool isReturnValueExpected);
+  ast::Node* lvalue(bool isReturnValueExpected, bool allowCall = true);
 
   Ref<TypeAnnotation> typeAnnotation();
 };

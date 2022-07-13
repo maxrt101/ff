@@ -25,7 +25,6 @@ class Compiler {
     Ref<TypeAnnotation> type;
     bool isConst = false;
     std::map<std::string, Variable> fields;
-    // bool isInitialized = false;
 
     Variable() = default;
     Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields);
@@ -98,7 +97,7 @@ class Compiler {
   bool isTopScope() const;
 
   /* Returns generated value type */
-  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true, bool isModule = false);
+  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true, bool isModule = false, bool saveToVariable = true);
 
   void beginScope();
   void beginFunctionScope(Ref<TypeAnnotation> returnType);
@@ -136,11 +135,13 @@ class Compiler {
   Ref<TypeAnnotation> sequence(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> binaryExpr(ast::Node* node);
   Ref<TypeAnnotation> unaryExpr(ast::Node* node);
-  Ref<TypeAnnotation> fndecl(ast::Node* node, bool isModule = false);
+  Ref<TypeAnnotation> fndecl(ast::Node* node, bool isModule = false, bool saveToVariable = true);
+  Ref<TypeAnnotation> classdecl(ast::Node* node, bool isModule = false);
   Ref<TypeAnnotation> vardecl(ast::Node* node, bool copyValue = true, bool isModule = false);
   Ref<TypeAnnotation> assignment(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> ref(ast::Node* node);
+  Ref<TypeAnnotation> newexpr(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr}, bool explicitSelf = false);
   Ref<TypeAnnotation> lambda(ast::Node* node);
   Ref<TypeAnnotation> dict(ast::Node* node);

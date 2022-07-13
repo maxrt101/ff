@@ -54,8 +54,8 @@ const char* ff::RuntimeError::what() const noexcept {
 void ff::RuntimeError::print() const {
   printf("%s%s%s%s%sRuntimeError%s: %s\n",
     m_filename.c_str(), (m_filename.empty() ? "" : ":"), 
-    (m_line == -1 ? "" : std::to_string(m_line).c_str()),
-    (m_line == -1 ? "" : ": "),
+    (m_line >= 0 ? "" : std::to_string(m_line).c_str()),
+    (m_line >= 0 ? "" : ": "),
     mrt::console::RED, mrt::console::RESET,
     m_message.c_str());
 }
@@ -211,7 +211,7 @@ void ff::VM::call(Ref<Object> object, const std::vector<Ref<Object>>& args) {
 
 void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int argc) {
   if (!self.get()) {
-    throw createError("cannot call member of null");
+    throw createError("Cannot call member of null");
   }
   bool implicitSelf = true;
   Ref<Object> fnObject;
@@ -219,7 +219,14 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
     if (isOfType(self, ModuleType::getInstance())) {
       implicitSelf = false;
     }
-    if (self->hasField(memberName)) {
+    if (isOfType(self.asRefTo<Instance>(), ClassInstanceType::getInstance())) {
+      Ref<ClassInstance> classInstance = self.asRefTo<ClassInstance>();
+      if (classInstance->getClass()->hasField(memberName)) {
+        fnObject = classInstance->getClass()->getField(memberName);
+      } else {
+        throw createError("Member '%s' cannot be found", memberName.c_str());
+      }
+    } else if (self->hasField(memberName)) {
       fnObject = self->getField(memberName);
     } else if (self.as<Instance>()->getType()->hasField(memberName)) {
       fnObject = self.as<Instance>()->getType()->getField(memberName);
@@ -241,7 +248,7 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
     }
     std::vector<Ref<Object>> args = pop(argc);
     if (implicitSelf) {
-      args.insert(args.begin(), self);
+      args.push_back(self);
     }
     callFunction(fn, args);
   } else if (isOfType(fnObject, NativeFunctionType::getInstance())) {
@@ -251,7 +258,7 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, int arg
     }
     std::vector<Ref<Object>> args = pop(argc);
     if (implicitSelf) {
-      args.insert(args.begin(), self);
+      args.insert(args.begin(), self); // TODO: Check order
     }
     callNativeFunction(fn, args);
   } else {
@@ -265,7 +272,14 @@ void ff::VM::callMember(Ref<Object> self, const std::string& memberName, const s
   }
   Ref<Object> fnObject;
   if (self->isInstance()) {
-    if (self->hasField(memberName)) {
+    if (isOfType(self.asRefTo<Instance>(), ClassInstanceType::getInstance())) {
+      Ref<ClassInstance> classInstance = self.asRefTo<ClassInstance>();
+      if (classInstance->getClass()->hasField(memberName)) {
+        fnObject = classInstance->getClass()->getField(memberName);
+      } else {
+        throw createError("Member '%s' cannot be found", memberName.c_str());
+      }
+    } else if (self->hasField(memberName)) {
       fnObject = self->getField(memberName);
     } else if (self.as<Instance>()->getType()->hasField(memberName)) {
       fnObject = self.as<Instance>()->getType()->getField(memberName);
@@ -530,8 +544,10 @@ bool ff::VM::executeInstruction(Opcode op) {
       push(Bool::createInstance(false).asRefTo<Object>());
       break;
     }
-    case OP_NEW: { // ast::NewNode
-      throw createError("OP_NEW: Unimplemented");
+    case OP_NEW: {
+      Ref<Class> class_ = popCheckType(ClassType::getInstance()).asRefTo<Class>();
+      push(ClassInstance::createInstance(class_).asRefTo<Object>());
+      break;
     }
     case OP_COPY: {
       Ref<Object> object = pop();

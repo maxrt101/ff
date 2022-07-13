@@ -51,6 +51,9 @@ enum NodeType {
   NTYPE_PRINT,
   NTYPE_REF,
 
+  NTYPE_CLASS,
+  NTYPE_NEW,
+
   NTYPE_IMPORT,
   NTYPE_MODULE,
 

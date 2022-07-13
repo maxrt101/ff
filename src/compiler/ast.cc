@@ -61,6 +61,34 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       _printTree(mod->getBody(), prefix);
       break;
     }
+    case NTYPE_CLASS: {
+      Class* class_ = node->as<Class>();
+      printf("class %s {\n", class_->getName().str.c_str());
+      for (auto& field : class_->getFields()) {
+        printf("%s  ", prefix.c_str());
+        if (field.isStatic) {
+          printf("static ");
+        }
+        if (field.isConst) {
+          printf("const ");
+        }
+        printf("%s: %s", field.name.str.c_str(), field.type->toString().c_str());
+        if (field.value) {
+          printf(" = ");
+          _printTree(field.value, prefix);
+        }
+        printf(";\n");
+      }
+      printf("%s}", prefix.c_str());
+      break;
+    }
+    case NTYPE_NEW: {
+      New* new_ = node->as<New>();
+      printf("new ");
+      _printTree(new_->getClass(), "");
+      printf("()");
+      break;
+    }
     case NTYPE_FUNCTION: {
       Function* fn = node->as<Function>();
       printf("fn %s(", fn->getName().str.c_str());

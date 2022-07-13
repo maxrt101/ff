@@ -15,6 +15,8 @@ static std::map<ff::ast::NodeType, std::string> g_nodeTypes {
   {ff::ast::NTYPE_VAR_DECL, "VarDecl"},
   {ff::ast::NTYPE_VAR_DECL_LIST, "VarDeclList"},
   {ff::ast::NTYPE_FUNCTION, "Function"},
+  {ff::ast::NTYPE_CLASS, "Class"},
+  {ff::ast::NTYPE_NEW, "New"},
   {ff::ast::NTYPE_CAST_EXPR, "Cast"},
   {ff::ast::NTYPE_CALL, "Call"},
   {ff::ast::NTYPE_ASSIGNMENT, "Assignment"},
