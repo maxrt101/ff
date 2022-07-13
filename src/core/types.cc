@@ -104,6 +104,22 @@ bool& ff::types::boolval(Ref<Object> object) {
   return boolean(object)->value;
 }
 
+ff::Vector::ValueType& ff::types::vectorval(Ref<Vector> value) {
+  return value->value;
+}
+
+ff::Vector::ValueType& ff::types::vectorval(Ref<Object> object) {
+  return vector(object)->value;
+}
+
+ff::Dict::ValueType& ff::types::dictval(Ref<Dict> value) {
+  return value->getFields();
+}
+
+ff::Dict::ValueType& ff::types::dictval(Ref<Object> object) {
+  return dict(object)->getFields();
+}
+
 ff::Ref<ff::TypeAnnotation> ff::types::type(const std::string& typeName, bool isInferred) {
   return TypeAnnotation::create(typeName, isInferred, false);
 }

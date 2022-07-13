@@ -13,6 +13,7 @@
 #include <ff/types/module.h>
 #include <ff/types/dict.h>
 #include <ff/types/vector.h>
+#include <ff/types/class.h>
 
 namespace ff {
 
@@ -74,6 +75,10 @@ Int::ValueType& intval(Ref<Int> value);
 Int::ValueType& intval(Ref<Object> object);
 bool& boolval(Ref<Bool> value);
 bool& boolval(Ref<Object> object);
+Vector::ValueType& vectorval(Ref<Vector> value);
+Vector::ValueType& vectorval(Ref<Object> object);
+Dict::ValueType& dictval(Ref<Dict> value);
+Dict::ValueType& dictval(Ref<Object> object);
 
 template <typename T>
 inline Ref<T> ref(Ref<T>& annotation) {
