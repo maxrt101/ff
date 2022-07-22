@@ -31,6 +31,9 @@ def update():
     for file in _cache[config.get('profile')]['files'].keys():
         add_file(file)
 
+def clear():
+    _cache[config.get('profile')]['files'] = {}
+
 def add_file(filename: str):
     _cache[config.get('profile')]['files'][filename] = os.path.getmtime(filename)
 
@@ -67,7 +70,8 @@ def print_last_build():
     print('last build:'
         + '\nstarted: ' + _cache[config.get('profile')]['last_build']['start_time']
         + '\nended: '   + _cache[config.get('profile')]['last_build']['end_time']
-        + '\nresult: '  + _cache[config.get('profile')]['last_build']['result'] + '\n')
+        + '\nresult: '  + _cache[config.get('profile')]['last_build']['result']
+        + '\n')
 
     for filename, out in _cache[config.get('profile')]['last_build']['compilation'].items():
         if out['stdout'] != '' or out['stderr'] != '':

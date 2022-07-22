@@ -1,11 +1,11 @@
 
 from .task import _tasks, run_task, run_subtask, calculate_progress_increment, calculate_progress_increment_sub
-from .console import ERROR, NOTE
+from .console import ERROR, NOTE, Color
 from . import config, cache, console, utils, context
 from typing import Tuple
-import sys, json
+import sys, json, time
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 options = {
     'task': '',
@@ -17,7 +17,7 @@ def usage():
     print(
         f'ff/build v{VERSION}\n'
         '\n'
-        f'Usage: {sys.argv[0]} [OPTIONS] [TASK[:SUBTASK]]\n'
+        f'Usage: {sys.argv[0]} [OPTIONS] [:PROFILE] [TASK[:SUBTASK]]\n'
         '\n'
         'Options:\n'
         '  -h, --help            - Shows this message\n'
@@ -27,8 +27,6 @@ def usage():
         '  -f, --force           - Forces recompilation\n'
         '  -u, --unchanged       - Consider every file unchanged\n'
         '  -t, --count-time      - Turns on time counting for each task\n'
-        '  -l, --list            - Lists all tasks\n'
-        '  -i, --info TASK       - Prints info about the task\n'
         '  -p, --profile PROFILE - Select different profile (debug, release)\n'
         '  --feature FEATURELIST - Set feature list\n'
         '\n'
@@ -36,6 +34,13 @@ def usage():
         '  +config               - Shows current config\n'
         '  +info                 - Shows info about the build\n'
         '  +last                 - Shows info about last build\n'
+        '  +list                 - Lists all tasks\n'
+        '  +cache                - Show file cache for profile\n'
+        '  +cache-clear          - Cleans cache for profile\n'
+        '\n'
+        'Profile:\n'
+        '  Specifies a profile for the build (same as -p option)\n'
+        f'  Example: {sys.argv[0]} :debug\n'
     )
 
 
@@ -47,8 +52,16 @@ def parse_task(task_name: str) -> Tuple[str, str]:
 
 
 def list_tasks():
-    for target, _ in _tasks.items():
-        print(target)
+    for target, task_info in _tasks.items():
+        print(f'{Color.GREEN}{target}{Color.RESET}', end='')
+        if task_info.depends:
+            print(' depends on ' + Color.RED + ', '.join(task_info.depends) + Color.RESET)
+        else:
+            print()
+        if task_info.subtasks:
+            print(' subtasks:')
+        for subtask, _ in task_info.subtasks.items():
+            print(f'  {subtask}')
 
 
 def task_info(task_name: str):
@@ -97,12 +110,6 @@ def parse_args():
             config.consider_unchanged(True)
         elif sys.argv[i] in ['-t', '--count-time']:
             config.count_time(True)
-        elif sys.argv[i] in ['-l', '--list']:
-            list_tasks()
-            sys.exit(0)
-        elif sys.argv[i] in ['-i', '--info']:
-            task_info(check_next_arg(i))
-            sys.exit(0)
         elif sys.argv[i] in ['-p', '--profile']:
             config.profile(check_next_arg(i))
             i += 1
@@ -110,7 +117,9 @@ def parse_args():
             options['features'] += check_next_arg(i).split(',')
             i += 1
         else:
-            if options['task'] == '':
+            if sys.argv[i][0] == ':':
+                config.profile(sys.argv[i][1:])
+            elif options['task'] == '':
                 if len(sys.argv[i]) > 0 and sys.argv[i][0] == '-':
                     utils.die(f'{ERROR}: Unknown option: "{sys.argv[i]}"')
                 options['task'], options['subtask'] = parse_task(sys.argv[i])
@@ -139,11 +148,11 @@ def run(default_task: str = ''):
             print(
                 (
                     '{} build\n'
-                    '  force              : {}\n'
-                    '  verbose            : {}\n'
-                    '  count_time         : {}\n'
-                    '  default_task       : {}\n'
-                    '  requested features : {}'
+                    '  force        : {}\n'
+                    '  verbose      : {}\n'
+                    '  count_time   : {}\n'
+                    '  default_task : {}\n'
+                    '  features     : {}'
                 ).format(
                     config.get('profile'),
                     config.get('force'),
@@ -155,6 +164,16 @@ def run(default_task: str = ''):
             )
         elif options['task'] == '+last':
             cache.print_last_build()
+        elif options['task'] == '+list':
+            list_tasks()
+            sys.exit(0)
+        elif options['task'] == '+cache':
+            for file, mtime in cache.get(config.get('profile'), 'files').items():
+                print(f'{file}: ' + time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(mtime)))
+            sys.exit(0)
+        elif options['task'] == '+cache-clear':
+            cache.clear()
+            sys.exit(0)
         else:
             cache.update_last_build_start(utils.current_time_str())
             cache.update_last_build_result('fail')
