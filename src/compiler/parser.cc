@@ -400,15 +400,21 @@ ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
       // NOTE: setIsReturnValueExpected patches expectance of value if that value is used in call or assignment
       if (peek().type == TOKEN_LEFT_PAREN) {
         consume(TOKEN_LEFT_PAREN);
-        ((ast::Call*)value)->setIsReturnValueExpected(true);
+        if (value->getType() == ast::NTYPE_CALL) {
+          ((ast::Call*)value)->setIsReturnValueExpected(true);
+        }
         value = call(value, false);
       } else if (peek().type == TOKEN_EQUAL) {
         consume(TOKEN_EQUAL);
-        ((ast::Call*)value)->setIsReturnValueExpected(true);
+        if (value->getType() == ast::NTYPE_CALL) {
+          ((ast::Call*)value)->setIsReturnValueExpected(true);
+        }
         value = new ast::Assignment(value, expression(true));
       } else if (peek().type == TOKEN_COLON_EQUAL) {
         consume(TOKEN_COLON_EQUAL);
-        ((ast::Call*)value)->setIsReturnValueExpected(true);
+        if (value->getType() == ast::NTYPE_CALL) {
+          ((ast::Call*)value)->setIsReturnValueExpected(true);
+        }
         value = new ast::Assignment(value, expression(true), true);
       } /*else {
         throw ParseError(peek(), m_filename, "Expected call or assignment");
