@@ -38,6 +38,8 @@
 #include <ff/ast/vector.h>
 #include <ff/ast/import.h>
 #include <ff/ast/module.h>
+#include <ff/ast/class.h>
+#include <ff/ast/new.h>
 #include <ff/ast/breakpoint.h>
 
 namespace ff {

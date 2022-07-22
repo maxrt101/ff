@@ -77,6 +77,8 @@ def run_tests(test_list):
             print(f'{ERROR}: No such test: {test}')
             sys.exit(1)
     print_summary()
+    if context['failed'] > 0:
+        exit(1)
 
 def usage(print_version: bool):
     print(

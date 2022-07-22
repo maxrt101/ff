@@ -104,8 +104,6 @@ ff::Compiler::ModuleInfo ff::loadModule(const std::string& name, const std::stri
 
   Compiler::ModuleInfo result = {name, module, compiler.getGlobals()[name]};
 
-  result.sharedLibs = compiler.getSharedLibs();
-
   for (auto& import : compiler.getImports()) {
     if (!isOfType(globals[import], ModuleType::getInstance())) {
       throw CompileError(filename, -1, "Import is not a module");

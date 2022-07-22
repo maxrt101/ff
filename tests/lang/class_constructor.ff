@@ -1,0 +1,13 @@
+
+class Test {
+  counter: int = 5;
+
+  fn __init__(self, c: int) -> {
+    self.counter = c;
+  }
+}
+
+fn main() -> {
+  var test = new Test(20);
+  assert(test.counter == 20);
+}

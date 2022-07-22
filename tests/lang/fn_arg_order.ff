@@ -1,0 +1,9 @@
+
+fn testArgOrder(a: int, b: int) -> {
+  assert(a == 10);
+  assert(b == 20);
+}
+
+fn main() -> {
+  testArgOrder(10, 20);
+}

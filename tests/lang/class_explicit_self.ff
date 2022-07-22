@@ -1,0 +1,14 @@
+
+class Test {
+  counter: int = 5;
+
+  fn add(self, n: int) -> {
+    self.counter = self.counter + n;
+  }
+}
+
+fn main() -> {
+  var test = new Test();
+  Test.add(test, 10);
+  assert(test.counter == 15);
+}

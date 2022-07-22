@@ -11,6 +11,8 @@ namespace ff {
 extern Ref<NativeFunction> fn_exit;
 extern Ref<NativeFunction> fn_assert;
 extern Ref<NativeFunction> fn_type;
+extern Ref<NativeFunction> fn_inspect;
+extern Ref<NativeFunction> fn_memaddr;
 
 } /* namespace ff */
 

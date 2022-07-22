@@ -61,6 +61,43 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       _printTree(mod->getBody(), prefix);
       break;
     }
+    case NTYPE_CLASS: {
+      Class* class_ = node->as<Class>();
+      printf("class %s {\n", class_->getName().str.c_str());
+      for (auto& field : class_->getFields()) {
+        printf("%s  ", prefix.c_str());
+        if (field.isStatic) {
+          printf("static ");
+        }
+        if (field.isConst) {
+          printf("const ");
+        }
+        printf("%s: %s", field.name.str.c_str(), field.type->toString().c_str());
+        if (field.value) {
+          printf(" = ");
+          _printTree(field.value, prefix);
+        }
+        printf(";\n");
+      }
+      for (auto& method : class_->getMethods()) {
+        printf("%s  ", prefix.c_str());
+        if (method.isStatic) {
+          printf("static ");
+        }
+        _printTree(method.fn, prefix + "  ");
+        // printf("%s: %s", field.name.str.c_str(), field.type->toString().c_str());
+        printf("\n");
+      }
+      printf("%s}", prefix.c_str());
+      break;
+    }
+    case NTYPE_NEW: {
+      New* new_ = node->as<New>();
+      printf("new ");
+      _printTree(new_->getClass(), "");
+      printf("()");
+      break;
+    }
     case NTYPE_FUNCTION: {
       Function* fn = node->as<Function>();
       printf("fn %s(", fn->getName().str.c_str());
@@ -131,7 +168,7 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       for (auto& bodyNode : node->as<Block>()->getBody()) {
         printf("%s", (prefix + "  ").c_str());
         _printTree(bodyNode, prefix + "  ", true);
-        if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE, NTYPE_MODULE, NTYPE_IMPORT)) {
+        if (!mrt::isIn(bodyNode->getType(), NTYPE_FUNCTION, NTYPE_CLASS, NTYPE_BLOCK, NTYPE_IF, NTYPE_FOR, NTYPE_FOREACH, NTYPE_WHILE, NTYPE_MODULE, NTYPE_IMPORT)) {
           printf(";");
         }
         printf("\n");

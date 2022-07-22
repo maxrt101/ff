@@ -152,6 +152,8 @@ ff::Compiler::Compiler() {
   m_globalVariables["exit"] = Variable::fromObject("assert", obj(fn_exit));
   m_globalVariables["assert"] = Variable::fromObject("assert", obj(fn_assert));
   m_globalVariables["type"] = Variable::fromObject("type", obj(fn_type));
+  m_globalVariables["inspect"] = Variable::fromObject("inspect", obj(fn_inspect));
+  m_globalVariables["memaddr"] = Variable::fromObject("memaddr", obj(fn_memaddr));
 }
 
 ff::Ref<ff::Code> ff::Compiler::compile(const std::string& filename, ast::Node* node) {
@@ -208,10 +210,6 @@ std::map<std::string, ff::Compiler::Variable>& ff::Compiler::getGlobals() {
 
 std::vector<std::string>& ff::Compiler::getImports() {
   return m_imports;
-}
-
-std::map<std::string, ff::Ref<mrt::DynamicLibrary>> ff::Compiler::getSharedLibs() {
-  return std::move(m_sharedLibs);
 }
 
 void ff::Compiler::beginScope() {
@@ -502,8 +500,8 @@ void ff::Compiler::defineArgs(ast::VarDeclList* args) {
   }
 }
 
-ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Node* node, bool& isFunction) {
-  isFunction = false;
+ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Node* node, bool& isCopyable) {
+  isCopyable = true;
   if (node->getType() == ast::NTYPE_IDENTIFIER) {
     std::string name = node->as<ast::Identifier>()->getValue();
     emitConstant(String::createInstance(name).asRefTo<Object>());
@@ -516,6 +514,9 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
         type = var->type;
       }
     }
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+      isCopyable = false;
+    }
     return {type, var};
   } else if (node->getType() == ast::NTYPE_CALL) {
     bool explicitSelf = false;
@@ -526,7 +527,7 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
         explicitSelf = prev.type->toString() == prev.var->name;
       }
     }
-    isFunction = true;
+    isCopyable = false;
     return {call(node, false, prev, explicitSelf), nullptr};
   } else {
     throw CompileError(m_filename, -1, "Expected filed or call");
@@ -554,7 +555,7 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceStart(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node, bool copyValue) {
   ast::Identifier* ident = node->as<ast::Identifier>();
   auto type = resolveVariable(ident->getValue());
-  if (type->annotationType != TypeAnnotation::TATYPE_FUNCTION) {
+  if (type->annotationType != TypeAnnotation::TATYPE_FUNCTION && type->typeName != "type") {
     if (copyValue) {
       getCode()->pushInstruction(OP_COPY);
     }
@@ -565,11 +566,11 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::identifier(ast::Node* node, bool copyV
 ff::Ref<ff::TypeAnnotation> ff::Compiler::sequence(ast::Node* node, bool copyValue) {
   auto seq = node->as<ast::Sequence>()->getSequence();
   TypeInfo typeInfo = evalSequenceStart(seq.front());
-  bool isFunction = false;
+  bool isCopyable = true;
   for (int i = 1; i < seq.size(); i++) {
-    typeInfo = evalSequenceElement(typeInfo, seq[i], isFunction);
+    typeInfo = evalSequenceElement(typeInfo, seq[i], isCopyable);
   }
-  if (!isFunction && copyValue) {
+  if (isCopyable && copyValue) {
     getCode()->pushInstruction(OP_COPY);
   }
   return typeInfo.type;
@@ -668,7 +669,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
   return TypeAnnotation::any();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule, bool saveToVariable) {
   ast::Function* fn = node->as<ast::Function>();
 
   Variable var(
@@ -677,7 +678,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     true,
     {}
   );
-  m_globalVariables[var.name] = var;
+
+  if (saveToVariable) {
+    m_globalVariables[var.name] = var;
+  }
 
   beginFunctionScope(fn->getFunctionType()->returnType);
   defineArgs(fn->getArgs());
@@ -711,12 +715,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     }
   }
 
-  if (!isModule) {
+  if (saveToVariable && !isModule) {
     emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
     getCode()->pushInstruction(OP_NEW_GLOBAL);
   }
 
-  m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
+  if (saveToVariable) {
+    m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
+  }
 
   if (scope.code->size() == 0 || (*scope.code)[scope.code->size()-1] != OP_RETURN) {
     scope.code->pushInstruction(OP_RETURN);
@@ -728,20 +734,99 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule)
     fn->getFunctionType().as<FunctionAnnotation>()->returnType
   );
 
-  if (isModule) {
-    emitConstant(function.asRefTo<Object>());
-    TypeInfo typeInfo = resolveCurrentModule();
-    typeInfo.var->fields[var.name] = var;
-    emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
-    getCode()->pushInstruction(OP_SET_FIELD);
-  } else {
-    emitConstant(function.asRefTo<Object>());
-    emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
-    getCode()->pushInstruction(OP_SET_GLOBAL);
+  emitConstant(function.asRefTo<Object>());
+
+  if (saveToVariable) {
+    if (isModule) {
+      TypeInfo typeInfo = resolveCurrentModule();
+      typeInfo.var->fields[var.name] = var;
+      emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
+      getCode()->pushInstruction(OP_SET_FIELD);
+    } else {
+      emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
+      getCode()->pushInstruction(OP_SET_GLOBAL);
+    }
   }
 
   return fn->getFunctionType().asRefTo<TypeAnnotation>();
 }
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModule) {
+  ast::Class* classNode = node->as<ast::Class>();
+
+  Ref<TypeAnnotation> type = TypeAnnotation::create("type");
+  // Ref<TypeAnnotation> type = TypeAnnotation::create(classNode->getName().str);
+
+  Variable var {
+    classNode->getName().str.c_str(),
+    type,
+    true,
+    {}
+  };
+
+  m_globalVariables[var.name] = var;
+
+  Ref<Class> classObject = Class::createInstance(var.name);
+
+  if (!isModule) {
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_NEW_GLOBAL);
+  }
+
+  emitConstant(classObject.asRefTo<Object>());
+  getCode()->pushInstruction(OP_DUP);
+
+  if (isModule) {
+    TypeInfo typeInfo = resolveCurrentModule();
+    typeInfo.var->fields[var.name] = var;
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_FIELD);
+  } else {
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_SET_GLOBAL);
+  }
+
+  for (auto& field : classNode->getFields()) {
+    var.fields[field.name.str] = Variable {
+      field.name.str,
+      field.type,
+      false,
+      {}
+    };
+
+    getCode()->pushInstruction(OP_DUP);
+    ast::Node* call_ = new ast::Call(
+      new ast::Identifier({TOKEN_IDENTIFIER, "addField", field.name.line}),
+      {new ast::StringLiteral(field.name), field.value},
+      false
+    );
+    call(call_, false, {type, nullptr});
+  }
+
+  for (auto& method : classNode->getMethods()) {
+    var.fields[method.fn->getName().str] = Variable {
+      method.fn->getName().str,
+      method.fn->getFunctionType().asRefTo<TypeAnnotation>(),
+      false,
+      {}
+    };
+
+    getCode()->pushInstruction(OP_DUP);
+    getCode()->pushInstruction(OP_DUP);
+    ast::Node* call_ = new ast::Call(
+      new ast::Identifier({TOKEN_IDENTIFIER, "addMethod", method.fn->getName().line}),
+      {new ast::StringLiteral(method.fn->getName()), method.fn},
+      false
+    );
+    call(call_, false, {type, nullptr});
+  }
+
+  getCode()->pushInstruction(OP_POP);
+  m_globalVariables[var.name] = var;
+
+  return type;
+}
+
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValue, bool isModule) {
   ast::VarDecl* varNode = node->as<ast::VarDecl>();
@@ -861,7 +946,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   auto args = call->getArgs();
 
   for (int i = args.size() - 1; i >= 0; i--) {
-    auto argType = evalNode(args[i]);
+    auto argType = evalNode(args[i], true, false, false);
     if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
       Ref<TypeAnnotation> paramType;
       if (topLevelCallee) {
@@ -909,6 +994,46 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
     return type.asRefTo<FunctionAnnotation>()->returnType;
   }
+  return TypeAnnotation::any();
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::callMember(const std::string& memberName, const std::vector<ast::Node*>& args, bool isReturnValueExpected, bool explicitSelf, Ref<TypeAnnotation> type) {
+  for (int i = args.size() - 1; i >= 0; i--) {
+    auto argType = evalNode(args[i], true, false, false);
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+      Ref<TypeAnnotation> paramType = type.asRefTo<FunctionAnnotation>()->arguments[explicitSelf ? i : i + 1];
+      if (*paramType != *TypeAnnotation::any() && *argType != *paramType) {
+        throw CompileError(m_filename, -1, "TypeMismatch: expected '%s', but got '%s' for argument %d of function '%s'",
+          paramType->toString().c_str(),
+          argType->toString().c_str(),
+          i,
+          memberName.c_str()
+        );
+      }
+      if (paramType->isRef && !argType->isRef) {
+        warning("Expected '%s' but got '%s' for argument %d of function '%s'",
+          paramType->toString().c_str(),
+          argType->toString().c_str(),
+          i,
+          memberName.c_str()
+        );
+        info("To silence the warning - pass a 'ref' or remove 'ref' from argument type annotation");
+      }
+    }
+  }
+
+  emitConstant(Int::createInstance(args.size()).asRefTo<Object>());
+
+  size_t nargs = args.size();
+  getCode()->pushInstruction(OP_PULL_UP);
+  getCode()->push<uint16_t>(nargs + 2);
+  emitConstant(String::createInstance(memberName).asRefTo<Object>());
+  getCode()->pushInstruction(OP_CALL_MEMBER);
+
+  if (!isReturnValueExpected) {
+    getCode()->pushInstruction(OP_POP);
+  }
+
   return TypeAnnotation::any();
 }
 
@@ -1024,6 +1149,24 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::ref(ast::Node* node) {
   auto type = evalNode(ref->getValue(), false);
   type = type->copy();
   type->isRef = true;
+  return type;
+}
+
+ff::Ref<ff::TypeAnnotation> ff::Compiler::newexpr(ast::Node* node) {
+  ast::New* newNode = node->as<ast::New>();
+  auto type = evalNode(newNode->getClass(), false);
+  type = TypeAnnotation::create(newNode->getClass()->toString());
+  getCode()->pushInstruction(OP_NEW);
+  if (newNode->getIsConstructorCalled()) {
+    getCode()->pushInstruction(OP_DUP);
+    Ref<TypeAnnotation> initType = any();
+    if (m_globalVariables.find(type->typeName) != m_globalVariables.end()) {
+      if (m_globalVariables[type->typeName].fields.find("__init__") != m_globalVariables[type->typeName].fields.end()) {
+        initType = m_globalVariables[type->typeName].fields["__init__"].type;
+      }
+    }
+    callMember("__init__", newNode->getConstructorArgs(), false, false, initType);
+  }
   return type;
 }
 
@@ -1241,7 +1384,6 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
   auto configImportPaths = mrt::str::split(config::get("import_path"), ":");
   importPaths.insert(importPaths.end(), configImportPaths.begin(), configImportPaths.end());
 
-
   // Import modules
   for (auto& import : imp->getImports()) {
     std::string name = path::stripExtension(path::getFile(import));
@@ -1272,10 +1414,6 @@ void ff::Compiler::import(ast::Node* node, bool isModule) {
       getCode()->addModule(module.name, module.module.asRefTo<Object>());
       m_globalVariables[module.name] = module.var;
       m_imports.push_back(module.name);
-    }
-
-    for (auto& dl : modInfo.sharedLibs) {
-      m_sharedLibs[dl.first] = std::move(dl.second);
     }
   }
 }
@@ -1321,10 +1459,12 @@ void ff::Compiler::module(ast::Node* node, bool isModule) {
   m_modules.pop_back();
 }
 
-ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyValue, bool isModule) {
+ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyValue, bool isModule, bool saveToVariable) {
   if (!node) return TypeAnnotation::nothing();
 #ifdef _FF_EVAL_NODE_DEBUG
-  printf("evalNode: ptr=%p type=%s\n", node, ast::nodeTypeToString(node->getType()).c_str());
+  if (config::get("debug") != "0") {
+    printf("evalNode: ptr=%p type=%s\n", node, ast::nodeTypeToString(node->getType()).c_str());
+  }
 #endif
   switch (node->getType()) {
     case ast::NTYPE_FLOAT_LITERAL: {
@@ -1362,7 +1502,10 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
       return sequence(node, copyValue);
     }
     case ast::NTYPE_FUNCTION: {
-      return fndecl(node, isModule);
+      return fndecl(node, isModule, saveToVariable);
+    }
+    case ast::NTYPE_CLASS: {
+      return classdecl(node, isModule);
     }
     case ast::NTYPE_VAR_DECL: {
       return vardecl(node, copyValue, isModule);
@@ -1418,6 +1561,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     }
     case ast::NTYPE_REF: {
       return ref(node);
+    }
+    case ast::NTYPE_NEW: {
+      return newexpr(node);
     }
     case ast::NTYPE_FOREACH:
     case ast::NTYPE_EXPR_LIST_EXPR: {

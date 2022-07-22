@@ -25,7 +25,6 @@ class Compiler {
     Ref<TypeAnnotation> type;
     bool isConst = false;
     std::map<std::string, Variable> fields;
-    // bool isInitialized = false;
 
     Variable() = default;
     Variable(const std::string& name, Ref<TypeAnnotation> type, bool isConst, const std::map<std::string, Variable>& fields);
@@ -43,7 +42,6 @@ class Compiler {
     Ref<Module> module;
     Variable var;
     std::vector<ModuleInfo> imports;
-    std::map<std::string, Ref<mrt::DynamicLibrary>> sharedLibs;
   };
 
   enum ScopeType {
@@ -71,7 +69,6 @@ class Compiler {
   std::vector<Scope> m_scopes;                        // Stack of scopes
   std::vector<LoopRecord> m_loops;                    // Stack of loops
   std::map<std::string, Variable> m_globalVariables;
-  std::map<std::string, Ref<mrt::DynamicLibrary>> m_sharedLibs;
   std::vector<std::string> m_modules;                 // Stack for module declarations
   std::vector<std::string> m_imports;                 // List of imported modules, to prevent reimports and circular dependencies
   std::string m_thisModuleName;                       // Current module
@@ -88,8 +85,6 @@ class Compiler {
   std::map<std::string, Variable>& getGlobals();
   std::vector<std::string>& getImports();
 
-  std::map<std::string, Ref<mrt::DynamicLibrary>> getSharedLibs();
-
  private:
   Ref<Code>& getCode();
   std::vector<Variable>& getLocals();
@@ -98,7 +93,7 @@ class Compiler {
   bool isTopScope() const;
 
   /* Returns generated value type */
-  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true, bool isModule = false);
+  Ref<TypeAnnotation> evalNode(ast::Node* node, bool copyValue = true, bool isModule = false, bool saveToVariable = true);
 
   void beginScope();
   void beginFunctionScope(Ref<TypeAnnotation> returnType);
@@ -136,12 +131,15 @@ class Compiler {
   Ref<TypeAnnotation> sequence(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> binaryExpr(ast::Node* node);
   Ref<TypeAnnotation> unaryExpr(ast::Node* node);
-  Ref<TypeAnnotation> fndecl(ast::Node* node, bool isModule = false);
+  Ref<TypeAnnotation> fndecl(ast::Node* node, bool isModule = false, bool saveToVariable = true);
+  Ref<TypeAnnotation> classdecl(ast::Node* node, bool isModule = false);
   Ref<TypeAnnotation> vardecl(ast::Node* node, bool copyValue = true, bool isModule = false);
   Ref<TypeAnnotation> assignment(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> cast(ast::Node* node, bool copyValue = true);
   Ref<TypeAnnotation> ref(ast::Node* node);
+  Ref<TypeAnnotation> newexpr(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr}, bool explicitSelf = false);
+  Ref<TypeAnnotation> callMember(const std::string& memberName, const std::vector<ast::Node*>& args, bool isReturnValueExpected, bool explicitSelf, Ref<TypeAnnotation> type);
   Ref<TypeAnnotation> lambda(ast::Node* node);
   Ref<TypeAnnotation> dict(ast::Node* node);
   Ref<TypeAnnotation> vector(ast::Node* node);
@@ -155,7 +153,7 @@ class Compiler {
   void module(ast::Node* node, bool isModule);
 
   TypeInfo evalSequenceStart(ast::Node* node);
-  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isFunction);
+  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isCopyable);
 };
 
 Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename, const std::string& parentModule);

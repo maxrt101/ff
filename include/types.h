@@ -66,6 +66,10 @@ Ref<Vector> vector(const Vector::ValueType& value);
 Ref<Vector> vector(Ref<Object> object);
 Ref<Dict> dict(Dict::ValueType value);
 Ref<Dict> dict(Ref<Object> object);
+Ref<Class> classobj(const std::string& className, std::unordered_map<std::string, Class::Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods);
+Ref<Class> classobj(Ref<Object> object);
+Ref<ClassInstance> instance(Ref<Class> class_);
+Ref<ClassInstance> instance(Ref<Object> object);
 
 std::string& strval(Ref<String> value);
 std::string& strval(Ref<Object> object);

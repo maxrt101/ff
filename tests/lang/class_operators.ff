@@ -1,0 +1,19 @@
+
+class Test {
+  counter: int = 5;
+
+  fn __init__(self, c: int) -> {
+    self.counter = c;
+  }
+
+  fn __add__(self, rhs: Test) -> {
+    return new Test(self.counter + rhs.counter);
+  }
+}
+
+fn main() -> {
+  var lhs = new Test(5);
+  var rhs = new Test(5);
+  var sum = lhs + rhs;
+  assert(sum.counter == 10);
+}
