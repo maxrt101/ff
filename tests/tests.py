@@ -13,6 +13,38 @@ tests = {
         'expect': 'return',
         'value': 0
     },
+    'lang/class_def': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_constructor': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_default_field': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_explicit_self': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_method': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_method_arg_order': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_no_constructor': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/class_operators': {
+        'expect': 'return',
+        'value': 0
+    },
     'lang/const_global': {
         'expect': 'return',
         'value': 0
@@ -30,6 +62,10 @@ tests = {
         'value': 1
     },
     'lang/fields': {
+        'expect': 'return',
+        'value': 0
+    },
+    'lang/fn_arg_order': {
         'expect': 'return',
         'value': 0
     },

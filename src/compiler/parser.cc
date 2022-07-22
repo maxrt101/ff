@@ -1,6 +1,7 @@
 #include <ff/compiler/parser.h>
 #include <ff/utils/macros.h>
 #include <ff/ast.h>
+#include <ff/log.h>
 
 #include <mrt/console/colors.h>
 #include <mrt/container_utils.h>
@@ -481,7 +482,7 @@ std::vector<ff::ast::Node*> ff::Parser::statementList() {
   }
 
   if (peek().type != TOKEN_RIGHT_BRACE) {
-    throw ParseError(peek(), m_filename, "Expected ';' after a statement");
+    throw ParseError(peek(), m_filename, "Expected ';' after a statement)");
   }
 
   return nodes;
@@ -703,11 +704,18 @@ ff::ast::Node* ff::Parser::cast(bool isReturnValueExpected) {
 ff::ast::Node* ff::Parser::newexpr(bool isReturnValueExpected) {
   ast::Node* expr = lvalue(true, false);
 
-  consume(TOKEN_LEFT_PAREN, "Expected '(' after class name");
-  // auto params = expressionList(true);
-  consume(TOKEN_RIGHT_PAREN, "Expected ')' after constructor args");
+  bool isConstructorCalled = false;
+  std::vector<ast::Node*> constructorArgs;
 
-  return new ast::New(expr);
+  if (match({TOKEN_LEFT_PAREN})) {
+    isConstructorCalled = true;
+    if (peek().type != TOKEN_RIGHT_PAREN) {
+      constructorArgs = expressionList(true);
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after constructor args");
+  }
+
+  return new ast::New(expr, isConstructorCalled, constructorArgs);
 }
 
 ff::ast::Node* ff::Parser::rvalue(bool isReturnValueExpected) {
@@ -795,7 +803,7 @@ ff::ast::Node* ff::Parser::lvalue(bool isReturnValueExpected, bool allowCall) {
   }
 
   // FIXME: Can happen if keyword is identified as an identifier (see scanner.cc)
-  printf("DEV: CHECK FOR KEYWORDS\n");
+  warning("For developer: Check keywords\n");
   throw ParseError(peek(), m_filename, "Expected an expression");
 }
 

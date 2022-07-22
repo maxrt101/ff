@@ -11,7 +11,7 @@ using namespace ff::types;
 ff::Ref<ff::ClassType> ff::ClassType::m_instance;
 ff::Ref<ff::ClassInstanceType> ff::ClassInstanceType::m_instance;
 
-ff::ClassType::ClassType() : Type("class") {
+ff::ClassType::ClassType() : Type("type") {
   setField("addField", 
     obj(fn([](VM* context, std::vector<Ref<Object>> args) {
       args[0].as<Class>()->fieldInfo[strval(args[1])] = Class::Field {
@@ -21,7 +21,7 @@ ff::ClassType::ClassType() : Type("class") {
       };
       return Ref<Object>();
     }, {
-      {"self", type("class")},
+      {"self", type("type")},
       {"name", type("string")},
       {"value", any()}
     }, nothing()))
@@ -32,7 +32,7 @@ ff::ClassType::ClassType() : Type("class") {
       args[0].as<Class>()->setField(strval(args[1]), args[2]);
       return Ref<Object>();
     }, {
-      {"self", type("class")},
+      {"self", type("type")},
       {"name", type("string")},
       {"value", any()}
     }, nothing()))
@@ -42,7 +42,7 @@ ff::ClassType::ClassType() : Type("class") {
 ff::ClassType::~ClassType() {}
 
 std::string ff::ClassType::toString() const {
-  return "class";
+  return "type";
 }
 
 ff::Ref<ff::ClassType> ff::ClassType::getInstance() {
@@ -54,10 +54,27 @@ ff::Ref<ff::ClassType> ff::ClassType::getInstance() {
 }
 
 ff::Class::Class(const std::string& className)
-  : Instance(ClassType::getInstance().asRefTo<Type>()), className(className) {}
+  : Class(className, {}, {}) {}
 
-ff::Class::Class(const std::string& className, std::unordered_map<std::string, Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods)
+ff::Class::Class(const std::string& className, const std::unordered_map<std::string, Field>& fieldInfo, const std::unordered_map<std::string, Ref<Object>>& methods)
     : Instance(ClassType::getInstance().asRefTo<Type>()), className(className), fieldInfo(fieldInfo) {
+
+  setField("__init__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return Ref<Object>();
+    }, {
+      {"self", any()}
+    }, nothing()))
+  );
+
+  setField("__copy__",
+    obj(fn([](VM* context, std::vector<Ref<Object>> args) {
+      return args[0];
+    }, {
+      {"self", any()}
+    }, any()))
+  );
+
   for (auto& [methodName, method] : methods) {
     setField(methodName, method);
   }
@@ -77,7 +94,7 @@ ff::Ref<ff::Class> ff::Class::createInstance(const std::string& className) {
   return memory::construct<Class>(className);
 }
 
-ff::Ref<ff::Class> ff::Class::createInstance(const std::string& className, std::unordered_map<std::string, Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods) {
+ff::Ref<ff::Class> ff::Class::createInstance(const std::string& className, const std::unordered_map<std::string, Field>& fieldInfo, const std::unordered_map<std::string, Ref<Object>>& methods) {
   return memory::construct<Class>(className, fieldInfo, methods);
 }
 

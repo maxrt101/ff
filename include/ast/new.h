@@ -13,12 +13,16 @@ namespace ast {
 class New : public Node {
  private:
   Node* m_class;
+  bool m_isConstructorCalled = true;
+  std::vector<Node*> m_constructorArgs;
 
  public:
-  New(Node* class_);
+  New(Node* class_, bool isConstructorCalled, const std::vector<Node*>& constructorArgs);
   ~New() = default;
 
   Node* getClass() const;
+  bool getIsConstructorCalled() const;
+  std::vector<Node*> getConstructorArgs() const;
 };
 
 } /* namespace ast */

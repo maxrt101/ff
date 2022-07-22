@@ -13,7 +13,7 @@ ff::ast::Class::Method::Method(
   bool isStatic
 ) : fn(fn), isStatic(isStatic) {}
 
-ff::ast::Class::Class(Token name, std::vector<Field>& fields, std::vector<ff::ast::Class::Method>& methods)
+ff::ast::Class::Class(const Token& name, const std::vector<Field>& fields, const std::vector<ff::ast::Class::Method>& methods)
   : Node(NTYPE_CLASS), m_name(name), m_fields(fields), m_methods(methods) {}
 
 ff::Token ff::ast::Class::getName() const {

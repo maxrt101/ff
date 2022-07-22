@@ -34,7 +34,7 @@ class Class : public Node {
     ast::Function* fn;
     bool isStatic = false;
 
-    Method(
+    explicit Method(
       ast::Function* fn,
       bool isStatic = false
     );
@@ -46,7 +46,12 @@ class Class : public Node {
   std::vector<Method> m_methods;
 
  public:
-  Class(Token name, std::vector<Field>& fields, std::vector<Method>& methods);
+  Class(
+    const Token& name,
+    const std::vector<Field>& fields,
+    const std::vector<Method>& methods
+  );
+
   ~Class() = default;
 
   Token getName() const;

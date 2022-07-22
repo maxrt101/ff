@@ -35,14 +35,14 @@ class Class : public Instance {
 
  public:
   explicit Class(const std::string& className);
-  explicit Class(const std::string& className, std::unordered_map<std::string, Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods);
+  explicit Class(const std::string& className, const std::unordered_map<std::string, Field>& fieldInfo, const std::unordered_map<std::string, Ref<Object>>& methods);
   ~Class();
 
   std::string toString() const override;
   bool equals(Ref<Object> other) const override;
 
   static Ref<Class> createInstance(const std::string& className);
-  static Ref<Class> createInstance(const std::string& className, std::unordered_map<std::string, Field> fieldInfo, std::unordered_map<std::string, Ref<Object>> methods);
+  static Ref<Class> createInstance(const std::string& className, const std::unordered_map<std::string, Field>& fieldInfo, const std::unordered_map<std::string, Ref<Object>>& methods);
 };
 
 class ClassInstanceType : public Type {

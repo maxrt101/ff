@@ -139,6 +139,7 @@ class Compiler {
   Ref<TypeAnnotation> ref(ast::Node* node);
   Ref<TypeAnnotation> newexpr(ast::Node* node);
   Ref<TypeAnnotation> call(ast::Node* node, bool topLevelCallee = false, TypeInfo typeInfo = {TypeAnnotation::any(), nullptr}, bool explicitSelf = false);
+  Ref<TypeAnnotation> callMember(const std::string& memberName, const std::vector<ast::Node*>& args, bool isReturnValueExpected, bool explicitSelf, Ref<TypeAnnotation> type);
   Ref<TypeAnnotation> lambda(ast::Node* node);
   Ref<TypeAnnotation> dict(ast::Node* node);
   Ref<TypeAnnotation> vector(ast::Node* node);
@@ -152,7 +153,7 @@ class Compiler {
   void module(ast::Node* node, bool isModule);
 
   TypeInfo evalSequenceStart(ast::Node* node);
-  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isFunction);
+  TypeInfo evalSequenceElement(TypeInfo info, ast::Node* node, bool& isCopyable);
 };
 
 Compiler::ModuleInfo loadModule(const std::string& name, const std::string& filename, const std::string& parentModule);
