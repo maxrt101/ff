@@ -32,4 +32,4 @@ Build system keeps track of changed source files, and on subsequent builds will 
 
 ### Tests:
 To run tests execute `./make.py test` (or directly with `./tests/run.sh`)  
-Usage of `run.sh`: `./tests/run.sh [PROFILE]`, if no profile is provided `release` will be assumed.  
+Usage of `run.sh`: `./tests/run.py [OPTION] PROFILE [TEST...]`  
