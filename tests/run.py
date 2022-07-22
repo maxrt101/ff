@@ -4,7 +4,6 @@ from typing import Dict, Tuple, Final
 from tests import tests
 import os, sys, subprocess
 
-
 class Color:
     RESET  = "\033[0m"
     RED    = "\033[0;31m"
@@ -16,14 +15,14 @@ ERROR:   Final[str] = f'[{Color.RED}ERROR{Color.RESET}]'
 WARNING: Final[str] = f'[{Color.YELLOW}WARNING{Color.RESET}]'
 NOTE:    Final[str] = f'[{Color.BLUE}NOTE{Color.RESET}]'
 
-VERSION: Final[str] = '0.1.0'
+VERSION: Final[str] = '0.1.1'
 FOLDER:  Final[str] = os.path.dirname(os.path.realpath(__file__))
 
 config = {
     'profile': '',
     'script_dir': FOLDER,
     'topdir': FOLDER + '/..',
-    'print_result': False,
+    'verbose': False,
     'tests': list()
 }
 
@@ -44,7 +43,7 @@ def run_cmd(cmd: str) -> Tuple[int, str, str]:
 
 def run_test(test: str, test_config: Dict) -> Tuple[bool, int]:
     result = run_cmd(f'{config["topdir"]}/target/{config["profile"]}/bin/ff {config["script_dir"]}/{test}.ff {test_config.get("args", "")}')
-    if config['print_result']:
+    if config['verbose']:
         print(f'{NOTE}: {test}: {result}')
     if test_config['expect'] == 'return':
         return result[0] == test_config['value'], result[0]
@@ -86,7 +85,7 @@ def usage(print_version: bool):
         f'Usage: {sys.argv[0]} [OPTION] PROFILE [TEST...]\n'
         'Options:\n'
         '  -h, --help         - Prints this message\n'
-        '  -p, --print-result - Prints test results (return code, stdout, stderr)'
+        '  -v, --verbose      - Prints test results (return code, stdout, stderr)'
     )
 
 def main():
@@ -95,8 +94,8 @@ def main():
         if sys.argv[i] in ['-h', '--help', 'help']:
             usage(True)
             return
-        elif sys.argv[i] in ['-p', '--print-result']:
-            config['print_result'] = True
+        elif sys.argv[i] in ['-v', '--verbose']:
+            config['verbose'] = True
         else:
             if config['profile'] == '':
                 config['profile'] = sys.argv[i]
