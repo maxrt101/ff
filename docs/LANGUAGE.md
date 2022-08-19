@@ -426,15 +426,15 @@ class Test {
   counter: int = 0;
   name: string;
 
-  def __init__(self, name: string) -> {
+  fn __init__(self, name: string) -> {
     self.name = name;
   }
 
-  def greet(self) -> {
+  fn greet(self) -> {
     print "Hello, " + self.name;
   }
 
-  def __add__(self, rhs: Test) -> {
+  fn __add__(self, rhs: Test) -> {
     var tmp = new Test(self.name);
     tmp.counter = tmp.counter + rhs.counter;
     return tmp;

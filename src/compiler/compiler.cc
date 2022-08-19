@@ -378,6 +378,9 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariable(const std::string& nam
     }
     return itr->second.type;
   } else {
+    if (!m_modules.empty()) {
+      return resolveVariableRelativeToModule(name, local == OP_SET_LOCAL || local == OP_SET_FIELD_REF || global == OP_SET_GLOBAL || global == OP_SET_GLOBAL_REF, checkIsConst);
+    }
     throw CompileError(m_filename, -1, "Unknown variable '%s'", name.c_str());
   }
   return TypeAnnotation::any();
@@ -405,6 +408,56 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::getVariableType(const std::string& nam
     throw CompileError(m_filename, -1, "Unknown variable '%s'", name.c_str());
   }
   return TypeAnnotation::any();
+}
+
+// TODO: Refactor/Make more efficient
+ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariableRelativeToModule(const std::string& name, bool set, bool checkIsConst) {
+  if (m_modules.empty()) return TypeAnnotation::any();
+  std::string rootModuleName = m_modules.front();
+  std::vector<TypeInfo> typeInfo; // stack of current modules from the first one (global)
+
+  auto itr = m_globalVariables.find(rootModuleName);
+  if (itr != m_globalVariables.end()) {
+    typeInfo.push_back({itr->second.type, &itr->second});
+
+    for (int i = 1; i < m_modules.size(); i++) {
+      auto fitr = typeInfo.back().var->fields.find(m_modules[i]);
+      if (fitr != typeInfo.back().var->fields.end()) {
+        typeInfo.push_back({fitr->second.type, &fitr->second});
+      } else {
+        throw CompileError(m_filename, -1, "Unknown field '%s'", m_modules[i].c_str());
+      }
+    }
+  } else {
+    throw CompileError(m_filename, -1, "Unknown variable '%s'", rootModuleName.c_str());
+  }
+
+  auto varModItr = typeInfo.end();
+
+  for (auto i = typeInfo.end()-1; i >= typeInfo.begin(); i--) {
+    auto fitr = i->var->fields.find(name);
+    if (fitr != i->var->fields.end()) {
+      varModItr = i;
+      break;
+    }
+  }
+
+  emitConstant(String::createInstance(typeInfo.front().var->name).asRefTo<Object>());
+  getCode()->pushInstruction(OP_GET_GLOBAL);
+
+  for (auto i = typeInfo.begin() + 1; i <= varModItr; i++) {
+    emitConstant(String::createInstance(i->var->name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_GET_FIELD);
+  }
+
+  emitConstant(String::createInstance(name).asRefTo<Object>());
+  if (set) {
+    getCode()->pushInstruction(OP_SET_FIELD);
+  } else {
+    getCode()->pushInstruction(OP_GET_FIELD);
+  }
+
+  return typeInfo.back().type;
 }
 
 ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, ast::Node* value, bool copyValue) {
@@ -1095,11 +1148,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::assignment(ast::Node* node, bool copyV
     evalNode(seq.front(), false);
 
     if (seq.size() > 2) {
-      for (int i = 1; i < seq.size()-3; i++) {
+      for (int i = 1; i < seq.size()-1; i++) {
         if (seq[i]->getType() == ast::NTYPE_IDENTIFIER) {
           emitConstant(String::createInstance(seq[i]->as<ast::Identifier>()->getValue()).asRefTo<Object>());
+          getCode()->pushInstruction(OP_GET_FIELD);
         } else if (seq[i]->getType() == ast::NTYPE_CALL) { // is this even legal?
           call(seq[i], false);
+        } else {
+          throw CompileError(m_filename, -1, "Expected identifier or call near '%s'", seq[1]->toString().c_str());
         }
       }
     }
@@ -1428,28 +1484,28 @@ void ff::Compiler::module(ast::Node* node, bool isModule) {
     {}
   };
 
-  if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
-    throw CompileError(m_filename, -1, "Redeclaration of global variable");
-  }
-  m_globalVariables[var.name] = var;
-
   if (isModule) {
-    emitConstant(Module::createInstance(var.name).asRefTo<Object>());
     TypeInfo typeInfo = resolveCurrentModule();
     if (!typeInfo.var) {
       throw CompileError(m_filename, -1, "Coudn't resolve current module");
     }
     typeInfo.var->fields[var.name] = var;
-    emitConstant(String::createInstance(var.name).template asRefTo<Object>());
+    emitConstant(Module::createInstance(var.name).asRefTo<Object>());
+    getCode()->pushInstruction(OP_ROL);
+    emitConstant(String::createInstance(var.name).asRefTo<Object>());
     getCode()->pushInstruction(OP_SET_FIELD);
   } else {
+    if (m_globalVariables.find(var.name) != m_globalVariables.end()) {
+      throw CompileError(m_filename, -1, "Redeclaration of global variable");
+    }
+    m_globalVariables[var.name] = var;
+
     emitConstant(String::createInstance(var.name).asRefTo<Object>());
     getCode()->pushInstruction(OP_NEW_GLOBAL);
 
     emitConstant(Module::createInstance(var.name).asRefTo<Object>());
     emitConstant(String::createInstance(var.name).asRefTo<Object>());
     getCode()->pushInstruction(OP_SET_GLOBAL);
-
   }
 
   m_modules.push_back(var.name);

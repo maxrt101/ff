@@ -122,6 +122,10 @@ tests = {
         'expect': 'return',
         'value': 0
     },
+    'lang/module_field_resolution': {
+        'expect': 'return',
+        'value': 0
+    },
     'lang/recursion': {
         'expect': 'return',
         'value': 0

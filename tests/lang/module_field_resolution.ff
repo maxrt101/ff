@@ -1,0 +1,15 @@
+
+module test {
+  module inner {
+    var version = 125;
+    
+    fn getVersion() -> {
+      return version;
+    }
+  }
+}
+
+fn main() -> {
+  assert(test.inner.version == 125);
+  assert(test.inner.getVersion() == 125);
+}

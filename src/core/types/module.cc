@@ -50,7 +50,8 @@ std::string ff::Module::toString() const {
 
 bool ff::Module::equals(Ref<Object> other) const {
   return other->getObjectType() == OTYPE_INSTANCE
-      && other.as<Instance>()->getType() == getType();
+      && other.as<Instance>()->getType() == getType()
+      && other.as<Module>()->name == name;
       // && other.as<Module>()->value == value;
 }
 
