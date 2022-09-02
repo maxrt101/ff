@@ -1,11 +1,18 @@
+<p align="center">
+<img src="https://github.com/maxrt101/ff/blob/main/docs/logo.png?raw=true" width="300">
+</p>
 
 <h1 align="center">FF Programing Language</h1>
 
-<p align="center">
-<img src="https://github.com/maxrt101/ff/blob/main/docs/logo.png?raw=true" width="256">
-</p>
-
+<!--
 [![build](https://github.com/maxrt101/ff/actions/workflows/build.yml/badge.svg)](https://github.com/maxrt101/ff/actions/workflows/build.yml)
+-->
+
+<p align="center">
+  <a href="https://github.com/maxrt101/ff/actions/workflows/build.yml">
+    <img src="https://github.com/maxrt101/ff/actions/workflows/build.yml/badge.svg" alt="build"> 
+  </a>
+</p>
 
 ## About
 ff is a general purpose scripting language with dynamic and gradual typing.  
