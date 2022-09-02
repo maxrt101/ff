@@ -1,3 +1,5 @@
+![Example](https://github.com/maxrt101/ff/blob/main/docs/logo.png?raw=true)
+
 # FF Programming Language
 
 [![build](https://github.com/maxrt101/ff/actions/workflows/build.yml/badge.svg)](https://github.com/maxrt101/ff/actions/workflows/build.yml)
