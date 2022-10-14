@@ -296,12 +296,10 @@ ff::ast::Node* ff::Parser::ifstmt() {
 }
 
 ff::ast::Node* ff::Parser::forstmt() {
-  if (peek().type == TOKEN_LEFT_PAREN) { // for
+  if (peek().type == TOKEN_LEFT_PAREN) {
     consume(TOKEN_LEFT_PAREN);
     
-    ast::Node* init = nullptr;
-    ast::Node* cond = nullptr;
-    ast::Node* incr = nullptr;
+    ast::Node *init = nullptr, *cond = nullptr, *incr = nullptr;
     
     if (peek().type != TOKEN_SEMICOLON) {
       if (peek().type == TOKEN_VAR) {
@@ -416,9 +414,9 @@ ff::ast::Node* ff::Parser::statement(bool isInOtherStatement) {
           ((ast::Call*)value)->setIsReturnValueExpected(true);
         }
         value = new ast::Assignment(value, expression(true), true);
-      } /*else {
+      } /* else {
         throw ParseError(peek(), m_filename, "Expected call or assignment");
-      }*/
+      } */
       return value;
     }
     case TOKEN_VAR:
@@ -551,9 +549,6 @@ ff::ast::Node* ff::Parser::lambda() {
 
   std::vector<Ref<TypeAnnotation>> argTypes;
   if (args) {
-    // for (auto varDecl : args->getList()) {
-    //   argTypes.push_back(varDecl->getVarType());
-    // }
     std::transform(
       BEGIN_END(args->getList()),
       std::back_inserter(argTypes),

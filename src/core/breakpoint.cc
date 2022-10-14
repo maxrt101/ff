@@ -6,7 +6,8 @@
 #include <iostream>
 #include <string>
 
-static const char* _CMD_CONFIG_HELP = "Usage: config|cfg get|set|list|print [NAME] [VALUE]";
+static const char* _CMD_HELP        = "Available commands: exit continue help config stack jump";
+static const char* _CMD_CONFIG_HELP = "Usage: config|cfg get|set|list|show [NAME [VALUE]]";
 static const char* _CMD_STACK_HELP  = "Usage: stack|stk [print|pop]";
 static const char* _CMD_JUMP_HELP   = "Usage: jump|jmp|j OFFSET";
 
@@ -19,6 +20,8 @@ void ff::VM::runtimeBreakpoint() {
     auto tokens = mrt::str::split(line, " ");
     if (mrt::isIn(tokens[0], "quit", "q", "continue", "c")) {
       break;
+    } else if (mrt::isIn(tokens[0], "help", "h", "usage")) {
+      printf("%s\n", _CMD_HELP);
     } else if (mrt::isIn(tokens[0], "stack", "stk")) {
       if (tokens.size() == 1) {
         printStack();
@@ -61,7 +64,7 @@ void ff::VM::runtimeBreakpoint() {
           for (auto& name : config::getKeys()) {
             printf("%s\n", name.c_str());
           }
-        } else if (tokens[1] == "print") {
+        } else if (tokens[1] == "show") {
           for (auto& p : config::getAll()) {
             printf("%s=%s\n", p.first.c_str(), p.second.c_str());
           }

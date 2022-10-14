@@ -167,12 +167,8 @@ ff::Token ff::Scanner::scanToken() {
     case '!': return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
     case '=': return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
     case '<': {
-      if (match('-')) {
-        return makeToken(TOKEN_LEFT_ARROW);
-      }
-      if (match('=')) {
-        return makeToken(TOKEN_LESS_EQUAL);
-      }
+      if (match('-')) return makeToken(TOKEN_LEFT_ARROW);
+      if (match('=')) return makeToken(TOKEN_LESS_EQUAL);
       return makeToken(TOKEN_LESS);
     }
     case '>': return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
@@ -375,7 +371,7 @@ ff::TokenType ff::Scanner::identifierType() {
 }
 
 ff::TokenType ff::Scanner::checkKeyword(int start, int length, const char* rest, TokenType type) const {
-  if (m_current - m_start == start + length && !memcmp(m_start+start, rest, length) /*itrEqualsCharBuffer(m_start+start, rest, length)*/) {
+  if (m_current - m_start == start + length && !memcmp(m_start+start, rest, length)) {
     return type;
    }
    return TOKEN_IDENTIFIER;

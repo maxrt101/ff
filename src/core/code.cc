@@ -2,6 +2,60 @@
 #include <algorithm>
 #include <cstdio>
 
+std::string ff::opcodeToString(const Opcode op) {
+  switch (op) {
+    case OP_POP:            return "OP_POP";
+    case OP_PULL_UP:        return "OP_PULL_UP";
+    case OP_ROL:            return "OP_ROL";
+    case OP_DUP:            return "OP_DUP";
+    case OP_NULL:           return "OP_NULL";
+    case OP_TRUE:           return "OP_TRUE";
+    case OP_FALSE:          return "OP_FALSE";
+    case OP_NEW:            return "OP_NEW";
+    case OP_COPY:           return "OP_COPY";
+    case OP_LOAD_CONSTANT:  return "OP_LOAD_CONSTANT";
+    case OP_NEW_GLOBAL:     return "OP_NEW_GLOBAL";
+    case OP_GET_GLOBAL:     return "OP_GET_GLOBAL";
+    case OP_SET_GLOBAL:     return "OP_SET_GLOBAL";
+    case OP_SET_GLOBAL_REF: return "OP_SET_GLOBAL_REF";
+    case OP_GET_LOCAL:      return "OP_GET_LOCAL";
+    case OP_SET_LOCAL:      return "OP_SET_LOCAL";
+    case OP_SET_LOCAL_REF:  return "OP_SET_LOCAL_REF";
+    case OP_GET_FIELD:      return "OP_GET_FIELD";
+    case OP_SET_FIELD:      return "OP_SET_FIELD";
+    case OP_SET_FIELD_REF:  return "OP_SET_FIELD_REF";
+    case OP_GET_STATIC:     return "OP_GET_STATIC";
+    case OP_JUMP:           return "OP_JUMP";
+    case OP_JUMP_TRUE:      return "OP_JUMP_TRUE";
+    case OP_JUMP_FALSE:     return "OP_JUMP_FALSE";
+    case OP_LOOP:           return "OP_LOOP";
+    case OP_CALL:           return "OP_CALL";
+    case OP_CALL_MEMBER:    return "OP_CALL_MEMBER";
+    case OP_RETURN:         return "OP_RETURN";
+    case OP_CAST:           return "OP_CAST";
+    case OP_PRINT:          return "OP_PRINT";
+    case OP_ADD:            return "OP_ADD";
+    case OP_SUB:            return "OP_SUB";
+    case OP_MUL:            return "OP_MUL";
+    case OP_DIV:            return "OP_DIV";
+    case OP_MOD:            return "OP_MOD";
+    case OP_EQ:             return "OP_EQ";
+    case OP_NEQ:            return "OP_NEQ";
+    case OP_LT:             return "OP_LT";
+    case OP_GT:             return "OP_GT";
+    case OP_LE:             return "OP_LE";
+    case OP_GE:             return "OP_GE";
+    case OP_AND:            return "OP_AND";
+    case OP_OR:             return "OP_OR";
+    case OP_NOT:            return "OP_NOT";
+    case OP_NEG:            return "OP_NEG";
+    case OP_INC:            return "OP_INC";
+    case OP_DEC:            return "OP_DEC";
+    case OP_BREAKPOINT:     return "OP_BREAKPOINT";
+    default:                return "?";
+  }
+}
+
 ff::Code::Code(const std::string& filename) : m_filename(filename) {}
 
 size_t ff::Code::size() const {
@@ -73,14 +127,12 @@ std::string ff::Code::getFilename() const {
 
 int ff::Code::getLine(unsigned offset) const {
   for (int i = 0; i < m_lines.size(); i++) {
-    if (m_lines[i].startOffset == offset) {
-      return m_lines[i].line;
+    if (m_lines[i].startOffset == offset) {return m_lines[i].line;
     } else if (m_lines[i].startOffset < offset) {
       if (i+1 == m_lines.size()) {
         return m_lines[i].line;
       }
-    } else {
-      return m_lines[i-1].line;
+    } else {return m_lines[i-1].line;
     }
   }
 
@@ -109,148 +161,38 @@ void ff::Code::disassemble(const std::string& prefix) {
 }
 
 void ff::Code::disassembleInstruction(const std::string& prefix) {
-  printf("%s%04zx | ", prefix.c_str(), getReadIndex());
-  switch (read<uint8_t>()) {
-    case OP_POP:
-      printf("OP_POP\n");
-      return;
+  Opcode op = (Opcode) read<uint8_t>();
+  printf("%s%04zx | %s", prefix.c_str(), getReadIndex(), opcodeToString(op).c_str());
+  switch (op) {
     case OP_PULL_UP:
-      printf("OP_PULL_UP %u\n", read<uint16_t>());
-      return;
-    case OP_ROL:
-      printf("OP_ROL\n");
-      return;
-    case OP_DUP:
-      printf("OP_DUP\n");
-      return;
-    case OP_NULL:
-      printf("OP_NULL\n");
-      return;
-    case OP_TRUE:
-      printf("OP_TRUE\n");
-      return;
-    case OP_FALSE:
-      printf("OP_FALSE\n");
-      return;
-    case OP_NEW:
-      printf("OP_NEW\n");
-      return;
-    case OP_COPY:
-      printf("OP_COPY\n");
+      printf(" %u\n", read<uint16_t>());
       return;
     case OP_LOAD_CONSTANT:
-      printf("OP_LOAD_CONSTANT %u\n", read<uint32_t>());
-      return;
-    case OP_NEW_GLOBAL:
-      printf("OP_NEW_GLOBAL\n");
-      return;
-    case OP_GET_GLOBAL:
-      printf("OP_GET_GLOBAL\n");
-      return;
-    case OP_SET_GLOBAL:
-      printf("OP_SET_GLOBAL\n");
-      return;
-    case OP_SET_GLOBAL_REF:
-      printf("OP_SET_GLOBAL_REF\n");
+      printf(" %u\n", read<uint32_t>());
       return;
     case OP_GET_LOCAL:
-      printf("OP_GET_LOCAL %u\n", read<uint32_t>());
+      printf(" %u\n", read<uint32_t>());
       return;
     case OP_SET_LOCAL:
-      printf("OP_SET_LOCAL %u\n",read<uint32_t>());
+      printf(" %u\n",read<uint32_t>());
       return;
     case OP_SET_LOCAL_REF:
-      printf("OP_SET_LOCAL_REF %u\n",read<uint32_t>());
-      return;
-    case OP_GET_FIELD:
-      printf("OP_GET_FIELD\n");
-      return;
-    case OP_SET_FIELD:
-      printf("OP_SET_FIELD\n");
-      return;
-    case OP_SET_FIELD_REF:
-      printf("OP_SET_FIELD_REF\n");
-      return;
-    case OP_GET_STATIC:
-      printf("OP_GET_STATIC\n");
+      printf(" %u\n",read<uint32_t>());
       return;
     case OP_JUMP:
-      printf("OP_JUMP %u\n", read<uint16_t>());
+      printf(" %u\n", read<uint16_t>());
       return;
     case OP_JUMP_TRUE:
-      printf("OP_JUMP_TRUE %u\n", read<uint16_t>());
+      printf(" %u\n", read<uint16_t>());
       return;
     case OP_JUMP_FALSE:
-      printf("OP_JUMP_FALSE %u\n", read<uint16_t>());
+      printf(" %u\n", read<uint16_t>());
       return;
     case OP_LOOP:
-      printf("OP_LOOP %u\n", read<uint16_t>());
+      printf(" %u\n", read<uint16_t>());
       return;
-    case OP_CALL:
-      printf("OP_CALL\n");
-      return;
-    case OP_CALL_MEMBER:
-      printf("OP_CALL_MEMBER\n");
-      return;
-    case OP_RETURN:
-      printf("OP_RETURN\n");
-      return;
-    case OP_CAST:
-      printf("OP_CAST\n");
-      return;
-    case OP_PRINT:
-      printf("OP_PRINT\n");
-      return;
-    case OP_ADD:
-      printf("OP_ADD\n");
-      return;
-    case OP_SUB:
-      printf("OP_SUB\n");
-      return;
-    case OP_MUL:
-      printf("OP_MUL\n");
-      return;
-    case OP_DIV:
-      printf("OP_DIV\n");
-      return;
-    case OP_MOD:
-      printf("OP_MOD\n");
-      return;
-    case OP_EQ:
-      printf("OP_EQ\n");
-      return;
-    case OP_NEQ:
-      printf("OP_NEQ\n");
-      return;
-    case OP_LT:
-      printf("OP_LT\n");
-      return;
-    case OP_GT:
-      printf("OP_GT\n");
-      return;
-    case OP_LE:
-      printf("OP_LE\n");
-      return;
-    case OP_GE:
-      printf("OP_GE\n");
-      return;
-    case OP_AND:
-      printf("OP_AND\n");
-      return;
-    case OP_OR:
-      printf("OP_OR\n");
-      return;
-    case OP_NEG:
-      printf("OP_NEG\n");
-      return;
-    case OP_INC:
-      printf("OP_INC\n");
-      return;
-    case OP_DEC:
-      printf("OP_DEC\n");
-      return;
-    case OP_NOT:
-      printf("OP_NOT\n");
+    default:
+      printf("\n");
       return;
   }
 }

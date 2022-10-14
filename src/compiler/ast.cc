@@ -85,7 +85,6 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
           printf("static ");
         }
         _printTree(method.fn, prefix + "  ");
-        // printf("%s: %s", field.name.str.c_str(), field.type->toString().c_str());
         printf("\n");
       }
       printf("%s}", prefix.c_str());
@@ -201,9 +200,6 @@ static void _printTree(ff::ast::Node* node, const std::string& prefix = "", bool
       printf("}");
       break;
     }
-    case NTYPE_EXPR_LIST_EXPR: {
-      break;
-    }
     case NTYPE_CAST_EXPR: {
       Cast* cast = node->as<Cast>();
       _printTree(cast->getValue());
@@ -315,4 +311,172 @@ void ff::ast::unwrapCode(ff::Ref<ff::Code> code, const std::string& prefix) {
     }
     i++;
   }
+}
+
+void ff::ast::deleteTree(Node* node) {
+  if (!node) return;
+  switch (node->getType()) {
+    case NTYPE_GROUP_EXPR:
+      deleteTree(node->as<Group>()->getValue());
+      break;
+    case NTYPE_UNARY_EXPR:
+      deleteTree(node->as<Unary>()->getValue());
+      break;
+    case NTYPE_BINARY_EXPR:
+      deleteTree(node->as<Binary>()->getLeft());
+      deleteTree(node->as<Binary>()->getRight());
+      break;
+    case NTYPE_SEQUENCE:
+      for (int i = 0; i < node->as<Sequence>()->getSequence().size(); i++) {
+        deleteTree(node->as<Sequence>()->getSequence()[i]);
+      }
+      break;
+    case NTYPE_MODULE: {
+      deleteTree(node->as<Module>()->getBody());
+      break;
+    }
+    case NTYPE_CLASS: {
+      Class* class_ = node->as<Class>();
+      for (auto& field : class_->getFields()) {
+        if (field.value) {
+          deleteTree(field.value);
+        }
+      }
+      for (auto& method : class_->getMethods()) {
+        deleteTree(method.fn);
+      }
+      break;
+    }
+    case NTYPE_NEW: {
+      deleteTree(node->as<New>()->getClass());
+      break;
+    }
+    case NTYPE_FUNCTION: {
+      Function* fn = node->as<Function>();
+      deleteTree(fn->getArgs());
+      deleteTree(fn->getBody());
+      break;
+    }
+    case NTYPE_LAMBDA: {
+      Lambda* lambda = node->as<Lambda>();
+      deleteTree(lambda->getArgs());
+      deleteTree(lambda->getBody());
+      break;
+    }
+    case NTYPE_VAR_DECL: {
+      VarDecl* var = node->as<VarDecl>();
+      if (var->getValue()) {
+        deleteTree(var->getValue());
+      }
+      break;
+    }
+    case NTYPE_VAR_DECL_LIST: {
+      VarDeclList* list = node->as<VarDeclList>();
+      for (auto& var : list->getList()) {
+        deleteTree(var);
+      }
+      break;
+    }
+    case NTYPE_CALL: {
+      Call* call = node->as<Call>();
+      deleteTree(call->getCallee());
+      for (int i = 0; i < call->getArgs().size(); i++) {
+        deleteTree(call->getArgs()[i]);
+      }
+      break;
+    }
+    case NTYPE_ASSIGNMENT: {
+      Assignment* ass = node->as<Assignment>();
+      deleteTree(ass->getAssignee());
+      deleteTree(ass->getValue());
+      break;
+    }
+    case NTYPE_RETURN: {
+      deleteTree(node->as<Return>()->getValue());
+      break;
+    }
+    case NTYPE_BLOCK: {
+      for (auto& bodyNode : node->as<Block>()->getBody()) {
+        deleteTree(bodyNode);
+      }
+      break;
+    }
+    case NTYPE_DICT: {
+      auto fields = node->as<Dict>()->getFields();
+      for (auto& p : fields) {
+        deleteTree(p.second);
+      }
+      break;
+    }
+    case NTYPE_VECTOR: {
+      auto elements = node->as<Vector>()->getElements();
+      for (int i = 0; i < elements.size(); i++) {
+        deleteTree(elements[i]);
+      }
+      break;
+    }
+    case NTYPE_CAST_EXPR: {
+      Cast* cast = node->as<Cast>();
+      deleteTree(cast->getValue());
+      break;
+    }
+    case NTYPE_REF: {
+      deleteTree(node->as<Ref>()->getValue());
+      break;
+    }
+    case NTYPE_PRINT: {
+      deleteTree(node->as<Print>()->getValue());
+      break;
+    }
+    case NTYPE_IF: {
+      If* if_ = node->as<If>();
+      deleteTree(if_->getCondition());
+      deleteTree(if_->getBody());
+      if (if_->getElseBody()) {
+        deleteTree(if_->getElseBody());
+      }
+      break;
+    }
+    case NTYPE_FOR: {
+      For* for_ = node->as<For>();
+      deleteTree(for_->getInit());
+      deleteTree(for_->getCondition());
+      deleteTree(for_->getIncrement());
+      deleteTree(for_->getBody());
+      break;
+    }
+    case NTYPE_FOREACH: {
+      ForEach* foreach = node->as<ForEach>();
+      deleteTree(foreach->getLoopVariable());
+      deleteTree(foreach->getIterable());
+      deleteTree(foreach->getBody());
+      break;
+    }
+    case NTYPE_WHILE: {
+      While* while_ = node->as<While>();
+      deleteTree(while_->getCondition());
+      deleteTree(while_->getBody());
+      break;
+    }
+    case NTYPE_LOOP: {
+      Loop* loop_ = node->as<Loop>();
+      deleteTree(loop_->getBody());
+      break;
+    }
+    case NTYPE_FLOAT_LITERAL:
+    case NTYPE_INTEGER_LITERAL:
+    case NTYPE_STRING_LITERAL:
+    case NTYPE_IDENTIFIER:
+    case NTYPE_IMPORT:
+    case NTYPE_NULL:
+    case NTYPE_TRUE:
+    case NTYPE_FALSE:
+    case NTYPE_CONTINUE:
+    case NTYPE_BREAK:
+    case NTYPE_BREAKPOINT:
+    default:
+      break;
+  }
+
+  delete node;
 }

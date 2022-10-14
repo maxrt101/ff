@@ -12,7 +12,6 @@ struct ff_symbol_t {
   ff::Ref<ff::Object> symbol;
 };
 
-
 struct ff_modinfo_t {
   const char* name;
   const char* version;

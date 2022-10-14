@@ -40,6 +40,7 @@ static int run(const std::string& filename, std::string src) {
 #endif
       ff::Compiler compiler;
       code = compiler.compile(filename, tree);
+      ff::ast::deleteTree(tree);
 #ifdef _FF_DEBUG_DISASM
       if (ff::config::get("debug") != "0") {
         printf("=== Code ===\n\\\n");

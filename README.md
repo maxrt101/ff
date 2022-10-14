@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/maxrt101/ff/blob/main/docs/logo.png?raw=true" width="300">
+  <img src="https://github.com/maxrt101/ff/blob/main/docs/logo.png?raw=true" width="300">
 </p>
 
 <h1 align="center">FF Programing Language</h1>
@@ -21,7 +21,7 @@ It was developed to be easily used within C++ applications (which also means bin
 
 ## Building
 ### Prerequisites:
-  - Linux or MacOS environment
+  - Linux or MacOS environment (WSL works too)
   - `C++` compiler that supports `c++17` (tested with `apple clang 11.0.3`, `gcc 10.2.0` and `gcc 9.4.0`)
   - `python3` (tested with `3.10.0`)
 

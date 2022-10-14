@@ -62,11 +62,7 @@ class RuntimeError : public std::exception {
   std::string m_message;
 
  public:
-  // RuntimeError(const std::string& msg);
-  // RuntimeError(const char* fmt, ...);
   RuntimeError(const std::string& filename, int line, const std::string& msg);
-  // RuntimeError(const std::string& filename, int line, const char* fmt, ...);
-  // RuntimeError(const std::string& filename, int line, const char* fmt, va_list args);
 
   static RuntimeError flcreate(const std::string& filename, int line, const std::string& msg);
   static RuntimeError flcreatef(const std::string& filename, int line, const char* fmt, ...);

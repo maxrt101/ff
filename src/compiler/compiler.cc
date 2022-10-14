@@ -55,7 +55,7 @@ ff::Compiler::Variable ff::Compiler::Variable::fromObject(const std::string& nam
       var.fields[field.first] = Variable::fromObject(field.first, field.second);
     }
   } else {
-    // throw CompieError // TODO:
+    throw CompileError("", -1, "Unknown type of object");
   }
   return var;
 }
@@ -79,9 +79,8 @@ void ff::Compiler::printScope(int i, const std::string& prefix) {
 
 void ff::Compiler::printGlobals() {
   std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](const std::string& prefix, Variable& var) {
-    // printf("%s%s: %s", prefix.c_str(), var.name.c_str(), var.type->toString().c_str()); // FIXME: can fail if var.type is nullptr
     printf("%s%s: ", prefix.c_str(), var.name.c_str());
-    printf("%s", var.type->toString().c_str());
+    printf("%s", var.type->toString().c_str()); // Separate printf to avoid not printing anything in case of var.type being nullptr 
     if (var.fields.size()) {
       printf(" {\n");
       for (auto& var : var.fields) {
@@ -486,7 +485,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, as
   } else {
     getCode()->push<uint8_t>(OP_NULL);
   }
-  // var.isIitialized = true;
   getLocals().push_back(var);
   return var.type;
 }
@@ -808,7 +806,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModu
   ast::Class* classNode = node->as<ast::Class>();
 
   Ref<TypeAnnotation> type = TypeAnnotation::create("type");
-  // Ref<TypeAnnotation> type = TypeAnnotation::create(classNode->getName().str);
 
   Variable var {
     classNode->getName().str.c_str(),
@@ -942,7 +939,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::vardecl(ast::Node* node, bool copyValu
             "TypeMismatch during variable definition (annotated type: %s, actual type: %s)",
             varNode->getVarType()->toString().c_str(), type->toString().c_str());
         }
-        // type.isInferred = true;
         m_globalVariables[var.name].type = type;
       }
       emitConstant(String::createInstance(var.name).asRefTo<Object>());
@@ -1621,8 +1617,7 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
     case ast::NTYPE_NEW: {
       return newexpr(node);
     }
-    case ast::NTYPE_FOREACH:
-    case ast::NTYPE_EXPR_LIST_EXPR: {
+    case ast::NTYPE_FOREACH: {
       throw CompileError(m_filename, -1, "Unimplemented");
     }
     case ast::NTYPE_CAST_EXPR: {
@@ -1655,8 +1650,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::evalNode(ast::Node* node, bool copyVal
 #endif
     default: {
       throw CompileError(m_filename, -1, "Unknown AST node: type=%d", (int)node->getType());
-      // throw CompileError(m_filename, -1, "Unknown AST node: type=%d str='%s'", (int)node->getType(), node->toString().c_str()); // FIXME: can fail if node in nullptr
-      break;
     }
   }
 

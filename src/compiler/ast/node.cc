@@ -11,7 +11,6 @@ static std::map<ff::ast::NodeType, std::string> g_nodeTypes {
   {ff::ast::NTYPE_UNARY_EXPR, "Unary"},
   {ff::ast::NTYPE_BINARY_EXPR, "Binary"},
   {ff::ast::NTYPE_BLOCK, "Block"},
-  {ff::ast::NTYPE_EXPR_LIST_EXPR, "ExprList"},
   {ff::ast::NTYPE_VAR_DECL, "VarDecl"},
   {ff::ast::NTYPE_VAR_DECL_LIST, "VarDeclList"},
   {ff::ast::NTYPE_FUNCTION, "Function"},

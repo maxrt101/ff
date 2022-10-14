@@ -64,6 +64,8 @@ enum Opcode {
   OP_BREAKPOINT,
 };
 
+std::string opcodeToString(const Opcode op);
+
 class Code {
  private:
   struct LineInfo {
