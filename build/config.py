@@ -69,23 +69,35 @@ def update(key: str, value):
 
 # Setters
 
-def profile(value: str):
-    _config['profile'] = value
+def profile(value: str = None):
+    if value:
+        _config['profile'] = value
+    return _config['profile']
 
-def force(value: bool):
-    _config['force'] = value
+def force(value: bool = None):
+    if value:
+        _config['force'] = value
+    return _config['force']
 
-def consider_unchanged(value: bool):
-    _config['consider_unchanged'] = value
+def consider_unchanged(value: bool = None):
+    if value:
+        _config['consider_unchanged'] = value
+    return _config['consider_unchanged']
 
-def verbose(value: bool):
-    _config['verbose'] = value
+def verbose(value: bool = None):
+    if value:
+        _config['verbose'] = value
+    return _config['verbose']
 
-def print_compiler_output(value: bool):
-    _config['print_compiler_output'] = value
+def print_compiler_output(value: bool = None):
+    if value:
+        _config['print_compiler_output'] = value
+    return _config['print_compiler_output']
 
-def count_time(value: bool):
-    _config['count_time'] = value
+def count_time(value: bool = None):
+    if value:
+        _config['count_time'] = value
+    return _config['count_time']
 
 # Feature handler
 

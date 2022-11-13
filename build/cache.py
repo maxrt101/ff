@@ -18,8 +18,8 @@ def load():
         _cache = json.loads(open(config.get(CONFIG_CACHE_FILE)).read())
     except json.JSONDecodeError as e:
         _reset_config_file()
-    if config.get('profile') not in _cache:
-        _cache[config.get('profile')] = {
+    if config.profile() not in _cache:
+        _cache[config.profile()] = {
             'files': {},
             'last_build': {'compilation': {}, 'result': '', 'start_time': '', 'end_time': ''}
         }
@@ -28,22 +28,22 @@ def save():
     open(config.get(CONFIG_CACHE_FILE), 'w').write(json.dumps(_cache, indent=4))
 
 def update():
-    for file in _cache[config.get('profile')]['files'].keys():
+    for file in _cache[config.profile()]['files'].keys():
         add_file(file)
 
 def clear():
-    _cache[config.get('profile')]['files'] = {}
+    _cache[config.profile()]['files'] = {}
 
 def add_file(filename: str):
-    _cache[config.get('profile')]['files'][filename] = os.path.getmtime(filename)
+    _cache[config.profile()]['files'][filename] = os.path.getmtime(filename)
 
 def changed(filename: str, add_if_not_exists: bool = True) -> bool:
     if config.get('consider_unchanged'):
         return False
-    if filename not in _cache[config.get('profile')]['files'] and add_if_not_exists:
+    if filename not in _cache[config.profile()]['files'] and add_if_not_exists:
         add_file(filename)
         return True
-    return float(_cache[config.get('profile')]['files'][filename]) < os.path.getmtime(filename)
+    return float(_cache[config.profile()]['files'][filename]) < os.path.getmtime(filename)
 
 def get(*args):
     value = _cache
@@ -55,25 +55,25 @@ def get(*args):
     return value
 
 def update_compilation_output(filename: str, stdout: str, stderr: str):
-    _cache[config.get('profile')]['last_build']['compilation'][filename] = {'stdout': stdout, 'stderr': stderr}
+    _cache[config.profile()]['last_build']['compilation'][filename] = {'stdout': stdout, 'stderr': stderr}
 
 def update_last_build_start(timestamp):
-    _cache[config.get('profile')]['last_build']['start_time'] = timestamp
+    _cache[config.profile()]['last_build']['start_time'] = timestamp
 
 def update_last_build_end(timestamp):
-    _cache[config.get('profile')]['last_build']['end_time'] = timestamp
+    _cache[config.profile()]['last_build']['end_time'] = timestamp
 
 def update_last_build_result(result: str):
-    _cache[config.get('profile')]['last_build']['result'] = result
+    _cache[config.profile()]['last_build']['result'] = result
 
 def print_last_build():
     print('last build:'
-        + '\nstarted: ' + _cache[config.get('profile')]['last_build']['start_time']
-        + '\nended: '   + _cache[config.get('profile')]['last_build']['end_time']
-        + '\nresult: '  + _cache[config.get('profile')]['last_build']['result']
+        + '\nstarted: ' + _cache[config.profile()]['last_build']['start_time']
+        + '\nended: '   + _cache[config.profile()]['last_build']['end_time']
+        + '\nresult: '  + _cache[config.profile()]['last_build']['result']
         + '\n')
 
-    for filename, out in _cache[config.get('profile')]['last_build']['compilation'].items():
+    for filename, out in _cache[config.profile()]['last_build']['compilation'].items():
         if out['stdout'] != '' or out['stderr'] != '':
             print(f'{console.Color.BLUE}FILE{console.Color.RESET}: {filename}')
             print(f'{console.Color.GREEN}STDOUT{console.Color.RESET}:', out['stdout'])
