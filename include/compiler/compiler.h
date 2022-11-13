@@ -118,6 +118,7 @@ class Compiler {
   Ref<TypeAnnotation> defineLocal(Variable var, int line = 0, ast::Node* value = nullptr, bool copyValue = true);
   TypeInfo resolveCurrentModule();
   Ref<TypeAnnotation> resolveVariableRelativeToModule(const std::string& name, bool set = false, bool checkIsConst = false);
+  TypeInfo getModuleInfo(const std::vector<std::string>& modules);
 
   std::vector<Function::Argument> parseArgs(ast::VarDeclList* args);
   void defineArgs(ast::VarDeclList* args);

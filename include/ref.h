@@ -125,11 +125,14 @@ class Ref {
     cleanup();
   }
 
+  inline bool valid() const {
+    return m_data != nullptr;
+  }
+
  private:
   void cleanup() {
 #ifdef _FF_REF_DEBUG
     std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ")::cleanup() &count=" << m_count <<  "\n";
-    // std::cout << "Ref<" << mrt::getTypeName<T>() << ">(" << m_data << ")::cleanup() &count=" << m_count << " count=" << (int)(m_count ? *m_count : -1) << "\n";
 #endif
     if (m_data && m_count) {
       (*m_count)--;

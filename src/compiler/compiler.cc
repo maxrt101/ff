@@ -78,9 +78,9 @@ void ff::Compiler::printScope(int i, const std::string& prefix) {
 }
 
 void ff::Compiler::printGlobals() {
-  std::function<void(std::string, Variable&)> printGlobal = [&printGlobal](const std::string& prefix, Variable& var) {
-    printf("%s%s: ", prefix.c_str(), var.name.c_str());
-    printf("%s", var.type->toString().c_str()); // Separate printf to avoid not printing anything in case of var.type being nullptr 
+  std::function<void(std::string, Variable&)> printGlobal = [&printGlobal, this](const std::string& prefix, Variable& var) {
+    if (!var.type.valid()) throw CompileError(m_filename, -1, "Unexpected Null Pointer");
+    printf("%s%s: %s", prefix.c_str(), var.name.c_str(), var.type->toString().c_str());
     if (var.fields.size()) {
       printf(" {\n");
       for (auto& var : var.fields) {
@@ -459,6 +459,30 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::resolveVariableRelativeToModule(const 
   return typeInfo.back().type;
 }
 
+ff::Compiler::TypeInfo ff::Compiler::getModuleInfo(const std::vector<std::string>& modules) {
+  if (modules.empty()) return {};
+  std::string rootModuleName = modules.front();
+  std::vector<TypeInfo> typeInfo; // stack of current modules from the first one (global)
+
+  auto itr = m_globalVariables.find(rootModuleName);
+  if (itr != m_globalVariables.end()) {
+    typeInfo.push_back({itr->second.type, &itr->second});
+
+    for (int i = 1; i < modules.size(); i++) {
+      auto fitr = typeInfo.back().var->fields.find(modules[i]);
+      if (fitr != typeInfo.back().var->fields.end()) {
+        typeInfo.push_back({fitr->second.type, &fitr->second});
+      } else {
+        throw CompileError(m_filename, -1, "Unknown field '%s'", modules[i].c_str());
+      }
+    }
+  } else {
+    throw CompileError(m_filename, -1, "Unknown variable '%s'", rootModuleName.c_str());
+  }
+
+  return typeInfo.back();
+}
+
 ff::Ref<ff::TypeAnnotation> ff::Compiler::defineLocal(Variable var, int line, ast::Node* value, bool copyValue) {
   if (localExists(var.name)) {
     throw CompileError(m_filename, line, "Redeclaration of local variable");
@@ -723,6 +747,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::unaryExpr(ast::Node* node) {
 ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule, bool saveToVariable) {
   ast::Function* fn = node->as<ast::Function>();
 
+  TypeInfo enclosingModuleInfo;
+
   Variable var(
     fn->getName().str,
     fn->getFunctionType().asRefTo<TypeAnnotation>(),
@@ -731,7 +757,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule,
   );
 
   if (saveToVariable) {
-    m_globalVariables[var.name] = var;
+    if (isModule) {
+      enclosingModuleInfo = getModuleInfo(m_modules);
+      enclosingModuleInfo.var->fields[var.name] = var;
+    } else {
+      m_globalVariables[var.name] = var;
+    }
   }
 
   beginFunctionScope(fn->getFunctionType()->returnType);
@@ -775,6 +806,14 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule,
     m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
   }
 
+  if (saveToVariable) {
+    if (isModule) {
+      enclosingModuleInfo.var->fields[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
+    } else {
+      m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
+    }
+  }
+
   if (scope.code->size() == 0 || (*scope.code)[scope.code->size()-1] != OP_RETURN) {
     scope.code->pushInstruction(OP_RETURN);
   }
@@ -805,6 +844,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule,
 ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModule) {
   ast::Class* classNode = node->as<ast::Class>();
 
+  TypeInfo enclosingModuleInfo;
+
   Ref<TypeAnnotation> type = TypeAnnotation::create("type");
 
   Variable var {
@@ -814,7 +855,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModu
     {}
   };
 
-  m_globalVariables[var.name] = var;
+  if (isModule) {
+    enclosingModuleInfo = getModuleInfo(m_modules);
+    enclosingModuleInfo.var->fields[var.name] = var;
+  } else {
+    m_globalVariables[var.name] = var;
+  }
 
   Ref<Class> classObject = Class::createInstance(var.name);
 
@@ -872,7 +918,12 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::classdecl(ast::Node* node, bool isModu
   }
 
   getCode()->pushInstruction(OP_POP);
-  m_globalVariables[var.name] = var;
+
+  if (isModule) {
+    enclosingModuleInfo.var->fields[var.name] = var;
+  } else {
+    m_globalVariables[var.name] = var;
+  }
 
   return type;
 }
