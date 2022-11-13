@@ -589,7 +589,7 @@ ff::Compiler::TypeInfo ff::Compiler::evalSequenceElement(TypeInfo prev, ast::Nod
         type = var->type;
       }
     }
-    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
+    if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION || type->typeName == "type") {
       isCopyable = false;
     }
     return {type, var};
@@ -800,10 +800,6 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::fndecl(ast::Node* node, bool isModule,
   if (saveToVariable && !isModule) {
     emitConstant(String::createInstance(fn->getName().str).asRefTo<Object>());
     getCode()->pushInstruction(OP_NEW_GLOBAL);
-  }
-
-  if (saveToVariable) {
-    m_globalVariables[var.name].type = fn->getFunctionType().asRefTo<TypeAnnotation>();
   }
 
   if (saveToVariable) {
