@@ -20,6 +20,10 @@ std::string ff::config::get(const std::string& key) {
   return g_values.at(key);
 }
 
+std::string ff::config::getOr(const std::string& key, const std::string& defaultValue) {
+  return exists(key) ? get(key) : defaultValue;
+}
+
 void ff::config::set(const std::string& key, const std::string& value) {
   g_values[key] = value;
 }
