@@ -88,6 +88,13 @@ ff::Ref<ff::ClassInstance> ff::types::instance(Ref<Object> object) {
   return object.asRefTo<ClassInstance>();
 }
 
+ff::Ref<ff::CPtr> ff::types::cptr(CPtr::ValueType value) {
+  return CPtr::createInstance(value);
+}
+
+ff::Ref<ff::CPtr> ff::types::cptr(Ref<Object> object) {
+  return object.asRefTo<CPtr>();
+}
 
 std::string& ff::types::strval(Ref<String> value) {
   return value->value;
@@ -135,6 +142,14 @@ ff::Dict::ValueType& ff::types::dictval(Ref<Dict> value) {
 
 ff::Dict::ValueType& ff::types::dictval(Ref<Object> object) {
   return dict(object)->getFields();
+}
+
+ff::CPtr::ValueType& ff::types::cptrval(Ref<CPtr> value) {
+  return value->value;
+}
+
+ff::CPtr::ValueType& ff::types::cptrval(Ref<Object> object) {
+  return cptr(object)->value;
 }
 
 ff::Ref<ff::TypeAnnotation> ff::types::type(const std::string& typeName, bool isInferred) {

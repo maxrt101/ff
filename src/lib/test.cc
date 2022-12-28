@@ -14,7 +14,8 @@ ff_symbol_t symbols[] {
     classobj(
         "Test",
         {
-          {"counter", ff::Class::Field {"counter", false, obj(integer(10))}}
+          {"counter", ff::Class::Field {"counter", false, obj(integer(10))}},
+          {"ptr", ff::Class::Field {"ptr", false, obj(cptr(0))}}
         },
         {
           {"test", obj(fn(Test_test, {{"self", any()}, {"arg1", any()}, {"arg2", any()}}, nothing()))}

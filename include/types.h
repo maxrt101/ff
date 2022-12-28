@@ -14,6 +14,7 @@
 #include <ff/types/dict.h>
 #include <ff/types/vector.h>
 #include <ff/types/class.h>
+#include <ff/types/cptr.h>
 
 namespace ff {
 
@@ -70,6 +71,8 @@ Ref<Class> classobj(const std::string& className, std::unordered_map<std::string
 Ref<Class> classobj(Ref<Object> object);
 Ref<ClassInstance> instance(Ref<Class> class_);
 Ref<ClassInstance> instance(Ref<Object> object);
+Ref<CPtr> cptr(CPtr::ValueType value);
+Ref<CPtr> cptr(Ref<Object> object);
 
 std::string& strval(Ref<String> value);
 std::string& strval(Ref<Object> object);
@@ -83,6 +86,8 @@ Vector::ValueType& vectorval(Ref<Vector> value);
 Vector::ValueType& vectorval(Ref<Object> object);
 Dict::ValueType& dictval(Ref<Dict> value);
 Dict::ValueType& dictval(Ref<Object> object);
+CPtr::ValueType& cptrval(Ref<CPtr> value);
+CPtr::ValueType& cptrval(Ref<Object> object);
 
 template <typename T>
 inline Ref<T> ref(Ref<T>& annotation) {

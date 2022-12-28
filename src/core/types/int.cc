@@ -107,7 +107,7 @@ ff::IntType::IntType() : Type("int") {
       return obj(boolean(intval(args[0]) != 0));
     }, {
       {"self", type("int")}
-    }, type("string")))
+    }, type("bool")))
   );
 
   setField("__copy__",
