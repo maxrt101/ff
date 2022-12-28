@@ -53,9 +53,17 @@ bool ff::FunctionAnnotation::operator==(const TypeAnnotation& rhs) const {
   if (arguments.size() != rhsf.arguments.size()) return false;
 
   for (int i = 0; i < arguments.size(); i++) {
-    if (*arguments[i] != *rhsf.arguments[i]) return false;
+    if (*arguments[i] != *rhsf.arguments[i]) {
+      if (*arguments[i] == *TypeAnnotation::any()) {
+        continue;
+      }
+      return false;
+    }
   }
 
+  if (*returnType == *TypeAnnotation::any()) {
+    return true;
+  }
   return *returnType == *rhsf.returnType;
 }
 
