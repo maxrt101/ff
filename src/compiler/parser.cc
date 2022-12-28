@@ -486,7 +486,7 @@ std::vector<ff::ast::Node*> ff::Parser::statementList() {
   }
 
   if (peek().type != TOKEN_RIGHT_BRACE) {
-    throw ParseError(peek(), m_filename, "Expected ';' after a statement)");
+    throw ParseError(peek(), m_filename, "Expected ';' after a statement");
   }
 
   return nodes;
