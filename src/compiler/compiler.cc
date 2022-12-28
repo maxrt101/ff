@@ -1044,7 +1044,8 @@ ff::Ref<ff::TypeAnnotation> ff::Compiler::call(ast::Node* node, bool topLevelCal
   for (int i = args.size() - 1; i >= 0; i--) {
     auto argType = evalNode(args[i], true, false, false);
     if (type->annotationType == TypeAnnotation::TATYPE_FUNCTION) {
-      if (type.asRefTo<FunctionAnnotation>()->arguments.size() != args.size()) {
+      if ((type.asRefTo<FunctionAnnotation>()->arguments.size() != args.size() && topLevelCallee)
+       || (type.asRefTo<FunctionAnnotation>()->arguments.size()-1 != args.size() && !topLevelCallee && !explicitSelf)) {
         throw CompileError(m_filename, -1, "TypeMismatch: number of arguments is not equal in annotation and in function call (function '%s' annotated '%s')",
           functionName.c_str(),
           type->toString().c_str()
